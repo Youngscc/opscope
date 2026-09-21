@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Tests and generated page
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Run unit tests
+        run: python3 -B -m unittest discover -s . -p 'test_*.py' -v
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check configuration.js
+          node --check catalog-ui.js
+
+      - name: Build page
+        run: python3 -B build.py
+
+      - name: Check generated page is up to date
+        run: git diff --exit-code -- index.html

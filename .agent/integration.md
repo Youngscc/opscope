@@ -29,3 +29,19 @@
 ## 后续 Agent 的第一步
 
 先读 README 与数据语义，运行已有八项测试，向用户当前目标对齐。未获新的实现要求前不主动删除 Accel-Sim、引入框架、调用远程评估或更改任何硬件参数。
+
+## FlashAttention 同配置差异核查（2026-09-21，已复现实例，未修复）
+
+本地直接调用 modeling 训练单算子服务和推理 `_simulate`（使用仓库 FlashAttentionScore 资产，不查任务数据库）：H100、BF16、Q/K/V 均 [2,8,512,128]。训练 FLOPs=2164260864、输出 [2,8,512,128]；推理 FLOPs=8589934592、attention_out=[2,32,512,128]。推理维度绑定仅处理独立变量，未从 `num_attention_heads // tp_size` 绑定头数，默认32头继续进入公式和输出。另有 BNSD 第1维被写入 input_length 的静态映射问题，其对具体任务影响未单独验证。
+
+32头对照时，两链路计算量和输出字节仍不同：训练包括 softmax 工作量，推理返回两份 FP32 softmax 统计辅助输出。前端 deriveOpReport 使用返回 FLOPs/Bytes 和页面有效算力/带宽重新计算耗时与 Bound。上述两个实测样例后端 Bound 均为 compute，没有复现用户所说的相反结果；用户具体配置/任务尚待提供，不能据此断定该任务根因。没有修改 modeling 业务代码。
+
+### modeling 任务 127 / 128 定向核对（2026-09-21，只读）
+
+读取用户指定的本地 task_store.sqlite3 中 task/config/run/result，127=train/simulate_op/zrt_roofline（run145），128=infer/infer_simulate_op/kepler_operator（run146）。两者 bf16 QKV 均 [1,32,2048,1]、硬件同名 Adevice03_POD，但保存的硬件资产分别为 train/infer，配置不完全相同。
+
+- 127：FLOPs1073741824，读393216B/写131072B，AI2048，计算19.217337µs/访存0.8192µs/总19.217337µs，bound=compute。
+- 128：FLOPs536870912，读393216B/写4325376B，AI113.777778，计算37.282702µs/访存3.515625µs/总47.282702µs，bound=compute。额外两个 fp32 [1,32,2048,8] softmax 输出各2MiB，令总字节从0.5MiB增至4.5MiB。
+- 127 FLOPs含两次矩阵乘加4个softmax操作；128返回的FLOPs仅矩阵乘，softmax在Kepler内部独立计时。D=1时softmax成本突出：华为Vector/SFU按24TFLOPS×0.6计价，softmax共536870912操作，对应37.282702µs，再加固定10µs。
+- 两者后端均计算受限，不能称为后端bound相反。PerformanceOpPage.vue deriveOpReport用返回FLOPs/总字节与当前UI硬件/利用率重新算时延和bound，忽略Kepler softmax成本和固定开销；同一阈值在113.78与2048之间时即可显示相反bound。具体当时滑条值没有保存在任务配置中，未声称复原当时屏幕值。
+- 本例头数32与默认值相同，前次复现的8头绑定bug不是这两条差异的原因。无业务代码修改，无任务重跑；原始结果来自保存记录。

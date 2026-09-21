@@ -1,200 +1,241 @@
 'use strict';
 const data = JSON.parse(document.getElementById('result-data').textContent);
-const state = {hardware: new Set(['ascend', 'h100']), methods: new Set(data.methods.map(item => item.id)), view: 'hardware', selected: [], details: [], tab: 'latency', origin: null};
+const state = {hardware: new Set(data.hardware.filter(item => item.group === 'demo').map(item => item.id)), methods: new Set(data.methods.map(item => item.id)), metric: 'latency', chart: 'error', scope: null, selecting: false, selected: [], details: [], tab: 'overview', onlyDifferences: false, origin: null};
 const by_id = id => document.getElementById(id);
 const hardware_by_id = id => data.hardware.find(item => item.id === id);
 const method_by_id = id => data.methods.find(item => item.id === id);
 const result_by_id = id => data.results.find(item => item.id === id);
-
-function visible_results() {
-  return data.results.filter(item => state.hardware.has(item.hardware) && state.methods.has(item.method));
-}
-
-function render_filters() {
-  by_id('hardware-options').innerHTML = data.hardware.map(item => `<label class="hardware-option"><input type="checkbox" data-hardware="${item.id}" ${state.hardware.has(item.id) ? 'checked' : ''}><span><b>${item.name}</b></span><span class="family">${item.family}</span></label>`).join('');
-  by_id('method-options').innerHTML = data.methods.map(item => `<label class="method-chip"><input type="checkbox" data-method="${item.id}" ${state.methods.has(item.id) ? 'checked' : ''}><span class="method-dot ${item.color}"></span>${item.name}</label>`).join('');
-}
-
-function result_heading(result) {
-  const method = method_by_id(result.method);
-  const name = state.view === 'hardware' ? method.name : hardware_by_id(result.hardware).name;
-  const checked = state.selected.includes(result.id) ? 'checked' : '';
-  const checkbox = result.available ? `<input type="checkbox" data-select="${result.id}" ${checked} aria-label="选择 ${hardware_by_id(result.hardware).name} ${method.name} 进行比较">` : '';
-  return `<th scope="col"><div class="method-head">${checkbox}<span class="method-dot ${method.color}"></span><span>${name}</span></div><span class="source-label ${result.source_class || ''}">${result.available ? result.source_label : '未提供'}</span></th>`;
-}
-
-function detail_button(result, tab, content, class_name) {
-  return `<button class="${class_name}" data-open="${result.id}" data-open-tab="${tab}" aria-expanded="${state.details.includes(result.id)}" aria-controls="detail-panel">${content}</button>`;
-}
-
-function throughput_summary(result) {
-  const item = result.summary;
-  const color = method_by_id(result.method).color;
-  return detail_button(result, 'compute', `<span class="metric-value">${item.throughput}<small>TFLOP/s</small></span><span class="mini-track"><i class="${color}" style="width:${item.throughput_width}%"></i></span>`, 'visual-metric');
-}
-
-function memory_summary(result) {
-  const item = result.summary.memory;
-  if (!item) return '<span class="metric-missing" title="此方法未提供实际流量与缓存指标">—</span>';
-  return detail_button(result, 'memory', `<span class="memory-value"><b>${item.traffic}<small>MiB</small></b><span>${item.bandwidth}<small>TB/s</small></span></span><span class="mini-label"><span>L2 命中</span><b>${item.hit}%</b></span><span class="mini-track"><i class="cache-bar" style="width:${item.hit}%"></i></span>`, 'visual-metric');
-}
-
-function activity_summary(result) {
-  const rows = result.summary.activity;
-  if (!rows.length) return '<span class="metric-missing" title="此方法未提供资源活动计数器">—</span>';
-  const chart = rows.map(item => `<span class="activity-line"><span>${item.label}</span><span class="mini-track"><i style="width:${item.value}%;background:${item.color}"></i></span><b>${item.value}%</b></span>`).join('');
-  return detail_button(result, 'compute', chart, 'visual-metric activity-metric');
-}
-
-function result_cell(result, metric) {
-  if (!result.available) return `<td class="missing-cell">${metric === 'latency' ? `<span class="missing-value">—</span><div class="unavailable">${result.reason}</div>` : '<span class="unavailable">—</span>'}</td>`;
-  const method = method_by_id(result.method);
-  const cells = {
-    latency: `<span class="latency-number">${result.latency}<small>μs</small></span><div class="latency-track"><i class="${method.color}" style="width:${result.bar_width}%"></i></div>`,
-    deviation: `<span class="delta ${result.error_class}">${result.deviation}</span>`,
-    components: `<div class="component">${detail_button(result, 'compute', '<span>计算</span>' + result.compute, 'component-link')}${detail_button(result, 'memory', '<span>访存</span>' + result.memory, 'component-link')}</div>`,
-    throughput: throughput_summary(result),
-    traffic: memory_summary(result),
-    activity: activity_summary(result),
-    bound: result.bound ? detail_button(result, 'latency', result.bound, 'bound-button') : '<span class="metric-missing" title="此结果未提供瓶颈分类">—</span>',
-    action: detail_button(result, 'latency', '查看详情 <span aria-hidden="true">↗</span>', 'details-button')
-  };
-  return `<td>${cells[metric]}</td>`;
-}
-
-function render_group(group, results) {
-  const is_hardware = state.view === 'hardware';
-  const family = is_hardware ? `<span class="family ${group.family === 'NPU' ? 'npu' : ''}">${group.family}</span>` : `<span class="method-dot ${group.color}"></span>`;
-  const metrics = [['latency', '总时延'], ['deviation', '偏差'], ['components', '计算 / 访存'], ['throughput', '有效算力<span class="row-hint">FLOPs / 总时延</span>'], ['traffic', 'HBM / 缓存<span class="row-hint">实际流量与命中率</span>'], ['activity', '资源活动<span class="row-hint">各硬件原生口径</span>'], ['bound', '主要瓶颈'], ['action', '']];
-  const rows = metrics.map(([key, label]) => `<tr class="metric-row-${key}"><th scope="row">${label}</th>${results.map(item => result_cell(item, key)).join('')}</tr>`).join('');
-  return `<section class="group" aria-label="${group.name} 比较"><div class="group-heading"><div><div class="group-title">${family}<h2>${group.name}</h2></div></div></div><div class="table-scroll" tabindex="0" role="region" aria-label="${group.name} 对比表，可横向滚动"><table class="comparison"><thead><tr><th scope="col">性能指标</th>${results.map(result_heading).join('')}</tr></thead><tbody>${rows}</tbody></table></div></section>`;
-}
-
-function render_groups() {
-  const results = visible_results();
-  const groups = state.view === 'hardware' ? data.hardware : data.methods;
-  const selected_groups = state.view === 'hardware' ? state.hardware : state.methods;
-  const output = groups.filter(item => selected_groups.has(item.id)).map(group => {
-    const members = results.filter(item => item[state.view] === group.id);
-    return members.length ? render_group(group, members) : '';
-  }).join('');
-  by_id('groups').after(by_id('detail-panel'));
-  by_id('groups').innerHTML = output;
-  by_id('empty-state').hidden = results.length > 0;
-  by_id('result-count').textContent = `${state.hardware.size} 种硬件 / ${state.methods.size} 种方法`;
-  document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === state.view)));
-}
-
-function render_tray() {
-  by_id('compare-tray').hidden = state.selected.length === 0;
-  by_id('selection-label').textContent = `已选择 ${state.selected.length} / 2 个结果`;
-  by_id('compare-button').disabled = state.selected.length !== 2;
-}
+const escape_html = value => String(value ?? '—').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
+const method_name = id => id === 'profile' ? 'Profiling' : method_by_id(id).name;
 
 function announce(message) {
   by_id('announcement').textContent = message;
 }
 
-function close_details(restore_focus = false) {
-  by_id('detail-panel').hidden = true;
-  state.details = [];
-  render_tray();
-  document.querySelectorAll('[data-open]').forEach(button => button.setAttribute('aria-expanded', 'false'));
-  if (restore_focus && state.origin) {
-    const trigger = document.querySelector(`[data-open="${state.origin}"]`);
-    if (trigger) trigger.focus();
-  }
+function visible_results() {
+  return data.results.filter(item => state.hardware.has(item.hardware) && state.methods.has(item.method));
+}
+
+function result_name(result) {
+  return `${hardware_by_id(result.hardware).name} · ${method_name(result.method)}`;
+}
+
+function render_filters() {
+  render_hardware_options();
+  by_id('method-options').innerHTML = data.methods.map(item => `<label class="filter-option"><input type="checkbox" data-method="${item.id}" ${state.methods.has(item.id) ? 'checked' : ''}><i class="method-dot ${item.id}" aria-hidden="true"></i><span>${method_name(item.id)}</span></label>`).join('');
+}
+
+function cell_markup(result) {
+  const {available, id, matrix} = result;
+  const error = state.metric === 'error';
+  const main = !available ? '—' : error ? (result.method === 'profile' ? '参考' : matrix.error_label) : `${result.latency}<small>μs</small>`;
+  const secondary = !available ? result.reason : error ? `${result.latency} μs` : result.method === 'profile' ? '同硬件参考' : `较参考 ${matrix.error_label}`;
+  const source = available && result.method === 'roofline' ? `<span class="calibration ${result.source_class.includes('generic') ? 'generic' : ''}">${result.source_label}</span>` : '';
+  const check = state.selecting && available ? `<label class="cell-check"><input type="checkbox" data-select="${id}" ${state.selected.includes(id) ? 'checked' : ''} aria-label="选择 ${result_name(result)} 进行比较"></label>` : '';
+  return `<td class="matrix-cell ${available ? '' : 'is-missing'} ${result.method === 'profile' ? 'reference-cell' : ''} ${state.selected.includes(id) ? 'is-selected' : ''}"><div class="cell-inner">${check}<button class="cell-result" data-open="${id}" aria-haspopup="dialog" aria-controls="detail-panel" aria-label="${result_name(result)}，${available ? result.latency + ' 微秒' : result.reason}，查看详情"><span class="cell-value">${main}</span><span class="cell-secondary">${secondary}</span>${available ? `<span class="cell-meta"><span>${matrix.note}</span>${source}</span>` : ''}<span class="cell-arrow" aria-hidden="true">↗</span></button></div></td>`;
+}
+
+function render_matrix() {
+  const methods = data.methods.filter(item => state.methods.has(item.id));
+  const hardware = data.hardware.filter(item => state.hardware.has(item.id));
+  const visible = visible_results();
+  by_id('matrix-head').innerHTML = `<tr><th scope="col" class="axis-corner">硬件 <span aria-hidden="true">↓</span> <span class="separator">/</span> 方法 <span aria-hidden="true">→</span></th>${methods.map(item => `<th scope="col" class="method-column ${item.id === 'profile' ? 'reference-cell' : ''}"><button class="axis-button" data-scope-method="${item.id}"><i class="method-dot ${item.id}" aria-hidden="true"></i>${method_name(item.id)}<span aria-hidden="true">↗</span></button><small>${item.id === 'profile' ? '同硬件参考' : item.source}</small></th>`).join('')}</tr>`;
+  by_id('matrix-body').innerHTML = methods.length ? hardware.map(hw => `<tr><th scope="row" class="hardware-column"><button class="axis-button" data-scope-hardware="${hw.id}"><span>${hw.name}</span><span aria-hidden="true">↗</span></button><small>${hw.family} · ${hw.group === 'demo' ? '示例' : '目录配置'}</small></th>${methods.map(method => cell_markup(visible.find(row => row.hardware === hw.id && row.method === method.id))).join('')}</tr>`).join('') : '';
+  by_id('result-matrix').style.setProperty('--method-count', methods.length || 1);
+  by_id('matrix-wrap').hidden = !visible.length;
+  by_id('empty-state').hidden = !!visible.length;
+  by_id('hardware-count').textContent = state.hardware.size;
+  by_id('method-count').textContent = state.methods.size;
+  by_id('result-count').textContent = `${visible.filter(item => item.available).length} / ${visible.length} 有结果`;
+  document.querySelectorAll('[data-metric]').forEach(button => button.setAttribute('aria-pressed', button.dataset.metric === state.metric));
+  render_scope();
+}
+
+function render_scope() {
+  document.querySelectorAll('[data-scope-method], [data-scope-hardware]').forEach(button => {
+    const active = state.scope && ((button.dataset.scopeMethod && button.dataset.scopeMethod === state.scope.method) || (button.dataset.scopeHardware && button.dataset.scopeHardware === state.scope.hardware));
+    button.setAttribute('aria-pressed', String(Boolean(active)));
+  });
+  by_id('chart-reset').hidden = !state.scope;
+}
+
+function render_tray() {
+  by_id('compare-tray').hidden = !state.selecting;
+  by_id('selection-mode').setAttribute('aria-pressed', String(state.selecting));
+  by_id('selection-mode').textContent = state.selecting ? '退出选择' : '选择对比';
+  by_id('selection-label').textContent = state.selected.length ? state.selected.map(id => result_name(result_by_id(id))).join('  ↔  ') : '勾选两个结果，逐项比较详情';
+  by_id('compare-button').disabled = state.selected.length !== 2;
 }
 
 function update_filters() {
   const visible = new Set(visible_results().filter(item => item.available).map(item => item.id));
   state.selected = state.selected.filter(id => visible.has(id));
-  close_details();
-  render_groups();
+  if (state.scope && ((state.scope.hardware && !state.hardware.has(state.scope.hardware)) || (state.scope.method && !state.methods.has(state.scope.method)))) state.scope = null;
+  render_matrix();
   render_tray();
-  announce('比较结果已按筛选条件更新');
+  render_chart();
+  announce('矩阵与图表已按筛选更新');
 }
 
 function reset_filters() {
-  state.hardware = new Set(['ascend', 'h100']);
+  const group = state.config.domain === 'demo' ? 'demo' : 'modeling';
+  state.hardware = new Set(data.hardware.filter(item => item.group === group).map(item => item.id));
+  by_id('hardware-search').value = '';
   state.methods = new Set(data.methods.map(item => item.id));
   state.selected = [];
-  state.view = 'hardware';
+  state.scope = null;
   render_filters();
   update_filters();
 }
 
-function result_name(result) {
-  return `${hardware_by_id(result.hardware).name} · ${method_by_id(result.method).name}${result.method === 'roofline' ? ' · ' + result.source_label : ''}`;
+function plot_results() {
+  return visible_results().filter(item => !state.scope || (state.scope.hardware ? item.hardware === state.scope.hardware : item.method === state.scope.method));
+}
+
+function chart_axis(metric) {
+  const ticks = data.matrix.scales[metric === 'error' ? 'error_ticks' : 'latency_ticks'];
+  return `<div class="chart-axis"><span>${metric === 'error' ? '偏差 %' : '耗时 μs'}</span><div>${ticks.map((tick, index) => `<span class="axis-tick ${index === 0 ? 'first' : index === ticks.length - 1 ? 'last' : ''}" style="left:${tick.position}%">${tick.label}</span>`).join('')}</div><span></span></div>`;
+}
+
+function chart_mark(result, metric) {
+  const error = metric === 'error';
+  const value = error ? result.matrix.error_label : `${result.latency} μs`;
+  const location = error ? `left:${result.matrix.error_position}%` : `width:${result.matrix.latency_width}%`;
+  const label = `${result_name(result)} · ${error ? '较同硬件参考 ' : ''}${value}`;
+  const side_label = !error ? `${method_name(result.method)}<span class="narrow-chart-value">${value}</span>` : state.scope ? value : '';
+  return `<div class="chart-lane"><div class="lane-plot"><button class="chart-mark ${result.method} ${error ? 'point' : 'bar'}" data-open="${result.id}" aria-label="${label}，查看详情" title="${label}" style="${location}">${error ? '<i aria-hidden="true"></i>' : `<span class="bar-number">${result.latency}</span>`}</button></div><span class="lane-value">${side_label}</span></div>`;
+}
+
+function chart_group(hw, rows, metric) {
+  const valid = rows.filter(row => row.available && (metric !== 'error' || row.matrix.error_position !== null));
+  const show_names = Boolean(state.scope);
+  const marks = valid.map(row => `<div class="chart-series"><span class="lane-name">${show_names ? method_name(row.method) : ''}</span>${chart_mark(row, metric)}</div>`).join('');
+  return `<div class="chart-group"><div class="chart-hardware">${hw.name.replace('NVIDIA ', '')}</div><div class="chart-series-group ${metric}">${marks || '<div class="chart-no-data">— 暂无结果</div>'}</div></div>`;
+}
+
+function render_chart() {
+  const rows = plot_results();
+  const no_reference = rows.some(row => row.available) && !rows.some(row => row.available && row.matrix.error_position !== null);
+  const metric = state.chart === 'error' && no_reference ? 'latency' : state.chart;
+  const scope = state.scope?.hardware ? hardware_by_id(state.scope.hardware).name + ' · 比较方法' : state.scope?.method ? method_name(state.scope.method) + ' · 比较硬件' : '全局对比';
+  by_id('chart-heading').textContent = scope;
+  by_id('chart-description').textContent = metric === 'error' ? '参考偏差 · 左侧低估，右侧高估，越接近零越接近本次参考。' : state.scope?.hardware ? '同一硬件 · 比较各方法预测与参考的耗时差异。' : '总耗时 · 固定同一方法后，可以直观比较不同硬件。';
+  by_id('chart-footnote').textContent = no_reference ? '暂无可用参考，展示绝对耗时。' : metric === 'error' ? '每行使用该硬件的 Profiling 作为零点；缺失结果不作零值绘制。' : '统一零起点刻度 · 更短的预测不代表更准确。';
+  const methods = data.methods.filter(item => state.methods.has(item.id) && rows.some(row => row.method === item.id && row.available) && (!state.scope?.method || item.id === state.scope.method) && (metric !== 'error' || item.id !== 'profile'));
+  const plotted = rows.filter(row => metric !== 'error' || row.method !== 'profile');
+  by_id('chart-legend').innerHTML = methods.map(item => `<span><i class="legend-mark ${item.id}" aria-hidden="true"></i>${method_name(item.id)}</span>`).join('');
+  const groups = data.hardware.filter(hw => state.hardware.has(hw.id) && (!state.scope?.hardware || hw.id === state.scope.hardware));
+  const only_reference = rows.length && rows.every(row => row.method === 'profile') && metric === 'error';
+  by_id('analysis-chart').innerHTML = only_reference ? '<div class="reference-note">Profiling 是每个硬件的参考基线，偏差为 0%。切换“总耗时”比较硬件。</div>' : chart_axis(metric) + groups.map(hw => chart_group(hw, plotted.filter(row => row.hardware === hw.id), metric)).join('');
+  by_id('analysis-chart').classList.toggle('focused', Boolean(state.scope));
+  const has_results = rows.some(row => row.available);
+  by_id('analysis-chart').hidden = !has_results;
+  by_id('chart-empty').hidden = has_results;
+  if (!has_results) {
+    by_id('chart-description').textContent = '此配置尚无可对比的性能数据。';
+    by_id('chart-footnote').textContent = '未运行的组合不作为零值绘制。';
+  }
+  document.querySelectorAll('[data-chart]').forEach(button => button.setAttribute('aria-pressed', button.dataset.chart === metric));
 }
 
 function render_selectors() {
-  const options = visible_results().filter(item => item.available);
   const paired = state.details.length === 2;
-  by_id('detail-selectors').classList.toggle('paired', paired);
-  by_id('detail-selectors').innerHTML = state.details.map((id, index) => {
-    const choices = options.filter(item => item.id === id || !state.details.includes(item.id));
-    return `<label>${paired ? ('结果 ' + (index === 0 ? 'A' : 'B')) : '评估结果'}<select data-detail-slot="${index}">${choices.map(item => `<option value="${item.id}" ${item.id === id ? 'selected' : ''}>${result_name(item)}</option>`).join('')}</select></label>`;
+  by_id('detail-selectors').hidden = !paired;
+  if (!paired) return;
+  const choices = visible_results().filter(item => item.available);
+  by_id('detail-selectors').innerHTML = state.details.map((id, index) => `<label>结果 ${index ? 'B' : 'A'}<select data-detail-slot="${index}">${choices.filter(item => item.id === id || !state.details.includes(item.id)).map(item => `<option value="${item.id}" ${item.id === id ? 'selected' : ''}>${result_name(item)}</option>`).join('')}</select></label>`).join('');
+}
+
+function paired_facts(left, right) {
+  const labels = [...new Set([...left.facts, ...right.facts].map(item => item.label))];
+  let count = 0;
+  const rows = labels.map(label => {
+    const a = left.facts.find(item => item.label === label);
+    const b = right.facts.find(item => item.label === label);
+    const same = a?.known && b?.known && a.value === b.value;
+    if (state.onlyDifferences && same) return '';
+    count++;
+    const style = same ? 'same-value' : a?.known && b?.known ? 'different-value' : 'unknown-value';
+    return `<tr class="${style}"><th scope="row">${escape_html(label)}</th><td>${escape_html(a?.value)}</td><td>${escape_html(b?.value)}</td></tr>`;
+  }).join('');
+  return count ? `<div class="pair-table-wrap"><table class="pair-table"><thead><tr><th scope="col">指标</th><th scope="col">结果 A</th><th scope="col">结果 B</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="note">已提供的字段一致。</p>';
+}
+
+function paired_content(records) {
+  const [left, right] = records.map(row => row.sections[state.tab]);
+  const sections = left.map((section, index) => `<section class="detail-section"><h3>${section.title}</h3>${paired_facts(section, right[index])}${section.extra || right[index].extra ? `<div class="pair-visuals"><div><h4 class="visual-result-name">结果 A · ${result_name(records[0])}</h4>${section.extra}</div><div><h4 class="visual-result-name">结果 B · ${result_name(records[1])}</h4>${right[index].extra}</div></div>` : ''}</section>`).join('');
+  const metadata = left[0].metadata_facts.length ? `<details class="task-run"><summary>任务、来源与运行记录</summary>${paired_facts({facts: left[0].metadata_facts}, {facts: right[0].metadata_facts})}</details>` : '';
+  return sections + metadata;
+}
+
+function single_content(record) {
+  return record.sections[state.tab].map(section => {
+    let body = record.details[section.key];
+    if (section.key === 'latency') {
+      const reference = section.facts.find(item => item.label === 'Profiling 参考');
+      body = (reference ? `<p class="note">Profiling 参考：${escape_html(reference.value)}</p>` : '') + section.extra;
+    }
+    return `<section class="detail-section"><h3>${section.title}</h3>${body}</section>`;
   }).join('');
 }
 
 function render_detail_content() {
-  const paired = state.details.length === 2;
-  by_id('detail-heading').textContent = paired ? '双结果详情对照' : '结果详情';
-  by_id('detail-content').classList.toggle('paired', paired);
+  const records = state.details.map(result_by_id);
+  const paired = records.length === 2;
+  const available = records.every(row => row.available);
+  by_id('detail-panel').classList.toggle('paired', paired);
+  by_id('detail-heading').textContent = paired ? '双结果对照' : result_name(records[0]);
+  by_id('detail-subtitle').textContent = state.config.operator + ' · ' + workload_summary();
+  by_id('diff-control').hidden = !paired;
+  by_id('only-differences').checked = state.onlyDifferences;
+  by_id('detail-tabs').hidden = !available;
+  by_id('detail-tabs').innerHTML = data.matrix.tabs.map(tab => `<button id="tab-${tab.id}" data-tab="${tab.id}" role="tab" aria-controls="detail-content" aria-selected="${state.tab === tab.id}" tabindex="${state.tab === tab.id ? 0 : -1}">${tab.name}</button>`).join('');
+  by_id('detail-content').setAttribute('aria-labelledby', available ? `tab-${state.tab}` : 'detail-heading');
   by_id('detail-content').dataset.detailTab = state.tab;
-  by_id('detail-content').setAttribute('aria-labelledby', `tab-${state.tab}`);
-  by_id('detail-content').innerHTML = state.details.map(id => {
-    const result = result_by_id(id);
-    return `<article class="detail-card">${paired ? `<h3>${result_name(result)}</h3>` : ''}${result.details[state.tab]}</article>`;
-  }).join('');
-  document.querySelectorAll('[data-tab]').forEach(button => {
-    const selected = button.dataset.tab === state.tab;
-    button.setAttribute('aria-selected', String(selected));
-    button.tabIndex = selected ? 0 : -1;
-  });
+  const notice = paired ? data.matrix.pairs[state.details.join('|')] : null;
+  by_id('comparison-notice').hidden = !paired;
+  by_id('comparison-notice').textContent = notice?.text || '';
+  by_id('comparison-notice').classList.toggle('has-issues', Boolean(notice?.issues.length));
+  if (!available) by_id('detail-content').innerHTML = pending_detail(records[0]);
+  else by_id('detail-content').innerHTML = paired ? paired_content(records) : single_content(records[0]);
 }
 
-function open_details(ids, tab = 'latency') {
+function open_details(ids, origin) {
   state.details = ids;
-  state.tab = tab;
-  state.origin = ids[0];
+  state.origin = origin || document.activeElement;
+  state.tab = 'overview';
+  state.onlyDifferences = false;
   render_selectors();
   render_detail_content();
-  by_id('detail-panel').hidden = false;
-  by_id('compare-tray').hidden = true;
-  // Keep the selected group's summary immediately above its expanded details.
-  const first = result_by_id(ids[0]);
-  const group_id = state.view === 'hardware' ? first.hardware : first.method;
-  const group = state.view === 'hardware' ? hardware_by_id(group_id) : method_by_id(group_id);
-  const section = Array.from(document.querySelectorAll('.group')).find(item => item.getAttribute('aria-label') === `${group.name} 比较`);
-  if (section) section.after(by_id('detail-panel'));
-  document.querySelectorAll('[data-open]').forEach(button => button.setAttribute('aria-expanded', String(ids.includes(button.dataset.open))));
-  by_id('detail-heading').focus({preventScroll: true});
-  by_id('detail-panel').scrollIntoView({block: 'start', behavior: 'instant'});
+  by_id('detail-panel').showModal();
+  by_id('detail-panel').querySelector('.detail-scroll').scrollTop = 0;
+  by_id('close-detail').focus({preventScroll: true});
 }
 
 function toggle_selection(input) {
   if (input.checked && state.selected.length === 2) {
     input.checked = false;
-    announce('最多选择两个结果，请先取消一个已选结果');
-    by_id('selection-label').textContent = '已选满 2 个，请先取消一个';
+    by_id('selection-label').textContent = '已选满两条，请先取消一条再选择';
+    announce('最多选择两个结果，请先取消一个');
     return;
   }
   if (input.checked) state.selected.push(input.dataset.select);
   else state.selected = state.selected.filter(id => id !== input.dataset.select);
+  input.closest('.matrix-cell').classList.toggle('is-selected', input.checked);
   render_tray();
-  announce(`已选择 ${state.selected.length} 个结果，最多两个`);
+  announce(`已选择 ${state.selected.length} 个结果`);
 }
 
-function export_results() {
-  const results = visible_results().map(({details, ...fields}) => fields);
-  const payload = {schema: data.schema, synthetic: true, notice: data.notice, workload: data.workload, results};
-  const json = JSON.stringify(payload, null, 2);
+function export_results(detail_only = false) {
+  const records = detail_only ? state.details.map(result_by_id) : visible_results();
+  const results = records.map(({details, sections, matrix, ...fields}) => fields);
+  const payload = {schema: data.schema, synthetic: true, notice: data.notice, workload: data.workload, configuration: state.config, catalog_revision: data.catalog.revision, results};
+  const json = JSON.stringify(Configuration.public_export(payload, data.catalog), null, 2);
   by_id('export-json').value = json;
+  by_id('export-scope').textContent = `${detail_only ? '当前详情' : '当前筛选结果'} · ${results.length} 条 · 示例数据`;
   by_id('download-json').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
   by_id('export-dialog').showModal();
-  announce('当前筛选结果已准备好，可下载或复制 JSON');
+  announce('JSON 已准备好，可下载或复制');
 }
 
 function on_change(event) {
@@ -210,36 +251,69 @@ function on_change(event) {
     state.details[Number(input.dataset.detailSlot)] = input.value;
     render_selectors();
     render_detail_content();
+    document.querySelector(`[data-detail-slot="${input.dataset.detailSlot}"]`).focus();
+  } else if (input.id === 'only-differences') {
+    state.onlyDifferences = input.checked;
+    render_detail_content();
   }
+}
+
+function select_tab(tab) {
+  state.tab = tab;
+  render_detail_content();
+  by_id(`tab-${tab}`).focus({preventScroll: true});
+  by_id('detail-panel').querySelector('.detail-scroll').scrollTop = 0;
 }
 
 function on_click(event) {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.dataset.view) {
-    state.view = button.dataset.view;
-    close_details();
-    render_groups();
-  } else if (button.dataset.open) open_details([button.dataset.open], button.dataset.openTab);
-  else if (button.dataset.tab) {
-    state.tab = button.dataset.tab;
-    render_detail_content();
-  }
+  if (button.dataset.open) open_details([button.dataset.open], button);
+  else if (button.dataset.metric) {
+    state.metric = button.dataset.metric;
+    render_matrix();
+  } else if (button.dataset.chart) {
+    state.chart = button.dataset.chart;
+    render_chart();
+  } else if (button.dataset.scopeHardware || button.dataset.scopeMethod) {
+    state.scope = button.dataset.scopeHardware ? {hardware: button.dataset.scopeHardware} : {method: button.dataset.scopeMethod};
+    render_scope();
+    render_chart();
+    announce(by_id('chart-heading').textContent + '，图表已更新');
+  } else if (button.dataset.tab) select_tab(button.dataset.tab);
 }
 
 function on_tab_key(event) {
-  const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
-  if (!keys.includes(event.key)) return;
-  const buttons = Array.from(by_id('detail-tabs').querySelectorAll('button'));
-  const index = buttons.indexOf(document.activeElement);
-  if (index < 0) return;
-  let next = event.key === 'ArrowRight' ? (index + 1) % buttons.length : (index + buttons.length - 1) % buttons.length;
+  if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+  const tabs = data.matrix.tabs.map(tab => tab.id);
+  const index = tabs.indexOf(state.tab);
+  let next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index + tabs.length - 1) % tabs.length;
   if (event.key === 'Home') next = 0;
-  if (event.key === 'End') next = buttons.length - 1;
+  if (event.key === 'End') next = tabs.length - 1;
   event.preventDefault();
-  state.tab = buttons[next].dataset.tab;
-  render_detail_content();
-  buttons[next].focus();
+  select_tab(tabs[next]);
+}
+
+function bind_dialogs() {
+  for (const dialog of document.querySelectorAll('dialog')) {
+    dialog.addEventListener('click', event => {
+      if (event.target !== dialog) return;
+      const box = dialog.getBoundingClientRect();
+      if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
+    });
+  }
+  by_id('detail-panel').addEventListener('close', () => {
+    state.details = [];
+    if (state.origin?.isConnected) state.origin.focus({preventScroll: true});
+  });
+  document.addEventListener('click', event => document.querySelectorAll('.filter-menu[open]').forEach(menu => {
+    if (!menu.contains(event.target)) menu.open = false;
+  }));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    const menu = document.querySelector('.filter-menu[open]');
+    if (menu) {menu.open = false; menu.querySelector('summary').focus();}
+  });
 }
 
 function bind_controls() {
@@ -248,16 +322,23 @@ function bind_controls() {
   by_id('detail-tabs').addEventListener('keydown', on_tab_key);
   by_id('reset-button').addEventListener('click', reset_filters);
   by_id('empty-reset').addEventListener('click', reset_filters);
-  by_id('export-button').addEventListener('click', export_results);
-  by_id('close-detail').addEventListener('click', () => close_details(true));
-  by_id('compare-button').addEventListener('click', () => open_details([...state.selected]));
-  by_id('clear-selection').addEventListener('click', () => {state.selected = []; render_groups(); render_tray();});
-  by_id('workload-button').addEventListener('click', () => by_id('workload-dialog').showModal());
+  by_id('export-button').addEventListener('click', () => export_results());
+  by_id('export-detail').addEventListener('click', () => export_results(true));
+  by_id('close-detail').addEventListener('click', () => by_id('detail-panel').close());
+  by_id('compare-button').addEventListener('click', event => open_details([...state.selected], event.currentTarget));
+  by_id('clear-selection').addEventListener('click', () => {state.selected = []; render_matrix(); render_tray();});
+  by_id('selection-mode').addEventListener('click', () => {state.selecting = !state.selecting; if (!state.selecting) state.selected = []; render_matrix(); render_tray();});
+  by_id('chart-reset').addEventListener('click', () => {state.scope = null; render_scope(); render_chart();});
+  by_id('workload-button').addEventListener('click', open_configuration);
   by_id('close-workload').addEventListener('click', () => by_id('workload-dialog').close());
   by_id('close-export').addEventListener('click', () => by_id('export-dialog').close());
   by_id('select-json').addEventListener('click', () => by_id('export-json').select());
+  bind_dialogs();
 }
 
+initialize_catalog();
 render_filters();
-render_groups();
+render_matrix();
+render_tray();
+render_chart();
 bind_controls();

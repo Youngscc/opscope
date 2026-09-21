@@ -1,12 +1,16 @@
 # 数据口径
 
+## 最新展示约定
+
+UI不展示来源项目或训练/推理域；100个内部模板按名称忽略大小写/下划线归并为94个列表入口。同名不同契约保留为“输入形式”，不因去重把SwiGLU的4输入融合投影与1输入门控混成同一工作负载。版本/融合算子不凭名字相似合并。内部domain/id/source继续用于准确校验与档案匹配，但对用户的JSON转换为中性operator_id/template_id，移除仓库路径、来源域和catalog_profiles等溯源字段；保留synthetic/null/执行与校准来源。不影响示例精确匹配和性能计算。
+
 ## 工作负载与外层
 
 - MatMul M=N=K=4096，FP16 输入/输出、FP32 累加；逻辑 FLOPs=2MNK=137438953472。
 - 逻辑字节=(MN+MK+KN)×2=100663296 bytes=96 MiB；不是实际 HBM 流量。
 - latency_us 为设备侧单 kernel 总耗时，单位 μs。有效算力=逻辑 FLOPs/总时延，单位 TFLOP/s，不是峰值利用率。
 - 偏差=(方法耗时−同硬件 Profiling 参考)/参考×100%；短于参考并不代表更准确。当前参考本身也是合成数据。
-- 时间图共用 320 μs 尺度，有效算力共用 2400 TFLOP/s 尺度。真实数据接入时需重新设计范围，不可直接套用固定上限。
+- 旧详情分项图共用 320 μs 尺度，有效算力示例元数据共用 2400 TFLOP/s 尺度。新矩阵分析图由Python根据全数据生成统一刻度，当前耗时0–300 μs、偏差−25%–25%；筛选不改变刻度。真实数据接入时不能直接套用示例上限。
 - 外层与详情/导出共享同一数据源；实际流量、带宽、缓存命中、资源活动仅在相应示例记录中存在。
 
 ## 不同方法能展示什么
@@ -16,7 +20,7 @@
 | Profiling | 耗时、计数器、活动与流水 | 全部合成；并未采集真机 |
 | Roofline | 总耗时、可用的计算/访存成本、校准元数据 | 不生成实际计数器、kernel 或 trace |
 | Tilesim | 总耗时与详细执行示例 | 细项标“扩展字段示例”，不是原适配器真实输出 |
-| Accel-Sim | H100/H200 的详细执行示例 | 本包未运行模拟器；不适用于昇腾，Blackwell 支持未验证 |
+| 方法3 / 方法4 | 各5条手工虚拟总耗时 | 尚未指定模拟器；分项、瓶颈、kernel与流水为空；不继承旧Accel-Sim记录 |
 
 Roofline 校准 status=calibrated/generic；source=bucket/aggregate/regression/heuristic。H200 演示 regression，compute_us、memory_us、bound 为 null，不从总时延虚构分项；其他解析示例的成本也不是真实模型计算。
 
@@ -27,3 +31,15 @@ Roofline 校准 status=calibrated/generic；source=bucket/aggregate/regression/h
 available=false 表示组合缺失，reason 保留原因；零耗时/零比例与 null 不等价。R200 正式型号仍待确认。synthetic 标记在整个 payload 与各结果保留。
 
 当前 schema 为 operator-ui-demo-v1，是展示私有结构，不保证兼容实际 modeling 的 SimResult。导出仅当前筛选结果，剔除 details HTML，保留 execution、校准来源与缺失值。
+
+矩阵新增 sections/matrix 展示预处理字段，导出一并剔除。双比较差值按(B−A)/A计算；A为零不计算比值，仍展示零值。合成同工作负载可同硬件比方法或同方法比硬件，硬件与方法同时变化时不作直接比值。真实来源尚未接入，缺契约不能套用此示例可比性。仅看差异过滤明确已提供且显示值相同的标量，未知字段仍保留。
+
+## 任务上下文
+
+每条结果包含 task/workload/hardware_snapshot。同一 MatMul 配置共享 workload_id，result_id 按硬件和方法区分。task.status=demo/unavailable，不代表真实任务完成；actual_backend、task_id/run_id、运行时间、回退原因与报告地址无来源时为 null。硬件快照未采集，峰值/容量等规格为 null。张量 A/B/C 各 33554432 bytes，输入 64 MiB、输出 32 MiB，合计 96 MiB，不是峰值显存。详情 JSON 仅当前一或两条结果，全局 JSON 仍为全部筛选结果。
+
+## 可配置目录（2026-09-21）
+
+以上MatMul数值只适用于精确的默认合成配置。现已允许选择modeling内置目录与逐张量shape/dtype：训练11条、推理88资产，保留来源身份而不把同名算子合并。通信6条仅目录不可应用，Flow条目注明流程标记。未知默认维度为null/“?”，必须人工填写，不自动取1。原始输出模板仅作来源说明，未执行时不推导输出。
+
+硬件目录11个系统、22份train/infer来源，Server与POD分开。目录不等于仿真适配认证，R200_Server的存在不证明原R200别名已核实。原6个示例硬件独立于目录型号；目录硬件不复用示例性能。所有新增组合available=false、latency_us=null、task.status=not_run；修改配置不携带旧执行记录、FLOPs或逻辑字节。configuration保留应用的输入与来源；导出全局和逐条上下文一致。

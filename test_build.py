@@ -36,15 +36,15 @@ class PresentationDataTest(unittest.TestCase):
         # Unsupported combinations stay absent; simulator totals do not imply traces.
         payload = build_payload()
         self.assertTrue(payload['synthetic'])
-        self.assertEqual(len(payload['results']), 24)
+        self.assertEqual(len(payload['results']), 85)
         for row in payload['results']:
             self.assertTrue(row['synthetic'])
             if not row['available']:
-                self.assertNotIn('latency_us', row)
+                self.assertIsNone(row.get('latency_us'))
         results = {row['id']: row for row in payload['results']}
-        self.assertFalse(results['demo-ascend-accel']['available'])
+        self.assertTrue(results['demo-ascend-method3']['available'])
         self.assertTrue(results['demo-b200-profile']['available'])
-        self.assertFalse(results['demo-b200-accel']['available'])
+        self.assertTrue(results['demo-b200-method3']['available'])
         self.assertIn('扩展字段示例', results['demo-h100-tilesim']['details']['pipeline'])
         self.assertIn('<svg', results['demo-h100-tilesim']['details']['pipeline'])
         self.assertIn('计算估算', results['demo-h100-roofline']['details']['latency'])
@@ -68,13 +68,13 @@ class PresentationDataTest(unittest.TestCase):
         self.assertIsNone(results['demo-h100-roofline']['summary']['memory'])
         self.assertEqual(results['demo-h100-tilesim']['summary']['activity'][0]['value'], 75)
         self.assertEqual(results['demo-ascend-profile']['summary']['activity'][0]['label'], 'Cube')
-        self.assertEqual(results['demo-h100-accel']['summary']['memory']['traffic'], 120)
+        self.assertIsNone(results['demo-h100-method3']['summary']['memory'])
 
     def test_expanded_execution_records(self):
-        # Fixtures cover 17 combinations; local events must remain inside one execution.
+        # Fixtures cover 25 combinations; local events must remain inside one execution.
         results = build_payload()['results']
         available = [row for row in results if row['available']]
-        self.assertEqual(len(available), 17)
+        self.assertEqual(len(available), 25)
         for row in available:
             record = row['execution']
             self.assertTrue(record['synthetic'])
@@ -84,7 +84,7 @@ class PresentationDataTest(unittest.TestCase):
                     self.assertEqual(row[field], '—')
                 else:
                     self.assertIn(f"{record[field + '_us']:.1f} μs", row[field])
-            if record['kind'] == 'analytic':
+            if record['kind'] in {'analytic', 'virtual'}:
                 self.assertEqual(record['events'], [])
                 self.assertNotIn('kernel', record)
                 self.assertIn('不生成指令级流水', row['details']['pipeline'])
@@ -103,7 +103,7 @@ class PresentationDataTest(unittest.TestCase):
         results = {row['id']: row for row in build_payload()['results']}
         self.assertEqual(results['demo-b300-profile']['latency_us'], 84.0)
         self.assertEqual(results['demo-b200-tilesim']['source_label'], '扩展字段示例')
-        self.assertIn('Blackwell', results['demo-b300-accel']['reason'])
+        self.assertEqual(results['demo-b300-method3']['latency_us'], 86.0)
         self.assertIn('正式 SKU', results['demo-r200-profile']['reason'])
         self.assertEqual(results['demo-b200-profile']['execution']['tile'], [128, 256, 128])
 
@@ -111,9 +111,9 @@ class PresentationDataTest(unittest.TestCase):
         # One result per hardware; metadata follows the total and never fabricates regression parts.
         payload = build_payload()
         self.assertEqual([item['id'] for item in payload['methods']],
-                         ['profile', 'roofline', 'tilesim', 'accel'])
+                         ['profile', 'roofline', 'tilesim', 'method3', 'method4'])
         rows = [row for row in payload['results'] if row['method'] == 'roofline']
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 17)
         results = {row['hardware']: row for row in rows}
         for hardware, source in [('ascend', 'bucket'), ('h100', 'aggregate'), ('h200', 'regression')]:
             row = results[hardware]

@@ -12,13 +12,14 @@ METHODS = [
     ("profile", "真机 Profiling", "采集报告", "profile"),
     ("roofline", "Roofline", "解析模型", "roofline"),
     ("tilesim", "Tilesim", "仿真", "tilesim"),
-    ("accel", "Accel-Sim", "GPU 仿真", "accel"),
+    ("method3", "方法3", "虚拟数据", "method3"),
+    ("method4", "方法4", "虚拟数据", "method4"),
 ]
 # These illustrative numbers are deliberately independent of real device specs.
 VALUES = {
     "ascend": {"profile": 248.0, "roofline": 232.0, "tilesim": 260.0},
-    "h100": {"profile": 162.0, "roofline": 157.0, "tilesim": 176.0, "accel": 169.0},
-    "h200": {"profile": 148.0, "roofline": 145.0, "tilesim": 160.0, "accel": 154.0},
+    "h100": {"profile": 162.0, "roofline": 157.0, "tilesim": 176.0},
+    "h200": {"profile": 148.0, "roofline": 145.0, "tilesim": 160.0},
 }
 
 # HBM MiB, L2 hit %, matrix activity %, auxiliary activity %, HBM activity %.
@@ -34,6 +35,13 @@ VALUES.update({
     'b200': {'profile': 96.0, 'roofline': 76.0, 'tilesim': 102.0},
     'b300': {'profile': 84.0, 'roofline': 68.0, 'tilesim': 89.0},
 })
+
+# Placeholder methods have totals only, with no claimed simulator or device support.
+for hardware, method3, method4 in [
+    ('ascend', 255.0, 239.0), ('h100', 170.0, 158.0), ('h200', 152.0, 146.0),
+    ('b200', 100.0, 92.0), ('b300', 86.0, 81.0),
+]:
+    VALUES[hardware].update(method3=method3, method4=method4)
 
 # Illustrative calibration metadata, not a loaded project calibration library.
 ROOFLINE_CONFIG = {

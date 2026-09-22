@@ -1,5 +1,9 @@
 # 项目记忆
 
+## 环境配置与启动分离（2026-09-22，已验证）
+
+用户要求把环境配置从 start.sh 拆出做独立命令文档。新增 setup.sh 作为环境配置唯一入口（uv sync / venv+pip 回退 + npm ci + 无参数守卫），start.sh 精简为只校验环境就绪后启动——缺 .venv 或 node_modules 时提示"请先运行 ./setup.sh"并退出 1，不再内联安装逻辑。新增 docs/environment.md 集中记录 uv / venv+pip 两条路径、前端依赖、验证命令（含 vue-tsc 正确调用方式）与常见问题。随后应要求新增 docs/setup-steps.md 单独记录 setup.sh 内部子操作（加载 .env、参数解析、Python 二选一分支、前端依赖、就绪提示）、失败处理与扩展注意，供维护者排查参考；docs/README.md 索引同步登记。README 快速使用改为两步（setup → start）并引用文档，ARCHITECTURE.md 文件职责同步更新。实测：setup.sh 幂等成功，start.sh 拆分后 /api/health 200（8782），环境缺失提示正确，index.html 构建一致。分类提交：脚本拆分 189913f、文档随下一条提交，推送后远程与本地一致。
+
 ## uv 环境配置（2026-09-22，已验证）
 
 用户要求加入 uv 配置运行环境的命令和依赖。新增根目录 pyproject.toml：virtual 项目（无 build-system，uv 不安装 opscope 自身），dependencies 为 fastapi==0.141.1、uvicorn==0.52.4，dev 组 httpx==0.28.1，与 backend/requirements*.txt 精确一致；uv.lock 由本地生成并加入 .gitignore 不入库，CI 与 pip 路径仍以 requirements 为准。start.sh 检测到 uv 时优先 `uv sync`，否则回退 venv+pip；并新增守护：uv 创建的 .venv 无 pip 时给出明确提示而非报错崩溃。README 快速使用、验证命令、项目结构表同步更新。uv 0.12.15 实测：uv sync 幂等复用现有 .venv 且保留 pip，59 项测试通过，start.sh 冒烟 /api/health 200（8779/8780 端口），index.html 构建一致。分类提交：工具链 d48de61、文档随下一条提交，推送后远程与本地一致。

@@ -11,14 +11,15 @@
 安装 Python 3.10+、Node.js 22.12+（推荐 Node.js 24），在项目根目录执行：
 
 ```bash
-./start.sh
+./setup.sh    # 首次或依赖变更后运行：配置 .venv 与前端依赖
+./start.sh    # 构建并启动服务
 ```
 
-访问 [OpScope](http://127.0.0.1:8768/opscope)。脚本首次创建项目 `.venv`、安装声明的前后端依赖，构建 Vue，再启动服务；页面与 API 共用 8768 端口。Ctrl+C 停止。改端口用 `./start.sh --port=8770`，不会自动关闭其他服务。
+访问 [OpScope](http://127.0.0.1:8768/opscope)。页面与 API 共用 8768 端口，Ctrl+C 停止。改端口用 `./start.sh --port=8770`，不会自动关闭其他服务。
 
-已安装 [uv](https://docs.astral.sh/uv/) 时，Python 环境优先走 uv：也可以先手动 `uv sync` 一步创建 `.venv` 并安装运行与开发依赖（fastapi、uvicorn、httpx），`./start.sh` 会复用该环境。未安装 uv 时自动回退 `python3 -m venv` + pip，依赖来源相同。
+[uv](https://docs.astral.sh/uv/) 已安装时 Python 环境优先走 `uv sync`；未安装 uv 自动回退 `python3 -m venv` + pip，依赖来源相同。环境配置的完整命令（uv / venv+pip 两条路径、验证与常见问题）集中在 [`docs/environment.md`](docs/environment.md)。
 
-未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。Python 不在默认路径时可用 `PYTHON_BIN=/path/to/python3.11 ./start.sh`。
+未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。Python 不在默认路径时可用 `PYTHON_BIN=/path/to/python3.11 ./setup.sh`。
 
 根目录 `index.html` 仍可直接用现代浏览器离线打开，不需要安装依赖；它是独立导出入口，在线应用使用 `frontend/dist/index.html`。
 
@@ -44,10 +45,10 @@
 ./start.sh --dev --port=8770 --frontend-port=5174
 ```
 
-验证命令：
+验证命令（环境配置见 [`docs/environment.md`](docs/environment.md)）：
 
 ```bash
-.venv/bin/python -m pip install -r backend/requirements-dev.txt   # 已装 uv 可用 uv sync 代替
+./setup.sh                                                        # 或 .venv/bin/python -m pip install -r backend/requirements-dev.txt
 .venv/bin/python -B -m unittest discover -s tests -p 'test_*.py' -v
 npm --prefix frontend test
 npm --prefix frontend run build
@@ -70,7 +71,7 @@ python3 -B build.py
 | `opscope/evaluation` | 请求契约、结果转换、独立 worker 与任务运行时 |
 | `tests` | Python 单元测试和离线 JavaScript 契约测试 |
 | `start.sh` / `.env.example` | 单端口启动、开发模式、外部引擎路径示例 |
-| `pyproject.toml` | uv 环境与依赖声明，`uv sync` 一键配置；版本与 `backend/requirements*.txt` 保持一致，CI 与 pip 安装仍以 requirements 为准 |
+| `setup.sh` / `pyproject.toml` | 环境配置入口：uv sync / venv+pip 回退与前端依赖安装，依赖声明与 requirements 对齐 |
 | `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
 | `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
 | `data/modeling-catalog.json` / `opscope/offline/catalog_data.py` | 内置目录快照、示例配置、无结果模板 |

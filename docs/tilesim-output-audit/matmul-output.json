@@ -1,0 +1,166 @@
+{
+  "version": "1.0.9",
+  "response_fields": [
+    "op_name",
+    "latency",
+    "component_latency",
+    "l2_hit_rate",
+    "cube_utilization_rate",
+    "vec_utilization_rate",
+    "mem_volume",
+    "compute_workload",
+    "gm_volume",
+    "tiling_info",
+    "ideal_time_by_mem",
+    "ideal_time_by_cube",
+    "ideal_time_by_vec",
+    "ideal_ratio"
+  ],
+  "internal_fields": [
+    "latency",
+    "aic_time",
+    "aic_cube_time",
+    "aic_mte2_time",
+    "aic_mte1_time",
+    "aic_fixpipe_time",
+    "aiv_time",
+    "aiv_vec_time",
+    "aiv_mte2_time",
+    "aiv_mte3_time",
+    "data_transfer",
+    "small_pkt_transfer",
+    "trace",
+    "tuning_result",
+    "aic_cycles",
+    "aiv_cycles",
+    "l2_access_rate"
+  ],
+  "theo": {
+    "op_name": "TheoMatMul",
+    "latency": 5.904144144144144,
+    "component_latency": {
+      "CUBE": 5.904144144144144,
+      "MTE1": 0.0,
+      "MTE2": 0.55235435520362,
+      "FIXPIPE": 1.1625744047619049,
+      "VEC": 0,
+      "MTE2_AIV": 0,
+      "MTE3": 0
+    },
+    "l2_hit_rate": 0.0,
+    "cube_utilization_rate": 1.0,
+    "vec_utilization_rate": 0.0,
+    "mem_volume": {
+      "GM_2_L2": 0,
+      "L2_2_L1": 3145728.0,
+      "L0C_2_L2": 4194304
+    },
+    "compute_workload": {
+      "CUBE": 0,
+      "VEC": 0
+    },
+    "gm_volume": 0,
+    "tiling_info": {},
+    "ideal_time_by_mem": 0.0,
+    "ideal_time_by_cube": 0.0,
+    "ideal_time_by_vec": 0.0,
+    "ideal_ratio": 0.0
+  },
+  "theo_hints": [],
+  "eng": {
+    "op_name": "MatMul",
+    "latency": 10.936681071217901,
+    "component_latency": {
+      "CUBE": 6.642162162162163,
+      "MTE1": 4.200051445578231,
+      "MTE2": 6.832540105999664,
+      "FIXPIPE": 5.273584821428572,
+      "VEC": 0,
+      "MTE2_AIV": 0,
+      "MTE3": 0,
+      "AIC_MEM_ACCESS": 6.832540105999664,
+      "AIV_MEM_ACCESS": 0
+    },
+    "l2_hit_rate": 0.75,
+    "cube_utilization_rate": 0.6073288705146904,
+    "vec_utilization_rate": 0.0,
+    "mem_volume": {
+      "L1_cache": 14680064,
+      "L0A_cache": 33554432,
+      "L0B_cache": 33554432,
+      "L0C_cache": 33554432,
+      "L2_cache": 11534336,
+      "UB_cache": 0
+    },
+    "compute_workload": {
+      "CUBE": 196356063.9663837,
+      "VEC": 0
+    },
+    "gm_volume": 0,
+    "tiling_info": {
+      "name_0": {
+        "item_name": "算子MatMul第1阶段AIV tiling参数",
+        "tiling_type": "CATLASS",
+        "l0_m": 0,
+        "l0_n": 0,
+        "l0_k": 0,
+        "l1_m": 0,
+        "l1_n": 0,
+        "l1_k": 0,
+        "ub_m": 0,
+        "ub_n": 0,
+        "param": {
+          "swizzle_dir": 0,
+          "swizzle_offset": -1
+        }
+      }
+    },
+    "ideal_time_by_mem": 0,
+    "ideal_time_by_cube": 0,
+    "ideal_time_by_vec": 0,
+    "ideal_ratio": 0
+  },
+  "dsl": {
+    "latency": 8.559025912870776,
+    "aic_time": 8.106913644352257,
+    "aic_cube_time": 6.64216216216216,
+    "aic_mte2_time": 6.3295717592592595,
+    "aic_mte1_time": 4.1520514455782305,
+    "aic_fixpipe_time": 5.231584821428571,
+    "aiv_time": 0.0,
+    "aiv_vec_time": 0,
+    "aiv_mte2_time": 0,
+    "aiv_mte3_time": 0,
+    "data_transfer": {
+      "GM_2_L1": 17301504,
+      "L1_2_L0A": 8388608,
+      "L1_2_L0B": 16777216,
+      "L0C_2_GM": 8388608
+    },
+    "small_pkt_transfer": {},
+    "trace": {
+      "event_count": 1736,
+      "event_keys": [
+        "cat",
+        "dur",
+        "name",
+        "ph",
+        "pid",
+        "tid",
+        "ts"
+      ],
+      "lanes": [
+        "AIC_FIXPIPE",
+        "AIC_MTE1",
+        "AIC_MTE2",
+        "CUBE"
+      ],
+      "cores": 24,
+      "max_end_us": 8.559025912870776
+    },
+    "tuning_result": {},
+    "aic_cycles": 12288,
+    "aiv_cycles": 0,
+    "l2_access_rate": 0.32653061224489793
+  }
+}

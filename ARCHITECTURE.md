@@ -8,7 +8,21 @@
 
 ## 当前形态
 
-独立静态前端原型，无服务器业务代码、数据库、API 客户端或框架依赖。Python 是构建期预处理工具，不是真实性能评估器。
+主要入口已改为 Vue 3 / TypeScript / Vite / Pinia / Vue Router + FastAPI / Uvicorn。`start.sh` 构建前端并在单端口提供页面/API；开发模式由 Vite 代理API。无任务数据库依赖。Web环境与外部计算解释器隔离，原单文件离线生成链路保留。
+
+```text
+Vue页面/组件 → Pinia状态 → /api/opscope APIRouter
+                              ↓
+                 EvaluationRuntime → 隔离worker
+                              ↓
+                 结构化结果 + Python预处理图表
+                              ↓
+                    Vue展示 / 离线HTML快照
+```
+
+`frontend/src/pages/OpScopePage.vue` 是接入宿主的页面入口，`backend/web/routes/opscope.py` 是可挂载路由，`app.state.opscope_runtime` 注入计算运行时。生命周期由独立宿主或未来modeling宿主管理。API基址和前端部署base可配置；当前独立服务使用根base。具体迁移边界见 [框架对齐设计](docs/framework-alignment.md)。
+
+以下为保留的离线生成链路：
 
 ```text
 fixtures.py → execution_data.py
@@ -25,6 +39,10 @@ fixtures.py → execution_data.py
 
 ## 文件职责
 
+- frontend/src：Vue组件、API客户端与Pinia状态；取消请求/配置切换使旧批次响应失效。
+- backend/web：FastAPI宿主、命名空间API、静态产物托管、生命周期和本地来源校验。
+- start.sh：创建独立环境、安装声明依赖、构建/启动、开发子进程清理。
+
 - task_details.py：合成任务上下文、张量占用与硬件快照缺失状态；Python 预生成新增详情页签。
 - matrix_data.py：统一图表尺度、点位置/条宽、详情标量/图形分组与定向成对比较说明，纯Python预处理。
 - fixtures.py：硬件/方法目录、示例时间与计数器、执行配置、Roofline 校准元数据。
@@ -36,9 +54,9 @@ fixtures.py → execution_data.py
 
 ## 数据边界
 
-所有结果 synthetic=true。方法名不等于数据来源已接通。`details` 为可信内置 fixture 生成的展示 HTML，导出时移除；它不是正式 API 契约。当前 JS 使用 innerHTML 渲染可信内置数据，未来导入外部数据前必须增加校验与安全渲染，不能直接插入外部 HTML。
+默认示例结果 synthetic=true；可选运行时预测 synthetic=false、measurement=false。方法名不等于所有来源已接通。`details` 为可信内置 fixture 生成的展示 HTML，导出时移除；它不是正式 API 契约。当前 JS 使用 innerHTML 渲染可信内置数据，未来导入外部数据前必须增加校验与安全渲染，不能直接插入外部 HTML。
 
-当前预生成85条组合记录（6个示例硬件+11个目录型号，各5方法），25条有合成结果；默认显示示例的30条。方法3与方法4各有5条虚拟总耗时，目录型号仍缺失。逻辑工作量、单kernel耗时与活动时间分开表达，计算/访存/等待允许重叠。精确字段语义见 [.agent/data-semantics.md](.agent/data-semantics.md)。
+当前预生成95条组合记录（6个示例硬件+11个目录型号+2个TileSim硬件，各5方法），25条有合成结果；默认显示示例的30条。方法3与方法4各有5条虚拟总耗时，目录型号仍缺失。逻辑工作量、单kernel耗时与活动时间分开表达，计算/访存/等待允许重叠。精确字段语义见 [.agent/data-semantics.md](.agent/data-semantics.md)。
 
 ## 后续边界
 
@@ -50,7 +68,7 @@ fixtures.py → execution_data.py
 
 结果附带 task、workload、hardware_snapshot；全部由构建期生成，不代表真实任务服务。原八类详情内容保留在 details，matrix_data 将其分成五个UI页签，并预提取用于双结果逐行对齐的标量。单条和双条都进入原生dialog，共用滚动区、焦点与关闭行为。
 
-主界面固定硬件行×方法列；JS只负责筛选、主指标选择、图表行/列聚焦、详情和导出。图表采用HTML/CSS标记，其刻度和百分比坐标由Python根据全部结果统一生成，筛选不会悄悄重定标。matrix.pairs 保存有方向的 A/B 比较说明；跨硬件又跨方法、输出/计时边界不一致或真实来源未校验时不生成比值。当前只有合成fixture契约，不是通用真实数据校验服务。
+主界面固定硬件行×方法列；JS只负责筛选、主指标选择、图表行/列聚焦、详情和导出。图表采用HTML/CSS标记，其刻度和百分比坐标由Python根据全部结果统一生成，筛选不会悄悄重定标。matrix.pairs 保存有方向的 A/B 比较说明；跨硬件又跨方法、输出/计时边界不一致或真实来源未校验时不生成比值。默认使用合成fixture契约；新增运行时以规范配置、硬件和引擎身份校验预测对比，尚不是通用实测数据校验服务。
 
 全局 JSON 导出筛选范围，详情 JSON 导出当前一或两条结果；两者移除 details/sections/matrix 等新旧展示字段，保留原始上下文、执行记录和 synthetic。字段背景见 [详情设计](docs/task-detail.md)，当前UI见 [矩阵设计](docs/result-matrix-design.md)。
 
@@ -61,3 +79,19 @@ fixtures.py → execution_data.py
 `configuration.js`仅负责表单语法、部分维度约束及配置匹配，`catalog-ui.js`负责搜索/编辑/应用。三个JS文件由build.py内嵌；Node只用于验证。Python安全求值已知模板维度，未知项为null。用户编辑配置不做FLOPs或输出形状推导；输出、工作量、耗时保持空缺。已有真实接口不支持的额外属性不擅自添加。
 
 应用配置时，同时更换标题、结果上下文与导出内容，清空比较和图表聚焦。只有完整匹配合成默认配置才恢复25条fixture结果；其余组合用Python预生成的空模板并绑定当前输入。配置在内存中保存，关闭/取消浮窗不提交草稿。详情和全局JSON增加configuration与catalog_revision，仍保留synthetic=true。实现计划与目录范围见 [算子目录设计](docs/operator-catalog-plan.md)。
+
+## 可选的本地评估运行时（2026-09-22）
+
+静态构建与示例仍不依赖外部仓库。新增 `serve.py` 标准库同源HTTP服务，可选连接通过启动参数指定的建模源码和Python环境。`evaluation_contract.py`根据内置模板规范化请求并校验基础算子形状/精度；客户端不能指定代码、硬件文件路径或公式。`evaluation_runtime.py`维护有界内存任务，以独立子进程调用`engine_worker.py`，避免Web系统、任务数据库及共享Hub缓存。
+
+worker为每个组合创建独立OpNode/Roofline实例，读取单设备硬件规格，返回原始数值、规格摘要、源码/校准身份；该worker仅处理Roofline，测量/方法3/4明确不支持，不做回退。`evaluation_results.py`生成`opscope-evaluation-v1`的工作负载、任务、来源和安全转义详情，由已有matrix_data生成全批图表尺度及比较数据。预测结果synthetic=false且measurement=false；空缺为null，不沿用fixture计数器或参考误差。
+
+`evaluation-ui.js`处理服务探测、任务提交/轮询、运行状态和整批切换；配置改变递增请求代号，旧任务不覆盖新配置。`configuration.js`仍只做表单校验，实际数值计算在worker，格式化/比较在服务。`build.render_page`同时用于构建示例和生成完整离线结果快照；快照内嵌initial_configuration并单独保存恢复示例所需的fixture和matrix，不将示例混入评估结果。
+
+部署入口、限制见[README](README.md)，接口与方案见[本地评估设计](docs/live-evaluation-plan.md)。这是可选运行模式，不代表已将建模引擎打包到本项目；训练/推理来源仍不出现在界面中。
+
+## 可选 TileSim 流水（2026-09-22）
+
+`tilesim_contract.py`固定硬件、算子、精度、形状与事件预算范围；`tilesim_worker.py`在显式独立解释器中运行已审计1.0.9的EngMatmulL0。`evaluation_runtime.py`为每批创建临时目录隔离上游trace文件，单独处理TileSim失败并保留Roofline结果。服务仍仅依赖标准库，不安装第三方包。
+
+`evaluation_results.py`保存同次结果的模型原字段和规范化事件；`tilesim_details.py`计算每核/通道区间并集、统一全程时间轴和SVG路径。`trace-ui.js`只做选核、分页及显示；由build.py内嵌。JSON剔除trace_view几何但保留全部事件的name/ts/dur/pid/tid/ph，省略上游冗长cat对象字符串。HTML快照保留展示几何。活动百分比并非算力利用率。具体能力与验证见[TileSim接入](docs/tilesim-integration-plan.md)。

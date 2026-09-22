@@ -1,6 +1,8 @@
 # 后续接入与已知边界
 
-本文是接手指南，不代表已实现。当前项目完全静态，无 API、上传解析器、仿真器或 profiling 数据库。
+当前在线应用已采用Vue 3/TypeScript/Vite/Pinia/Router与FastAPI/Uvicorn，启动和宿主迁移入口见[框架对齐](../docs/framework-alignment.md)。`/api/opscope`路由可注入EvaluationRuntime；真正合入modeling尚未执行。
+
+本文保留历史接入分析；文末记录已实现的可选 Roofline 本地服务。上传解析器与profiling数据库仍未接入；文末更新TileSim实际接入状态。
 
 ## 建议顺序（待实施）
 
@@ -45,3 +47,21 @@
 - 127 FLOPs含两次矩阵乘加4个softmax操作；128返回的FLOPs仅矩阵乘，softmax在Kepler内部独立计时。D=1时softmax成本突出：华为Vector/SFU按24TFLOPS×0.6计价，softmax共536870912操作，对应37.282702µs，再加固定10µs。
 - 两者后端均计算受限，不能称为后端bound相反。PerformanceOpPage.vue deriveOpReport用返回FLOPs/总字节与当前UI硬件/利用率重新算时延和bound，忽略Kepler softmax成本和固定开销；同一阈值在113.78与2048之间时即可显示相反bound。具体当时滑条值没有保存在任务配置中，未声称复原当时屏幕值。
 - 本例头数32与默认值相同，前次复现的8头绑定bug不是这两条差异的原因。无业务代码修改，无任务重跑；原始结果来自保存记录。
+
+## 第一阶段已接入（2026-09-22）
+
+上文完全静态及未接入状态为历史。现已实现可选本地服务与严格Roofline适配，详见[本地评估设计](../docs/live-evaluation-plan.md)。使用显式外部目录/解释器，通过子进程调用基础算子构造及RooflineSimulator，不使用Hub方法缓存、不提交原系统任务、不查测量数据库。33个基础模板×硬件组合经新适配器实际调用成功；这不构成精度或完整目录覆盖验证。
+
+TileSim本体与硬件配置仍缺失，因此只提供可观察的不可用原因；即便安装，仍需单独认证转换和硬件映射后才能启用。测量参考也未接入。方法3/4继续只供离线演示。源码中的默认校准库本次探测缺失，预测为未校准Roofline。
+
+## TileSim 安装状态更新（2026-09-22）
+
+已独立安装并通过工程模式单算子冒烟验证，见[安装记录](../docs/tilesim-installation.md)。以上“本体缺失”为原解释器历史状态；当前OpScope尚未连接新的tilesim-runtime环境。新版本API返回格式、工程接口与硬件映射仍需单独适配。
+
+## TileSim输出口径（2026-09-22）
+
+接入前必读[字段审计](../docs/tilesim-output-inventory.md)：单位、占位、最慢核分项、tiling及trace合并均存在实现边界，不能按字段名直连UI。包含三路径实跑数据及关键源码摘要。
+
+## TileSim 接入状态（2026-09-22，已实现）
+
+已通过可选--tilesim-python连接独立环境，MatMul+910B1/910B4使用DSL工程路径，和Roofline分别执行，不使用旧适配器。支持范围、固定分块及事件预算见[接入设计](../docs/tilesim-integration-plan.md)。真实来源字段、流水、JSON与详情已联通；其他算子/芯片仍未验证，无真机精度认证。默认4096²FP16和128²BF16均在两个硬件模型上实跑成功。

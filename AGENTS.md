@@ -18,11 +18,11 @@
 
 - 修改源文件后用 `python3 -B build.py` 生成 index.html，不直接修改生成文件。
 - Python 负责性能口径、数值、聚合、图宽等预处理；JS 负责选择、筛选和展示。后续在线化时计算放在后端。
-- 默认使用现有原生 HTML/CSS/JS 与 Python 标准库；引入依赖前说明必要性与影响。
+- 在线应用使用 Vue 3/TypeScript/Vite/Pinia/Vue Router 与 FastAPI/Uvicorn，保持与 modeling 同栈；原生 HTML/CSS/JS 离线导出保留。引入其他依赖前说明必要性与影响。
 - 保持既有命名和格式；新增函数尽量不超过 50 行、参数不超过 5 个，注释解释必要的原因。
 - 小范围展示调整采用定向检查；新增功能、接口或核心数据结构先写 docs/ 设计与计划，更新架构和相关测试。
 - 数据测试要核对具体数值、状态和缺失语义，测试注释说明观测点。
-- 常用验证：`python3 -B -m unittest discover -s . -p 'test_*.py' -v`；有 Node 时运行 `node --check app.js`。
+- 常用验证：`.venv/bin/python -B -m unittest discover -s . -p 'test_*.py' -v`、`npm --prefix frontend test`、`npm --prefix frontend run build`；离线 JS 运行 `node --check app.js`。
 - UI 改动检查桌面布局、筛选、详情、双结果比较和 JSON；不要把临时手机视口留给用户。不能运行的检查必须明确记录。
 - 不自动删除用户文件、添加远程、推送、部署或发布；用户已授权的任务直接完成，不反复确认。
 

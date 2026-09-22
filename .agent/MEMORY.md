@@ -1,5 +1,50 @@
 # 项目记忆
 
+## 分类提交（2026-09-22）
+
+用户要求将累计改动分类提交。本轮按“组件分析与输出审计”“实际评估与流水展示”“Vue/FastAPI框架与启动CI”“使用说明与项目记忆”四类整理本地提交。前三类提交为36d942a、00fb20a、1b38a92；本条记录随第四类文档提交。提交前重新通过47项Python测试、2项前端测试、Vue类型检查/构建、离线产物一致性与diff格式检查；未修改业务行为，未重复浏览器验收，沿用上一轮结果。本轮仅本地提交，未推送。
+
+## 最新：框架对齐与端口启动（2026-09-22，已实现）
+
+按用户要求，在线入口改为Vue 3 + TypeScript + Vite + Pinia + Vue Router，后端FastAPI/Uvicorn，与本地modeling及其配套zrt-sim-ui一致。`./start.sh`一条命令构建并在127.0.0.1:8768提供页面/API；`--dev`使用Vite5173代理后端，端口可改。独立Web虚拟环境，不混入模拟器依赖；无外部引擎时可浏览演示。实际本机.env已配置原先两个解释器，忽略不入库。
+
+Vue页面位于frontend/src，FastAPI可挂载路由位于backend/web/routes/opscope.py，前缀/api/opscope；宿主注入app.state.opscope_runtime。保留原生离线生成和serve.py兼容启动入口。Python仍负责性能数值/聚合/图表，前端管理状态与展示；取消或改配置会丢弃旧响应。未改modeling/zrt-sim-ui业务代码，尚未真正合入宿主。
+
+47项Python测试、2项前端状态测试、Vue类型检查/构建与离线构建通过。浏览器验证实际7/40组合、4096² FP16 TileSim 390.891/627.736μs、双比较+60.6%、各53,888事件JSON、选核分页、K校验及128² BF16重新运行；控制台无错误。开发代理与退出端口清理、宿主APIRouter注入、真实HTML快照200/attachment已验证。未推送、未部署、未做真机精度认证。详见[框架设计与验收](../docs/framework-alignment.md)。下文“默认纯静态/无框架”的记录是历史状态。
+
+
+## 最新：TileSim结果与流水接入（2026-09-22，已实现）
+
+此前“尚未接UI”为历史。新增可选--tilesim-python，连接外部1.0.9独立环境的DSL EngMatmulL0；仅MatMul二维FP16/BF16、128倍数维度、80,000事件上限，固定分块128/256/512/128。硬件新增独立910B1/910B4，不借用9382/GPU。每批临时目录隔离上游输出，失败保留Roofline。服务8768已带两解释器启动。
+
+总耗时、最慢核通道分项、预测L2字节命中率、路径搬运字节、周期、输入/硬件/分块证据和可选核流水接入浮窗。Python预处理区间并集与SVG，前端只选择/分页。JSON完整保留6键规范化事件，剔除冗长cat和展示几何；大型流水使用紧凑JSON+Blob。无等待原因、整体compute/memory分类、bound或实测偏差，不虚构。
+
+43项测试、五份JS语法与构建通过；实跑4096平方FP16两个硬件分别390.8914486042133/627.7357897236953µs，各53,888事件，末端与时延一致；128平方BF16分别2.996023742971288/4.441526814082755µs。桌面默认7/40结果、详情、切核/40条分页、双流水和+60.6%比较、单条及双条完整JSON核对；最终筛选6/35→7/40、切核焦点、控制台无错误。下载落盘未单独验收。HTML快照17MB接口成功，离线浏览器与真机精度未验收。未推送。详见[接入设计与验证](../docs/tilesim-integration-plan.md)。
+
+## TileSim 输出严格审计（2026-09-22）
+
+按安装的1.0.9源码及三路径MatMul实际返回核对：公开结果14顶层字段（5固定/默认零占位），底层OperatorResult17字段，trace每事件7键。理论5.904144µs、工程API10.936681µs、DSL8.559026µs/1736事件不能混拼。发现工程compute_workload.CUBE实际操作数/µs；mem_volume的L1_cache累计元素、其他cache项字节，不能统一Bytes；规则DSL时间分项属最慢核不是全芯片累计；tiling零/空和AIV标签需校验，append_result未正确写回trace。详见[字段审计](../docs/tilesim-output-inventory.md)及随附实际JSON/源码摘要。未改业务代码或接UI，非真机精度认证。
+
+## TileSim 流水能力核查（2026-09-22，已实跑）
+
+更正此前只有汇总的表述：CLI eng路径仅返回汇总，但安装包另有DSL EngineeringOperator规则流水路径。直接EngMatmulL0在910B1/24AIC生成1736个事件、4通道、8.559025912870776µs；ts/dur/pid/tid齐全，原始trace与脚本保存在外部tilesim-runtime。是Tile级模拟，不是真机指令trace；与CLI 10.936681µs不同实现，禁止混用。多候选时内部trace.json会被最后候选覆盖，应取最优OperatorResult.trace。详见[安装记录](../docs/tilesim-installation.md)。尚未接网页，其他算子未验证。
+
+## TileSim 独立安装（2026-09-22，已验证）
+
+用户授权安装。官方 msopmodeling 1.0.9 已安装在外部 modeling/tilesim-runtime/.venv（Python3.11）；原 modeling .venv 与8768服务未改。源码Git匿名克隆需认证，使用官方文档指定PyPI包。SciPy1.15.3改用同版本macOS12 ARM64 wheel解决本机Mach-O加载问题；pip check、CLI及理论/工程API导入通过，910B1 MatMul工程模式成功预测10.936681071217901µs，输入与原始结果/依赖锁/wheel摘要均保存。未做真机精度验证。旧适配器固定theo且按字典读取，新API返回tuple，工程接口独立；不能直接接通或沿用旧硬件映射。OpScope仍未连接该独立环境，详见[安装记录](../docs/tilesim-installation.md)。
+
+## 可选 Roofline 运行时（2026-09-22，已实现）
+
+用户授权按分析实施。新增标准库serve.py，显式--engine-root/--engine-python指定外部环境；前端运行按钮→任务轮询→矩阵/图表/详情/JSON，支持保存含结果的离线HTML。当前本机服务在127.0.0.1:8768，原8767静态服务未改；重启命令见README。任务内存存储、2并发/12条保留、60秒超时，不创建modeling任务或访问测量DB。每组合独立节点与RooflineSimulator，不使用Hub缓存/回退。
+
+默认MatMul及11基础模板支持保守形状和FP16/BF16/FP32（Embedding整数索引）；非默认执行选项拒绝，其他输入形式暂未适配。TileSim本体缺失，状态明确unsupported；即使装好仍须完成硬件/算子认证才能启用。Profiling、方法3/4运行时均空，示例模式保留虚拟数据。新契约synthetic=false、measurement=false，无参考偏差/计数器/trace；同规范配置和引擎身份才允许预测比较。
+
+38项Python测试（含7项Node配置、3项异步/快照初始化检查）、四份JS语法、构建一致性及差异格式通过。新worker在11模板×3硬件上33次Roofline成功，对应TileSim33项均不支持。浏览器默认MatMul5/30有预测，H200277.935194μs；改A为[1024,4096]先清空再重新计算，H200约57.903/B200约25.452μs，双比较-56.0%。单详情JSON核对数值/来源/无参考，双条导出范围正确，控制台无错误。快照HTTP200及attachment和内嵌配置/5条结果核对；浏览器URL策略拒绝file://，未绕过，该项离线浏览器验收未完成。未做真机精度或TileSim执行验证，未推送。见 [实施方案与验收](../docs/live-evaluation-plan.md)。
+
+## 建模组件复用分析（2026-09-22，只读核查）
+
+用户要求先分析能否复用modeling Roofline/TileSim。已核查当前已跟踪源码并用其现有Python3.11.16环境执行11基础模板×3硬件共33次纯Roofline调用，全部成功；另验证4096² FP16 MatMul H200总耗时277.935194μs，均为预测、不是实测精度验证。默认校准库缺失，TileSim本体/目录缺失且import不可用。未提交任务、访问用户任务数据库、安装依赖或修改两项目业务代码。分析见 [复用可行性](../docs/modeling-reuse-analysis.md)。建议OpScope可选轻量服务及方法隔离适配器，先Roofline、后补TileSim；禁止自动回退冒充独立方法、沿用错误硬件映射/跨方法缓存、将旧示例细项或profiling_hit当作真实证据。仅新增分析与记忆，未实施、未推送。
+
 ## 本轮同步检查（2026-09-21）
 
 用户明确授权 push。本轮重新通过26项Python测试（含Node配置测试）、三份JavaScript语法检查、页面构建和差异格式检查；远程main与提交前本地HEAD一致。提交范围包含结果矩阵、算子配置目录、方法3/4虚拟数据、CI及相关文档。推送是否成功以远程main与提交后HEAD一致性验证为准，GitHub托管CI结果尚未验证。
@@ -18,7 +63,7 @@
 
 来源筛选、徽标、源码路径/提交号说明移除；硬件分组改“硬件配置”。JSON预览/下载也用中性算子/模板/硬件标识并移除来源域/仓库溯源，保留synthetic和性能来源；内部原数据不变。只验收桌面。24项Python测试（含7项Node）及3份JS语法通过；浏览器验证94个不重名列表、SwiGLU两种输入切换、硬件/详情无来源词、单条/双条JSON无原域与路径、MatMul示例恢复15条和双比较157/176微秒，控制台无错误。未推送或修改后端。
 
-最后更新：2026-09-21。当前项目名 OpScope，目录名 opscope，中文名“算子性能观察台”。
+最后更新：2026-09-22。当前项目名 OpScope，目录名 opscope，中文名“算子性能观察台”。
 
 ## 当前状态（已实现）
 
@@ -41,7 +86,7 @@
 - 独立包的本次验证见 [打包记录](../docs/PACKAGING.md)。
 - CI 添加后，本地八项单测、JS 语法、构建一致性和差异格式检查通过；未安装 actionlint，GitHub 托管运行尚未验证。
 - JSON 文件下载落盘、修正后的手机布局未完成验收。
-- 无后端接入、无真实 profiling、无实际 Roofline/TileSim/Accel-Sim 执行、无精度认证。
+- 可选Roofline后端已接入并验证调用；TileSim已按文首范围接入；无真实profiling、Accel-Sim执行或精度认证。
 - 示例时钟、tiling、kernel 名称、校准系数和计数器均虚构，不可作为硬件事实。
 
 ## 专题与后续入口

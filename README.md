@@ -2,21 +2,23 @@
 
 项目目录名：`opscope`。OpScope 取 Operator + Scope，表示从不同方法和硬件视角观察算子性能。
 
-用于比较同一个算子在不同硬件、不同评估方法下性能的 PC 前端原型。已从 modeling 提取，运行和开发均不依赖原仓库。
+用于比较同一个算子在不同硬件、不同评估方法下性能的 PC 应用。前端 Vue 3 / TypeScript / Vite / Pinia / Vue Router，后端 FastAPI / Uvicorn，与 modeling 的技术栈对齐。保留独立离线页面。
 
-**当前所有结果都是合成示例，包括名称为“真机 Profiling”的结果；尚未连接任何评估后端、真机、校准库或仿真器。**
+**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 当前支持 910B1 / 910B4 的二维 MatMul；预测不等于真机实测，Profiling 尚未接入。**
 
 ## 快速使用
 
-直接用现代浏览器打开根目录 `index.html`，可离线使用，无需安装依赖。
-
-也可以在项目根目录启动本地服务：
+安装 Python 3.10+、Node.js 22.12+（推荐 Node.js 24），在项目根目录执行：
 
 ```bash
-python3 -m http.server 8767 --bind 127.0.0.1
+./start.sh
 ```
 
-然后访问 http://127.0.0.1:8767/ 。Ctrl+C 停止服务。端口占用时更换端口；此服务仅用于本地预览。
+访问 [OpScope](http://127.0.0.1:8768/opscope)。脚本首次创建项目 `.venv`、安装声明的前后端依赖，构建 Vue，再启动服务；页面与 API 共用 8768 端口。Ctrl+C 停止。改端口用 `./start.sh --port=8770`，不会自动关闭其他服务。
+
+未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。Python 不在默认路径时可用 `PYTHON_BIN=/path/to/python3.11 ./start.sh`。
+
+根目录 `index.html` 仍可直接用现代浏览器离线打开，不需要安装依赖；它是独立导出入口，在线应用使用 `frontend/dist/index.html`。
 
 ## 功能
 
@@ -32,24 +34,35 @@ python3 -m http.server 8767 --bind 127.0.0.1
 
 ## 开发与验证
 
-Python 3.9+，仅标准库。本次使用 Python 3.9.6 验证。Node.js 用于 JS 语法及表单状态测试（未安装时 Python 测试会明确跳过这项），不是运行或构建依赖。无需 npm install 或 pip install。
+开发模式提供 Vite 热更新，浏览器访问 5173，API 代理到 8768：
 
 ```bash
-python3 -B build.py
-python3 -B -m unittest discover -s . -p 'test_*.py' -v
-node --check app.js
-node --check configuration.js
-node --check catalog-ui.js
+./start.sh --dev
+# 自定义两个端口
+./start.sh --dev --port=8770 --frontend-port=5174
 ```
 
-修改 `shell.html`、`styles.css`、JS 或 Python 数据文件后，运行 `build.py` 并刷新页面。不要直接修改生成的 `index.html`。生成器相对自身定位源文件，不依赖原仓库路径。
+验证命令：
 
-[GitHub Actions CI](.github/workflows/ci.yml) 在推送、PR 和手动触发时运行单元测试、JS 语法检查，并重新构建页面。如果生成结果与提交的 `index.html` 不一致，检查会失败；请本地运行 `python3 -B build.py` 后一并提交生成文件。CI 使用 Python 3.12 和 Node.js 24，不安装项目依赖或部署页面。设计见 [CI 说明](docs/ci.md)。
+```bash
+.venv/bin/python -m pip install -r backend/requirements-dev.txt
+.venv/bin/python -B -m unittest discover -s . -p 'test_*.py' -v
+npm --prefix frontend test
+npm --prefix frontend run build
+python3 -B build.py
+```
+
+在线组件位于 `frontend/src`；共享样式为 `styles.css`，形状/配置契约为 `configuration.js`。Python 继续负责数值、聚合和图表预处理。修改离线源文件或共享数据后运行 `build.py`，不要直接编辑根 `index.html`。生产模式修改源代码后重新构建；后端修改后重启。
+
+[GitHub Actions CI](.github/workflows/ci.yml) 安装声明依赖，运行 Python/前端状态测试、TypeScript 检查、Vite 构建、离线 JS 检查及 `index.html` 构建一致性检查；不部署。详见 [CI 说明](docs/ci.md)。
 
 ## 项目结构
 
 | 文件 | 作用 |
 | --- | --- |
+| `frontend/src` | Vue 页面、Pinia 状态、API 客户端与可复用组件 |
+| `backend/web` | FastAPI 应用、可挂载 APIRouter、运行配置与生命周期 |
+| `start.sh` / `.env.example` | 单端口启动、开发模式、外部引擎路径示例 |
 | `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
 | `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
 | `data/modeling-catalog.json` / `catalog_data.py` | 内置目录快照、示例配置、无结果模板 |
@@ -90,6 +103,31 @@ python3 -B build.py
 
 ## 已验证与限制
 
-26 项 Python 测试（其中一项运行 7 个 Node 表单状态测试）、三份 JS 语法检查通过。目录/形状与dtype/取消和恢复/硬件搜索/矩阵/浮层/双比较/JSON 已在浏览器验证，桌面1366×768及小屏375×812无页面横向溢出。设计与当前验收边界见 [矩阵设计](docs/result-matrix-design.md)；原独立打包记录见 [docs/PACKAGING.md](docs/PACKAGING.md)。JSON 预览及下载链接内容已核对，文件下载落盘未验收。用户明确仅PC桌面使用，不投入移动端支持；没有真实硬件性能或仿真精度验证。
+47 项 Python 测试、2 项前端状态测试、TypeScript 检查、Vite 和离线构建通过。FastAPI 路由在独立宿主挂载验证通过；真实 Roofline / TileSim 的端到端结果和原适配器一致。桌面验证配置校验/清空、双结果比较、流水选核/翻页和完整 JSON。仅PC使用，未做真机精度认证，尚未实际合入 modeling；集成边界见 [框架对齐说明](docs/framework-alignment.md)。
 
 本包不包含 modeling 后端、数据库、原 Git 历史、个人 Skill 或外部服务凭据。源码仓库已同步到 GitHub 的 Youngscc/opscope；未部署网站，未新增开源许可证授权。
+
+## 本地运行算子评估
+
+在 `.env` 配置已有环境（以下路径需替换）：
+
+```dotenv
+OPSCOPE_ENGINE_ROOT=/path/to/modeling
+OPSCOPE_ENGINE_PYTHON=/path/to/modeling/.venv/bin/python
+OPSCOPE_TILESIM_PYTHON=/path/to/tilesim-runtime/.venv/bin/python
+OPSCOPE_PORT=8768
+```
+
+然后运行 `./start.sh`。也可通过 `./start.sh --engine-root /path/to/modeling --engine-python /path/to/python --tilesim-python /path/to/tile/python` 传入参数。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装 Web 依赖和构建前端。
+
+服务 API 位于 `/api/opscope`；[接口文档](http://127.0.0.1:8768/docs) 和 `/api/health` 可用于检查。计算组件继续使用各自独立解释器，不装入 Web 环境、不连接任务数据库。
+
+- 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
+- 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
+- 每个硬件/方法独立运行，无自动方法回退。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
+- `--tilesim-python` 可省略；配置后使用独立安装的 msopmodeling 1.0.9 DSL 工程路径。当前开放 Ascend 910B1 / 910B4 的二维 MatMul，FP16/BF16，M/N/K为128的倍数，最多80,000个流水事件。固定分块128/256/512/128，不执行自动寻优；其他硬件、算子及尾块明确不支持，不借用硬件配置。
+- TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
+- “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。
+- 服务仅监听本机。任务保存在内存，最多同时2个、保留最近12个，每批计算超时60秒；重启会清空任务。需要留存的结果请下载HTML或JSON。
+
+实现与边界见 [本地评估方案](docs/live-evaluation-plan.md) 和 [组件复用分析](docs/modeling-reuse-analysis.md)。此功能不执行设备实测、不验证模型精度，已接入可选TileSim解释器，未接入外部测量数据库。详细范围见 [TileSim接入](docs/tilesim-integration-plan.md)。

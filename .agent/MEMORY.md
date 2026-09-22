@@ -1,5 +1,9 @@
 # 项目记忆
 
+## uv 环境配置（2026-09-22，已验证）
+
+用户要求加入 uv 配置运行环境的命令和依赖。新增根目录 pyproject.toml：virtual 项目（无 build-system，uv 不安装 opscope 自身），dependencies 为 fastapi==0.141.1、uvicorn==0.52.4，dev 组 httpx==0.28.1，与 backend/requirements*.txt 精确一致；uv.lock 由本地生成并加入 .gitignore 不入库，CI 与 pip 路径仍以 requirements 为准。start.sh 检测到 uv 时优先 `uv sync`，否则回退 venv+pip；并新增守护：uv 创建的 .venv 无 pip 时给出明确提示而非报错崩溃。README 快速使用、验证命令、项目结构表同步更新。uv 0.12.15 实测：uv sync 幂等复用现有 .venv 且保留 pip，59 项测试通过，start.sh 冒烟 /api/health 200（8779/8780 端口），index.html 构建一致。分类提交：工具链 d48de61、文档随下一条提交，推送后远程与本地一致。
+
 ## 分类提交（2026-09-22，第二批）
 
 用户要求将未提交修改分类提交。本轮分四类：功能代码主体（逐结果增量+覆盖扩展+包重组，79dc0be）、CI与测试路径配套（cd44636）、文档与项目记忆（c6ab705）、补交三篇功能设计文档（eca77c4，逐结果/覆盖计划/TileSim算子覆盖，后经amend并入MEMORY修正为e4fe710）。提交前重新通过59项Python测试、3项前端测试、5份JS语法、Vue构建、离线构建确定性与产物一致性检查。opscope/ 新包与根目录删除在同一提交中由git识别为重命名。.arts/、.vscode/、trace.json 保持untracked不提交。用户随后授权push，71b8938..e4fe710已推送，远程main与本地HEAD一致。

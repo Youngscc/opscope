@@ -10,7 +10,7 @@
 
 ```bash
 python3 -B build.py
-python3 -B -m unittest discover -s . -p 'test_*.py' -v
+python3 -B -m unittest discover -s tests -p 'test_*.py' -v
 node --check app.js
 ```
 

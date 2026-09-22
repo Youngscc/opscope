@@ -8,7 +8,7 @@
 
 使用 Ubuntu、Python 3.12 和 Node.js 24，单任务执行，安装 backend/requirements-dev.txt 和 frontend/package-lock.json 对应依赖。仓库权限仅为 contents: read，checkout 不保留凭据；任务超时 10 分钟，同一分支或 PR 的新运行取消旧运行。
 
-依次运行 unittest、前端状态测试、Vue TypeScript检查/Vite构建、node --check、build.py 和 git diff --exit-code -- index.html。最后一步防止源文件修改后漏提交生成页面。失败时开发者本地重新构建并提交 index.html。工作流不自动修改或提交文件，不部署，不检查已移除的 SHA256SUMS。
+依次从 `tests/` 发现并运行 unittest，再运行前端状态测试、Vue TypeScript检查/Vite构建、node --check、build.py 和 git diff --exit-code -- index.html。最后一步防止源文件修改后漏提交生成页面。失败时开发者本地重新构建并提交 index.html。工作流不自动修改或提交文件，不部署，不检查已移除的 SHA256SUMS。
 
 ## 验证边界
 

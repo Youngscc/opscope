@@ -8,3 +8,6 @@ venv/
 !.env.example
 *.log
 *.zip
+node_modules/
+frontend/dist/
+.run/

@@ -16,7 +16,7 @@ jobs:
   validate:
     name: Tests and generated page
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -34,6 +34,16 @@ jobs:
           node-version: '24'
           package-manager-cache: false
 
+      - name: Install web dependencies
+        run: |
+          python3 -m pip install -r backend/requirements-dev.txt
+          npm --prefix frontend ci
+
+      - name: Validate Vue application
+        run: |
+          npm --prefix frontend test
+          npm --prefix frontend run build
+
       - name: Run unit tests
         run: python3 -B -m unittest discover -s . -p 'test_*.py' -v
 
@@ -42,6 +52,8 @@ jobs:
           node --check app.js
           node --check configuration.js
           node --check catalog-ui.js
+          node --check evaluation-ui.js
+          node --check trace-ui.js
 
       - name: Build page
         run: python3 -B build.py

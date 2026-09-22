@@ -1,0 +1,7 @@
+{
+  "name": "opscope-frontend", "private": true, "version": "0.1.0", "type": "module",
+  "engines": {"node": ">=22.12.0"},
+  "scripts": {"dev": "vite", "build": "vue-tsc --noEmit && vite build", "test": "node --import tsx --test tests/*.test.ts", "preview": "vite preview"},
+  "dependencies": {"vue": "^3.5.24", "pinia": "^3.0.4", "vue-router": "^4.6.4"},
+  "devDependencies": {"@vitejs/plugin-vue": "^6.0.7", "vite": "^8.0.12", "typescript": "~6.0.2", "vue-tsc": "^2.2.8", "tsx": "^4.22.4", "@types/node": "^24.12.3"}
+}

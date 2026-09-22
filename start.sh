@@ -9,30 +9,15 @@ for arg in "$@"; do
     --dev) mode=development ;;
     --port=*) export OPSCOPE_PORT="${arg#*=}" ;;
     --frontend-port=*) export OPSCOPE_FRONTEND_PORT="${arg#*=}" ;;
-    -h|--help) echo './start.sh [--dev] [--port=8768] [--frontend-port=5173] [backend arguments]'; exit 0 ;;
+    -h|--help) echo './start.sh [--dev] [--port=8768] [--frontend-port=5173] [backend arguments]
+仅负责启动；环境配置请先运行 ./setup.sh（见 docs/environment.md）。'; exit 0 ;;
     *) args+=("$arg") ;;
   esac
 done
-if command -v uv >/dev/null 2>&1; then
-  uv sync
-else
-  if [[ ! -x .venv/bin/python ]]; then
-    runtime_python="${PYTHON_BIN:-python3}"
-    if [[ -z "${PYTHON_BIN:-}" ]] && ! "$runtime_python" -c 'import sys; sys.exit(sys.version_info < (3,10))'; then
-      for candidate in python3.12 python3.11 python3.10; do
-        if command -v "$candidate" >/dev/null; then runtime_python="$candidate"; break; fi
-      done
-    fi
-    "$runtime_python" -c 'import sys; assert sys.version_info >= (3,10), "Python >= 3.10 required; set PYTHON_BIN"'
-    "$runtime_python" -m venv .venv
-  fi
-  if ! .venv/bin/python -m pip --version >/dev/null 2>&1; then
-    echo '.venv 缺少 pip：该环境由 uv 创建但 uv 不在 PATH。请运行 uv sync，或删除 .venv 后重试。' >&2
-    exit 1
-  fi
-  .venv/bin/python -m pip install --disable-pip-version-check -q -r backend/requirements.txt
+if [[ ! -x .venv/bin/python || ! -d frontend/node_modules ]]; then
+  echo '环境未就绪：请先运行 ./setup.sh 安装 Python 与前端依赖。' >&2
+  exit 1
 fi
-if [[ ! -d frontend/node_modules ]]; then npm --prefix frontend ci; fi
 if [[ "$mode" == production ]]; then
   npm --prefix frontend run build
   exec .venv/bin/python -B -m backend.web "${args[@]}"

@@ -61,7 +61,10 @@ def catalog_payload():
 def all_hardware(catalog):
     demo = [{'id': item[0], 'name': item[1], 'family': item[2], 'note': item[3],
              'group': 'demo', 'profiles': {}} for item in HARDWARE]
-    return demo + catalog['hardware']
+    tile = [{'id': f'tilesim:{soc}', 'name': f'Ascend {soc}', 'family': 'NPU',
+             'note': 'TileSim 工程模型 · 独立芯片配置', 'group': 'tilesim', 'profiles': {}}
+            for soc in ('910B1', '910B4')]
+    return demo + catalog['hardware'] + tile
 
 
 def pending_results(hardware):

@@ -43,3 +43,17 @@ available=false 表示组合缺失，reason 保留原因；零耗时/零比例�
 以上MatMul数值只适用于精确的默认合成配置。现已允许选择modeling内置目录与逐张量shape/dtype：训练11条、推理88资产，保留来源身份而不把同名算子合并。通信6条仅目录不可应用，Flow条目注明流程标记。未知默认维度为null/“?”，必须人工填写，不自动取1。原始输出模板仅作来源说明，未执行时不推导输出。
 
 硬件目录11个系统、22份train/infer来源，Server与POD分开。目录不等于仿真适配认证，R200_Server的存在不证明原R200别名已核实。原6个示例硬件独立于目录型号；目录硬件不复用示例性能。所有新增组合available=false、latency_us=null、task.status=not_run；修改配置不携带旧执行记录、FLOPs或逻辑字节。configuration保留应用的输入与来源；导出全局和逐条上下文一致。
+
+## 实际模型调用（2026-09-22）
+
+本地评估服务新增opscope-evaluation-v1。只有实际调用Roofline成功的组合available=true、task.status=succeeded，synthetic=false、measurement=false、execution.kind=analytic，不等于设备实测。缺失/不支持/失败字段为null，原SimResult缺省0不能冒充计数器。regression校准不展示计算/访存/瓶颈分项。工作量与分项来自本次结果；kernel/tiling/trace为空；无真机参考时deviation_percent=null。
+
+规范配置与硬件规格分别有摘要，实际engine版本/源码摘要/校准库摘要保留。首次接入仅基础模板的默认语义；页面默认累加FP32、row-major不意味着模型比较不同kernel精度/布局。所有非默认执行选项拒绝，Attention限定QKV同形BNSD。边界为单算子解析预测，不指定实际kernel，不包括Host或传输；复合SwiGLU不宣称设备单kernel。
+
+双预测对比要求相同配置摘要、相同引擎/校准身份，并固定硬件或方法至少一轴；比较文案明确非实测加速。切换运行整批清空示例参考与虚拟结果；恢复示例必须显式应用原配置。离线快照保留独立demo_results仅用于恢复，不参与当前results、JSON导出或图表。
+
+## TileSim 工程结果（2026-09-22，已接入）
+
+独立msopmodeling1.0.9的DSL EngMatmulL0，当前仅910B1/910B4二维MatMul。synthetic=false、measurement=false，execution.kind=tile_simulation，不冒充设备实测。通道分项与周期属于最晚结束核；各通道可重叠。L2字段为预测字节命中率；data_transfer为模型路径累计字节，不能当作真机HBM计数器。逻辑FLOPs=2MNK、逻辑张量字节和有效算力为本系统推导。
+
+固定输入分块128/256/512/128明确记录，非自动最优。输出与输入同FP16/BF16，累加精度未单独建模。整体compute_us/memory_us/bound、等待原因、实测参考与偏差均空。trace保留全部事件及6个规范字段（name/ts/dur/pid/tid/ph），省略冗长cat；原始模型占位值不提升为UI事实。按核通道活动用区间并集/全程时延，既非峰值利用率，也不用于推断同步等待。

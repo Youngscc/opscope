@@ -5,9 +5,16 @@ function catalog_operator(id) {
 }
 
 function initialize_catalog() {
-  state.config = Configuration.clone(data.catalog.default_config);
-  state.baseline = data.results;
-  state.baselineWorkload = data.workload;
+  state.config = Configuration.clone(data.initial_configuration || data.catalog.default_config);
+  state.baseline = data.demo_results || data.results;
+  state.baselineWorkload = data.demo_workload || data.workload;
+  state.baselineMatrix = data.demo_matrix || data.matrix;
+  state.demoMethods = Configuration.clone(data.demo_methods || data.methods);
+  if (data.evaluation) {
+    state.hardware = new Set(data.evaluation.hardware_ids);
+    state.methods = new Set(data.evaluation.method_ids);
+    state.chart = 'latency';
+  }
   const categories = [...new Set(data.catalog.groups.map(op => op.category))].sort();
   by_id('operator-category').innerHTML += categories.map(name => `<option value="${escape_html(name)}">${escape_html(name)}</option>`).join('');
   ['operator-search', 'operator-category'].forEach(id => by_id(id).addEventListener(id === 'operator-search' ? 'input' : 'change', render_operator_list));
@@ -99,7 +106,7 @@ function render_configuration() {
   by_id('output-templates').innerHTML = op.outputs.length ? '<h4>输出模板 · 尚未推导实际形状</h4>' + op.outputs.map(tensor => `<p><b>${escape_html(tensor.name)}</b> · ${escape_html(tensor.dtype)}<br><code>${escape_html(typeof tensor.shape === 'string' ? tensor.shape : JSON.stringify(tensor.shape))}</code></p>`).join('') : '<p>实际输出形状待评估后端返回。</p>';
   by_id('config-error').hidden = true;
   by_id('apply-config').disabled = !op.configurable;
-  by_id('apply-hint').textContent = op.configurable ? '未接后端 · 不会启动任务' : op.reason;
+  by_id('apply-hint').textContent = op.configurable ? '应用配置后可运行评估' : op.reason;
 }
 
 function read_configuration() {
@@ -134,10 +141,11 @@ function apply_configuration() {
   if (errors.length) return;
   const previous = state.config.domain;
   state.config = config;
+  reset_evaluation();
   const demo = Configuration.matches_demo(config, data.catalog.default_config);
   data.results = Configuration.project(config, state.baseline, data.pending_results, data.catalog.default_config);
   data.workload = demo ? state.baselineWorkload : Configuration.workload(config);
-  if (previous === 'demo' && config.domain !== 'demo' && ![...state.hardware].some(id => id.startsWith('modeling:'))) {
+  if (previous === 'demo' && config.domain !== 'demo' && ![...state.hardware].some(id => id.startsWith('modeling:') || id.startsWith('tilesim:'))) {
     state.hardware = new Set(['modeling:Adevice03_Server', 'modeling:H100_Server', 'modeling:H200_Server'].filter(id => hardware_by_id(id)));
   } else if (previous !== 'demo' && demo) state.hardware = new Set(data.hardware.filter(hw => hw.group === 'demo').map(hw => hw.id));
   state.selected = [];
@@ -147,6 +155,7 @@ function apply_configuration() {
   render_workload_heading();
   render_filters();
   update_filters();
+  render_evaluation_controls();
   announce('配置已应用。' + (demo ? '展示合成示例。' : '当前配置尚未评估。'));
 }
 
@@ -163,13 +172,19 @@ function render_workload_heading() {
   by_id('workload-shape').textContent = demo ? '4096 × 4096 × 4096' : `${state.config.inputs[0]?.name || ''} [${state.config.inputs[0]?.shape.join(' × ') || '—'}]` + (state.config.inputs.length > 1 ? ` +${state.config.inputs.length - 1} 张量` : '');
   by_id('workload-shape').title = shape;
   by_id('workload-summary').textContent = demo ? '输入输出 FP16 · 累加 FP32 · 设备侧单 kernel' : workload_summary();
+  if (data.evaluation || !data.synthetic) {
+    by_id('workload-summary').textContent = workload_summary() + ' · 单算子性能预测';
+    by_id('workload-status').textContent = state.evaluating ? '正在评估当前配置…' : data.evaluation ? '已运行评估 · 模型预测，非设备实测' : '暂无预测结果 · 可重新运行';
+    by_id('matrix-data-note').textContent = '未接入实测参考 · 不计算参考偏差';
+    return;
+  }
   by_id('workload-status').textContent = demo ? '界面示例 · 未执行真实评估' : '配置已就绪 · 尚未评估';
-  by_id('matrix-data-note').textContent = demo ? '参考：同硬件 Profiling · 全部为合成示例' : '当前配置尚无结果 · 未连接评估后端';
+  by_id('matrix-data-note').textContent = demo ? '参考：同硬件 Profiling · 全部为合成示例' : '当前配置尚无结果 · 点击运行评估';
 }
 
 function pending_detail(record) {
   const config = state.config;
   const device = hardware_by_id(record.hardware);
   const profile = '硬件配置';
-  return `<div class="missing-detail"><span class="empty-mark">—</span><h3>${escape_html(record.reason)}</h3><p>当前配置未运行评估，暂无性能数值。</p><p class="note">${escape_html(device.note)} · ${device.group === 'demo' ? '合成示例配置' : profile}</p></div><div class="pending-inputs"><h3>${escape_html(config.operator)} · 输入配置</h3><dl class="facts">${config.inputs.map(t => `<div><dt>${escape_html(t.name)}</dt><dd>[${t.shape.join(', ')}] · ${escape_html(t.dtype.toUpperCase())}</dd></div>`).join('')}</dl></div>`;
+  return `<div class="missing-detail"><span class="empty-mark">—</span><h3>${escape_html(record.reason)}</h3><p>此组合暂无可用性能数值。</p><p class="note">${escape_html(device.note)} · ${data.synthetic && device.group === 'demo' ? '合成示例配置' : profile}</p></div><div class="pending-inputs"><h3>${escape_html(config.operator)} · 输入配置</h3><dl class="facts">${config.inputs.map(t => `<div><dt>${escape_html(t.name)}</dt><dd>[${t.shape.join(', ')}] · ${escape_html(t.dtype.toUpperCase())}</dd></div>`).join('')}</dl></div>`;
 }

@@ -73,6 +73,8 @@ def detail_sections(result):
 def comparison_issues(left, right):
     if not left['available'] or not right['available']:
         return ['结果缺失']
+    if all(r.get('provenance', {}).get('contract') == 'opscope-evaluation-v1' for r in (left, right)):
+        return evaluation_comparison_issues(left, right)
     issues = []
     for key, name in [('operator', '算子'), ('tensors', '输入输出'), ('layout', '布局'),
                       ('transpose_a', 'A转置'), ('transpose_b', 'B转置'),
@@ -91,6 +93,21 @@ def comparison_issues(left, right):
     return issues
 
 
+def evaluation_comparison_issues(left, right):
+    a, b = left['provenance'], right['provenance']
+    issues = []
+    if not a.get('configuration_hash') or a['configuration_hash'] != b.get('configuration_hash'):
+        issues.append('工作负载不同或未经校验')
+    same_hardware = a.get('hardware_hash') and a['hardware_hash'] == b.get('hardware_hash')
+    if not same_hardware and left['method'] != right['method']:
+        issues.append('硬件与方法同时变化')
+    if a.get('engine') != b.get('engine'):
+        issues.append('引擎或校准版本不同')
+    if any(r.get('synthetic') for r in (left, right)):
+        issues.append('示例与预测不能混合比较')
+    return issues
+
+
 def pair_summary(left, right):
     issues = comparison_issues(left, right)
     base = {'ids': [left['id'], right['id']], 'issues': issues, 'delta_percent': None,
@@ -101,8 +118,8 @@ def pair_summary(left, right):
     if a == 0:
         return {**base, 'text': 'A 耗时为 0，相对变化未定义；保留原始值。'}
     delta = (b - a) / a * 100
-    return {**base, 'delta_percent': delta,
-            'text': f'B 相对 A 耗时 {delta:+.1f}% · 仅合成示例，不代表准确性或真实性能结论。'}
+    note = '仅合成示例，不代表准确性或真实性能结论。' if left.get('synthetic') else '模型预测差异，不代表实测加速。'
+    return {**base, 'delta_percent': delta, 'text': f'B 相对 A 耗时 {delta:+.1f}% · {note}'}
 
 
 def prepare_matrix(results):
@@ -114,7 +131,7 @@ def prepare_matrix(results):
             'latency_width': round(row['latency_us'] / scales['latency_max'] * 100, 5) if available else None,
             'error_position': round(50 + delta / scales['error_max'] * 50, 5) if delta is not None else None,
             'error_label': f'{delta:+.1f}%' if delta is not None else '—',
-            'note': row.get('bound') or ('瓶颈未提供' if available else row['reason']),
+            'note': {'compute': '计算受限', 'memory': '访存受限', 'latency': '固定开销'}.get(row.get('bound'), row.get('bound')) or ('瓶颈未提供' if available else row['reason']),
         }
         row['sections'] = detail_sections(row)
     pairs = {a['id'] + '|' + b['id']: pair_summary(a, b)

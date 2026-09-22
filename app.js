@@ -29,10 +29,10 @@ function cell_markup(result) {
   const {available, id, matrix} = result;
   const error = state.metric === 'error';
   const main = !available ? '—' : error ? (result.method === 'profile' ? '参考' : matrix.error_label) : `${result.latency}<small>μs</small>`;
-  const secondary = !available ? result.reason : error ? `${result.latency} μs` : result.method === 'profile' ? '同硬件参考' : `较参考 ${matrix.error_label}`;
+  const secondary = !available ? result.reason : error ? `${result.latency} μs` : result.method === 'profile' ? '同硬件参考' : result.deviation_percent === null ? '模型预测 · 无实测参考' : `较参考 ${matrix.error_label}`;
   const source = available && result.method === 'roofline' ? `<span class="calibration ${result.source_class.includes('generic') ? 'generic' : ''}">${result.source_label}</span>` : '';
   const check = state.selecting && available ? `<label class="cell-check"><input type="checkbox" data-select="${id}" ${state.selected.includes(id) ? 'checked' : ''} aria-label="选择 ${result_name(result)} 进行比较"></label>` : '';
-  return `<td class="matrix-cell ${available ? '' : 'is-missing'} ${result.method === 'profile' ? 'reference-cell' : ''} ${state.selected.includes(id) ? 'is-selected' : ''}"><div class="cell-inner">${check}<button class="cell-result" data-open="${id}" aria-haspopup="dialog" aria-controls="detail-panel" aria-label="${result_name(result)}，${available ? result.latency + ' 微秒' : result.reason}，查看详情"><span class="cell-value">${main}</span><span class="cell-secondary">${secondary}</span>${available ? `<span class="cell-meta"><span>${matrix.note}</span>${source}</span>` : ''}<span class="cell-arrow" aria-hidden="true">↗</span></button></div></td>`;
+  return `<td class="matrix-cell ${available ? '' : 'is-missing'} ${result.method === 'profile' ? 'reference-cell' : ''} ${state.selected.includes(id) ? 'is-selected' : ''}"><div class="cell-inner">${check}<button class="cell-result" data-open="${id}" aria-haspopup="dialog" aria-controls="detail-panel" aria-label="${result_name(result)}，${available ? result.latency + ' 微秒' : escape_html(result.reason)}，查看详情"><span class="cell-value">${main}</span><span class="cell-secondary">${escape_html(secondary)}</span>${available ? `<span class="cell-meta"><span>${matrix.note}</span>${source}</span>` : ''}<span class="cell-arrow" aria-hidden="true">↗</span></button></div></td>`;
 }
 
 function render_matrix() {
@@ -40,7 +40,7 @@ function render_matrix() {
   const hardware = data.hardware.filter(item => state.hardware.has(item.id));
   const visible = visible_results();
   by_id('matrix-head').innerHTML = `<tr><th scope="col" class="axis-corner">硬件 <span aria-hidden="true">↓</span> <span class="separator">/</span> 方法 <span aria-hidden="true">→</span></th>${methods.map(item => `<th scope="col" class="method-column ${item.id === 'profile' ? 'reference-cell' : ''}"><button class="axis-button" data-scope-method="${item.id}"><i class="method-dot ${item.id}" aria-hidden="true"></i>${method_name(item.id)}<span aria-hidden="true">↗</span></button><small>${item.id === 'profile' ? '同硬件参考' : item.source}</small></th>`).join('')}</tr>`;
-  by_id('matrix-body').innerHTML = methods.length ? hardware.map(hw => `<tr><th scope="row" class="hardware-column"><button class="axis-button" data-scope-hardware="${hw.id}"><span>${hw.name}</span><span aria-hidden="true">↗</span></button><small>${hw.family} · ${hw.group === 'demo' ? '示例' : '目录配置'}</small></th>${methods.map(method => cell_markup(visible.find(row => row.hardware === hw.id && row.method === method.id))).join('')}</tr>`).join('') : '';
+  by_id('matrix-body').innerHTML = methods.length ? hardware.map(hw => `<tr><th scope="row" class="hardware-column"><button class="axis-button" data-scope-hardware="${hw.id}"><span>${hw.name}</span><span aria-hidden="true">↗</span></button><small>${hw.family} · ${data.synthetic && hw.group === 'demo' ? '示例' : '规格配置'}</small></th>${methods.map(method => cell_markup(visible.find(row => row.hardware === hw.id && row.method === method.id))).join('')}</tr>`).join('') : '';
   by_id('result-matrix').style.setProperty('--method-count', methods.length || 1);
   by_id('matrix-wrap').hidden = !visible.length;
   by_id('empty-state').hidden = !!visible.length;
@@ -74,6 +74,7 @@ function update_filters() {
   render_matrix();
   render_tray();
   render_chart();
+  render_evaluation_controls();
   announce('矩阵与图表已按筛选更新');
 }
 
@@ -171,7 +172,7 @@ function paired_content(records) {
 function single_content(record) {
   return record.sections[state.tab].map(section => {
     let body = record.details[section.key];
-    if (section.key === 'latency') {
+    if (record.synthetic && section.key === 'latency') {
       const reference = section.facts.find(item => item.label === 'Profiling 参考');
       body = (reference ? `<p class="note">Profiling 参考：${escape_html(reference.value)}</p>` : '') + section.extra;
     }
@@ -198,6 +199,7 @@ function render_detail_content() {
   by_id('comparison-notice').classList.toggle('has-issues', Boolean(notice?.issues.length));
   if (!available) by_id('detail-content').innerHTML = pending_detail(records[0]);
   else by_id('detail-content').innerHTML = paired ? paired_content(records) : single_content(records[0]);
+  render_traces();
 }
 
 function open_details(ids, origin) {
@@ -228,12 +230,19 @@ function toggle_selection(input) {
 
 function export_results(detail_only = false) {
   const records = detail_only ? state.details.map(result_by_id) : visible_results();
-  const results = records.map(({details, sections, matrix, ...fields}) => fields);
-  const payload = {schema: data.schema, synthetic: true, notice: data.notice, workload: data.workload, configuration: state.config, catalog_revision: data.catalog.revision, results};
-  const json = JSON.stringify(Configuration.public_export(payload, data.catalog), null, 2);
+  const results = records.map(({details, sections, matrix, ...fields}) => {
+    if (!fields.execution) return fields;
+    const {trace_view, ...execution} = fields.execution;
+    return {...fields, execution};
+  });
+  const payload = {schema: data.schema, synthetic: data.synthetic, notice: data.notice, workload: data.workload, configuration: state.config, catalog_revision: data.catalog.revision, results};
+  const large_trace = results.some(row => row.execution?.events?.length > 5000);
+  const json = JSON.stringify(Configuration.public_export(payload, data.catalog), null, large_trace ? 0 : 2);
   by_id('export-json').value = json;
-  by_id('export-scope').textContent = `${detail_only ? '当前详情' : '当前筛选结果'} · ${results.length} 条 · 示例数据`;
-  by_id('download-json').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+  by_id('export-scope').textContent = `${detail_only ? '当前详情' : '当前筛选结果'} · ${results.length} 条 · ${evaluation_label()}`;
+  if (state.exportUrl) URL.revokeObjectURL(state.exportUrl);
+  state.exportUrl = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+  by_id('download-json').href = state.exportUrl;
   by_id('export-dialog').showModal();
   announce('JSON 已准备好，可下载或复制');
 }
@@ -342,3 +351,5 @@ render_matrix();
 render_tray();
 render_chart();
 bind_controls();
+
+initialize_evaluation();

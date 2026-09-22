@@ -36,7 +36,7 @@ class PresentationDataTest(unittest.TestCase):
         # Unsupported combinations stay absent; simulator totals do not imply traces.
         payload = build_payload()
         self.assertTrue(payload['synthetic'])
-        self.assertEqual(len(payload['results']), 85)
+        self.assertEqual(len(payload['results']), 95)
         for row in payload['results']:
             self.assertTrue(row['synthetic'])
             if not row['available']:
@@ -113,7 +113,7 @@ class PresentationDataTest(unittest.TestCase):
         self.assertEqual([item['id'] for item in payload['methods']],
                          ['profile', 'roofline', 'tilesim', 'method3', 'method4'])
         rows = [row for row in payload['results'] if row['method'] == 'roofline']
-        self.assertEqual(len(rows), 17)
+        self.assertEqual(len(rows), 19)
         results = {row['hardware']: row for row in rows}
         for hardware, source in [('ascend', 'bucket'), ('h100', 'aggregate'), ('h200', 'regression')]:
             row = results[hardware]

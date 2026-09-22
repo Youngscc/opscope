@@ -253,11 +253,16 @@ def build_payload():
     return {'schema': 'operator-ui-demo-v1', 'synthetic': True, 'notice': '合成 UI 示例，非实测或实际仿真结果', 'workload': {'operator': 'MatMul', 'm': 4096, 'n': 4096, 'k': 4096, 'dtype': 'FP16', 'flops': FLOPS, 'logical_bytes': LOGICAL_BYTES, 'boundary': 'device kernel only'}, 'hardware': hardware, 'methods': [{'id': item[0], 'name': item[1], 'source': item[2], 'color': item[3]} for item in METHODS], 'results': results, 'matrix': matrix, 'catalog': catalog, 'pending_results': pending}
 
 
-def build():
-    payload = json.dumps(build_payload(), ensure_ascii=False).replace('<', '\\u003c')
+def render_page(data):
+    payload = json.dumps(data, ensure_ascii=False, allow_nan=False).replace('<', '\\u003c')
     output = ROOT.joinpath('shell.html').read_text().replace('/* INLINE_CSS */', ROOT.joinpath('styles.css').read_text())
-    scripts = '\n'.join(ROOT.joinpath(name).read_text() for name in ('configuration.js', 'catalog-ui.js', 'app.js'))
+    scripts = '\n'.join(ROOT.joinpath(name).read_text() for name in ('configuration.js', 'catalog-ui.js', 'evaluation-ui.js', 'trace-ui.js', 'app.js'))
     output = output.replace('/* INLINE_DATA */', payload).replace('/* INLINE_JS */', scripts)
+    return output
+
+
+def build():
+    output = render_page(build_payload())
     ROOT.joinpath('index.html').write_text(output)
     print(f'Built {ROOT / "index.html"} ({len(output.encode()):,} bytes)')
 

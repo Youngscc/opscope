@@ -39,7 +39,7 @@ test('modified configuration cannot inherit latency, FLOPs, trace or inferred ou
   config.inputs[0].shape = [1024, 4096];
   assert.equal(validate(config).length, 0);
   const rows = Config.project(config, payload.results, payload.pending_results, demo);
-  assert.equal(rows.length, 85);
+  assert.equal(rows.length, 95);
   for (const row of rows) {
     assert.equal(row.available, false);
     assert.equal(row.latency_us, null);

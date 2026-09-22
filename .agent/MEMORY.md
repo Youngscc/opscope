@@ -2,9 +2,13 @@
 
 ## 环境配置与启动分离（2026-09-22，已验证）
 
+本节记录早期拆分过程；当前环境入口与依赖口径以“当前状态”的最新条目和 `docs/environment.md` 为准。
+
 用户要求把环境配置从 start.sh 拆出做独立命令文档。新增 setup.sh 作为环境配置唯一入口（uv sync / venv+pip 回退 + npm ci + 无参数守卫），start.sh 精简为只校验环境就绪后启动——缺 .venv 或 node_modules 时提示"请先运行 ./setup.sh"并退出 1，不再内联安装逻辑。新增 docs/environment.md 集中记录 uv / venv+pip 两条路径、前端依赖、验证命令（含 vue-tsc 正确调用方式）与常见问题。随后应要求新增 docs/setup-steps.md 单独记录 setup.sh 内部子操作（加载 .env、参数解析、Python 二选一分支、前端依赖、就绪提示）、失败处理与扩展注意，供维护者排查参考；docs/README.md 索引同步登记。README 快速使用改为两步（setup → start）并引用文档，ARCHITECTURE.md 文件职责同步更新。实测：setup.sh 幂等成功，start.sh 拆分后 /api/health 200（8782），环境缺失提示正确，index.html 构建一致。分类提交：脚本拆分 189913f、文档随下一条提交，推送后远程与本地一致。
 
 ## uv 环境配置（2026-09-22，已验证）
+
+本节记录最初接入 uv 时的历史实现；后续已改为提交 `uv.lock`、锁定同步并由锁文件导出 requirements。
 
 用户要求加入 uv 配置运行环境的命令和依赖。新增根目录 pyproject.toml：virtual 项目（无 build-system，uv 不安装 opscope 自身），dependencies 为 fastapi==0.141.1、uvicorn==0.52.4，dev 组 httpx==0.28.1，与 backend/requirements*.txt 精确一致；uv.lock 由本地生成并加入 .gitignore 不入库，CI 与 pip 路径仍以 requirements 为准。start.sh 检测到 uv 时优先 `uv sync`，否则回退 venv+pip；并新增守护：uv 创建的 .venv 无 pip 时给出明确提示而非报错崩溃。README 快速使用、验证命令、项目结构表同步更新。uv 0.12.15 实测：uv sync 幂等复用现有 .venv 且保留 pip，59 项测试通过，start.sh 冒烟 /api/health 200（8779/8780 端口），index.html 构建一致。分类提交：工具链 d48de61、文档随下一条提交，推送后远程与本地一致。
 
@@ -96,6 +100,8 @@ Vue页面位于frontend/src，FastAPI可挂载路由位于backend/web/routes/ops
 最后更新：2026-09-22。当前项目名 OpScope，目录名 opscope，中文名“算子性能观察台”。
 
 ## 当前状态（已实现）
+
+- 环境说明已收敛为单一入口 `docs/environment.md`：逐条记录 uv 安装 Python、创建 `.venv`、锁定同步、requirements 兼容安装、依赖更新/导出、启动与验证命令。`.python-version` 固定开发 Python 3.12，`uv.lock` 纳入版本控制；`setup.sh` 使用 `uv sync --locked --all-groups`，防止安装时静默改锁。`backend/requirements.txt` 与 `backend/requirements-dev.txt` 由 `uv export` 生成，分别供运行和开发/CI。原重复的 `docs/setup-steps.md` 已合并删除。已在 `/tmp` 分别按 uv 锁文件和 `requirements-dev.txt` 从空环境安装，`uv pip check` 通过，Python 3.12 下 59 项测试全部通过。
 
 - 按用户要求移除 `SHA256SUMS`，日常开发不维护文件哈希清单；打包文档中的校验结果仅为历史记录。
 - 已添加 [CI 工作流](../.github/workflows/ci.yml)：push、PR、手动触发，检查单测、JS 语法和生成页面一致性；Python 3.12 / Node.js 24，不部署。GitHub 实际运行待推送后验证，设计见 [CI 说明](../docs/ci.md)。

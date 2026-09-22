@@ -6,14 +6,14 @@ for arg in "$@"; do
   case "$arg" in
     -h|--help) echo './setup.sh [--help]
 配置运行环境（首次或依赖变更后运行）：
-- Python：uv 可用时走 uv sync，否则创建 .venv 并 pip 安装 backend/requirements.txt
+- Python：uv 可用时按 uv.lock 同步全部依赖组，否则创建 .venv 并 pip 安装 backend/requirements-dev.txt
 - 前端：frontend/node_modules 缺失时执行 npm ci
 详见 docs/environment.md。'; exit 0 ;;
     *) echo "未知参数：$arg（setup.sh 不接受参数）" >&2; exit 2 ;;
   esac
 done
 if command -v uv >/dev/null 2>&1; then
-  uv sync
+  uv sync --locked --all-groups
 else
   if [[ ! -x .venv/bin/python ]]; then
     runtime_python="${PYTHON_BIN:-python3}"
@@ -29,7 +29,7 @@ else
     echo '.venv 缺少 pip：该环境由 uv 创建但 uv 不在 PATH。请运行 uv sync，或删除 .venv 后重试。' >&2
     exit 1
   fi
-  .venv/bin/python -m pip install --disable-pip-version-check -q -r backend/requirements.txt
+  .venv/bin/python -m pip install --disable-pip-version-check -q -r backend/requirements-dev.txt
 fi
 if [[ ! -d frontend/node_modules ]]; then npm --prefix frontend ci; fi
 echo '环境就绪：.venv 与 frontend/node_modules 可用，可运行 ./start.sh。'

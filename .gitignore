@@ -11,4 +11,3 @@ venv/
 node_modules/
 frontend/dist/
 .run/
-uv.lock

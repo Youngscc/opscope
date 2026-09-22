@@ -1,4 +1,4 @@
-# uv 用户的一键环境声明；精确版本与 backend/requirements*.txt 保持一致。
+# uv 项目依赖的源声明；完整解析结果保存在 uv.lock，并导出到 backend/requirements*.txt。
 # 未声明 build-system，uv 视为虚拟项目，只安装依赖，不把 opscope 本身装入环境。
 [project]
 name = "opscope"

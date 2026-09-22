@@ -41,7 +41,7 @@ opscope/offline/fixtures.py → execution_data.py
 
 - frontend/src：Vue组件、API客户端与Pinia状态；取消请求/配置切换使旧批次响应失效。
 - backend/web：FastAPI宿主、命名空间API、静态产物托管、生命周期和本地来源校验。
-- setup.sh：环境配置入口，创建/同步独立环境（uv sync 或 venv+pip 回退）并安装前端依赖；命令见 [环境配置](docs/environment.md)。
+- setup.sh：环境配置入口，按 `uv.lock` 创建/同步独立环境（`uv sync --locked --all-groups`，或 venv+requirements 回退）并安装前端依赖；命令见 [环境配置](docs/environment.md)。
 - start.sh：校验环境就绪后构建/启动，开发模式负责子进程清理。
 
 - opscope/offline：合成任务上下文、目录、矩阵、示例执行数据和单文件生成；根 `build.py` 只是稳定入口。

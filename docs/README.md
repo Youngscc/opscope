@@ -3,8 +3,7 @@
 ## 使用与运行
 
 - [README](../README.md)：项目简介、启动方式和验证命令
-- [环境配置命令](environment.md)：setup.sh、uv 与 venv+pip 两条路径、验证与常见问题
-- [setup.sh 子操作记录](setup-steps.md)：setup.sh 内部各子步骤、触发条件、失败处理与扩展注意
+- [uv 环境配置](environment.md)：从零创建 `.venv`、requirements 文件、依赖更新、启动与验证命令
 - [框架对齐](framework-alignment.md)：Vue/FastAPI 端口服务和宿主接入边界
 - [本地评估设计](live-evaluation-plan.md)：Roofline 与 TileSim 的本地调用方式
 - [CI 说明](ci.md)：GitHub Actions 检查范围

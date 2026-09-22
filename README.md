@@ -17,9 +17,9 @@
 
 访问 [OpScope](http://127.0.0.1:8768/opscope)。页面与 API 共用 8768 端口，Ctrl+C 停止。改端口用 `./start.sh --port=8770`，不会自动关闭其他服务。
 
-[uv](https://docs.astral.sh/uv/) 已安装时 Python 环境优先走 `uv sync`；未安装 uv 自动回退 `python3 -m venv` + pip，依赖来源相同。环境配置的完整命令（uv / venv+pip 两条路径、验证与常见问题）集中在 [`docs/environment.md`](docs/environment.md)。
+[uv](https://docs.astral.sh/uv/) 已安装时 Python 环境优先按已提交的 `uv.lock` 同步；未安装 uv 自动回退 `python3 -m venv` + pip。逐条创建 `.venv`、安装 requirements、更新锁文件和验证的完整命令见 [`docs/environment.md`](docs/environment.md)。
 
-未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。Python 不在默认路径时可用 `PYTHON_BIN=/path/to/python3.11 ./setup.sh`。
+未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。未安装 uv、使用 venv+pip 回退时，可用 `PYTHON_BIN=/path/to/python3.12 ./setup.sh` 指定 Python。
 
 根目录 `index.html` 仍可直接用现代浏览器离线打开，不需要安装依赖；它是独立导出入口，在线应用使用 `frontend/dist/index.html`。
 
@@ -71,7 +71,7 @@ python3 -B build.py
 | `opscope/evaluation` | 请求契约、结果转换、独立 worker 与任务运行时 |
 | `tests` | Python 单元测试和离线 JavaScript 契约测试 |
 | `start.sh` / `.env.example` | 单端口启动、开发模式、外部引擎路径示例 |
-| `setup.sh` / `pyproject.toml` | 环境配置入口：uv sync / venv+pip 回退与前端依赖安装，依赖声明与 requirements 对齐 |
+| `setup.sh` / `pyproject.toml` / `uv.lock` | 环境配置入口：锁定同步、venv+pip 回退与前端依赖安装 |
 | `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
 | `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
 | `data/modeling-catalog.json` / `opscope/offline/catalog_data.py` | 内置目录快照、示例配置、无结果模板 |

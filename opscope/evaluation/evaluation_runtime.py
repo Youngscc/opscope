@@ -9,8 +9,9 @@ import tempfile
 from threading import Lock
 import uuid
 
-from evaluation_contract import normalize_request
-from evaluation_results import evaluation_payload
+from .evaluation_contract import normalize_request
+from .evaluation_results import evaluation_payload, stamp
+from .worker_stream import stream_worker
 
 ROOT = Path(__file__).resolve().parent
 
@@ -87,24 +88,79 @@ class EvaluationRuntime:
         self.pool.submit(self.run, job_id, request)
         return {'id': job_id, 'status': 'queued'}
 
-    def run(self, job_id, request):
-        with self.lock:
-            self.jobs[job_id]['status'] = 'running'
-        try:
-            raw = self.invoke(request)
-            payload = evaluation_payload(request, raw, job_id)
-            update = {'status': 'completed', 'payload': payload}
-        except subprocess.TimeoutExpired:
-            update = {'status': 'failed', 'reason': '评估超时，请缩小本批次范围后重试。'}
-        except Exception:
-            update = {'status': 'failed', 'reason': '评估失败，请检查计算环境后重试。'}
-        with self.lock:
-            self.jobs[job_id].update(update)
+    def stream_method(self, request, kind, on_row):
+        env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
+        env.pop('PYTHONPATH', None)
+        if kind == 'roofline':
+            command = [self.python, '-B', str(ROOT / 'engine_worker.py'), str(self.engine_root)]
+            return stream_worker(command, request, (self.timeout, self.engine_root, env), on_row)
+        with tempfile.TemporaryDirectory(prefix='opscope-tilesim-') as directory:
+            env.update(MPLCONFIGDIR=directory, XDG_CACHE_HOME=directory)
+            command = [self.tilesim_python, '-B', str(ROOT / 'tilesim_worker.py')]
+            stream_worker(command, request, (self.timeout, directory, env), on_row)
 
-    def get(self, job_id):
+    def stream(self, request, on_row):
+        groups = [('roofline', [m for m in request['method_ids'] if m != 'tilesim' or not self.tilesim_python])]
+        if self.tilesim_python and 'tilesim' in request['method_ids']:
+            groups.append(('tilesim', ['tilesim']))
+        for kind, methods in groups:
+            if not methods:
+                continue
+            finished = set()
+            def forward(row):
+                if row['status'] in {'succeeded', 'failed', 'unsupported'}:
+                    finished.add((row['hardware'], row['method']))
+                on_row(row)
+            try:
+                self.stream_method({**request, 'method_ids': methods}, kind, forward)
+                if len(finished) != len(request['hardware_ids']) * len(methods):
+                    raise ValueError('incomplete results')
+            except (OSError, ValueError, subprocess.SubprocessError) as exc:
+                reason = f'{kind}评估超时，请缩小范围' if isinstance(exc, subprocess.TimeoutExpired) else f'{kind}环境或执行失败'
+                for hardware in request['hardware_ids']:
+                    for method in methods:
+                        if (hardware, method) not in finished:
+                            on_row({'hardware': hardware, 'method': method, 'status': 'failed',
+                                    'result': None, 'reason': reason})
+
+    def publish(self, job_id, request, rows, status='running', reason=None):
+        payload = evaluation_payload(request, {'rows': list(rows.values()), 'status': status}, job_id)
+        with self.lock:
+            job = self.jobs[job_id]
+            job.update(status=status, payload=payload, revision=job.get('revision', 0) + 1)
+            if reason:
+                job['reason'] = reason
+
+    def run(self, job_id, request):
+        rows = {(h, m): {'hardware': h, 'method': m, 'status': 'queued',
+                        'result': None, 'reason': '等待评估'}
+                for h in request['hardware_ids'] for m in request['method_ids']}
+        def receive(row):
+            key = row['hardware'], row['method']
+            if key not in rows or rows[key]['status'] in {'succeeded', 'failed', 'unsupported'}:
+                raise ValueError('unexpected worker result')
+            rows[key] = {**row, 'finished_at': stamp() if row['status'] != 'running' else None}
+            self.publish(job_id, request, rows)
+        self.publish(job_id, request, rows)
+        try:
+            self.stream(request, receive)
+            self.publish(job_id, request, rows, 'completed')
+        except Exception as exc:
+            reason = '评估超时，请缩小本批次范围后重试。' if isinstance(exc, subprocess.TimeoutExpired) else '评估失败，请检查计算环境后重试。'
+            for row in rows.values():
+                if row['status'] in {'queued', 'running'}:
+                    row.update(status='failed', reason=reason)
+            self.publish(job_id, request, rows, 'failed', reason)
+
+    def get(self, job_id, since_revision=None):
         with self.lock:
             value = self.jobs.get(job_id)
-            return deepcopy({k: v for k, v in value.items() if k != 'request'}) if value else None
+            if value is None:
+                return None
+            fields = {k: v for k, v in value.items() if k != 'request' and
+                      (k != 'payload' or since_revision != value.get('revision'))}
+        # Published payloads are immutable; copying large traces need not block workers.
+        return deepcopy(fields)
 
     def close(self):
         self.pool.shutdown(wait=True)

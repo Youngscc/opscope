@@ -1,5 +1,5 @@
 """Illustrative execution records, independent of actual hardware/tool output."""
-from fixtures import BOUND_HINTS, EXECUTION_CONFIG, RESOURCE_STATS, ROOFLINE_CONFIG
+from .fixtures import BOUND_HINTS, EXECUTION_CONFIG, RESOURCE_STATS, ROOFLINE_CONFIG
 
 
 def roofline_record(hardware, latency):

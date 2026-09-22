@@ -13,7 +13,7 @@ watch(()=>props.rows, rows=>{
     const {trace_view,...execution}=r.execution;return {...r,execution}
   })
   const payload=Configuration.public_export({schema:s.data!.schema,synthetic:s.data!.synthetic,notice:s.data!.notice,
-    workload:s.data!.workload,configuration:s.config,results},s.data!.catalog)
+    workload:s.data!.workload,configuration:s.config,evaluation:s.data!.evaluation,results},s.data!.catalog)
   text.value=JSON.stringify(payload,null,results.some(r=>r.execution?.events?.length>5000)?0:2)
   if(url.value)URL.revokeObjectURL(url.value)
   url.value=URL.createObjectURL(new Blob([text.value],{type:'application/json'}))

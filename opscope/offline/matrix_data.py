@@ -103,6 +103,8 @@ def evaluation_comparison_issues(left, right):
         issues.append('硬件与方法同时变化')
     if a.get('engine') != b.get('engine'):
         issues.append('引擎或校准版本不同')
+    if left['hardware'] != right['hardware'] and any(r.get('hardware_snapshot', {}).get('borrowed_from') for r in (left, right)):
+        issues.append('包含借用配置，不能代表真实型号差异')
     if any(r.get('synthetic') for r in (left, right)):
         issues.append('示例与预测不能混合比较')
     return issues
@@ -133,6 +135,9 @@ def prepare_matrix(results):
             'error_label': f'{delta:+.1f}%' if delta is not None else '—',
             'note': {'compute': '计算受限', 'memory': '访存受限', 'latency': '固定开销'}.get(row.get('bound'), row.get('bound')) or ('瓶颈未提供' if available else row['reason']),
         }
+        if available and row.get('task', {}).get('actual_backend') == 'tilesim':
+            borrowed = row.get('hardware_snapshot', {}).get('borrowed_from')
+            row['matrix']['note'] = ('借用 ' + borrowed + ' · ' if borrowed else '') + row['source_label']
         row['sections'] = detail_sections(row)
     pairs = {a['id'] + '|' + b['id']: pair_summary(a, b)
              for a in results for b in results if a['available'] and b['available'] and a['id'] != b['id']}

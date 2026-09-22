@@ -1,5 +1,5 @@
 """Synthetic totals for unnamed methods; never invent an execution backend."""
-from task_details import facts, hardware_detail, input_detail, task_overview
+from .task_details import facts, hardware_detail, input_detail, task_overview
 
 
 def virtual_result(row, latency, reference, summary, max_time):

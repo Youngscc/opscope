@@ -2,8 +2,8 @@
 import copy
 import unittest
 
-from build import build_payload
-from matrix_data import chart_scales, comparison_issues, nice_ceiling, pair_summary, parsed_facts, prepare_matrix
+from opscope.offline.build import build_payload
+from opscope.offline.matrix_data import chart_scales, comparison_issues, nice_ceiling, pair_summary, parsed_facts, prepare_matrix
 
 
 class MatrixDataTest(unittest.TestCase):

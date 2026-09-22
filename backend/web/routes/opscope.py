@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from build import build_payload, render_page
+from opscope.offline.build import build_payload, render_page
 
 router = APIRouter(prefix='/api/opscope', tags=['opscope'])
 
@@ -60,16 +60,16 @@ async def submit(request: Request):
         return error(str(exc) if isinstance(exc, ValueError) else '配置格式无效。')
 
 
-def get_job(request, job_id):
+def get_job(request, job_id, since_revision=None):
     runtime = getattr(request.app.state, 'opscope_runtime', None)
     if not re.fullmatch('[a-f0-9]{32}', job_id) or runtime is None:
         return None
-    return runtime.get(job_id)
+    return runtime.get(job_id) if since_revision is None else runtime.get(job_id, since_revision)
 
 
 @router.get('/evaluations/{job_id}')
-def evaluation(request: Request, job_id: str):
-    return get_job(request, job_id) or error('任务不存在或已过期。', 404)
+def evaluation(request: Request, job_id: str, since_revision: int | None = None):
+    return get_job(request, job_id, since_revision) or error('任务不存在或已过期。', 404)
 
 
 @router.get('/evaluations/{job_id}/snapshot')

@@ -49,3 +49,20 @@ test('snapshot opens with captured config while demo restore retains fixtures',(
   assert.equal(c.state.chart,'latency');
   assert.equal(c.state.hardware.has('h200'),true);
 });
+
+test('partial results arrive while polling continues before final completion',async()=>{
+  const c=context();const accepted=[];let release;
+  c.evaluation_request=async(path)=>{
+    if(path==='/api/evaluations')return {id:'job'};
+    if(!accepted.length)return {status:'running',revision:1,payload:{name:'first'}};
+    return await new Promise(r=>release=r);
+  };
+  c.accept_evaluation=(payload,status)=>{accepted.push(payload.name);c.state.evaluating=status==='running'};
+  c.setTimeout=resolve=>setImmediate(resolve);
+  const pending=c.run_evaluation();
+  while(!release)await new Promise(r=>setImmediate(r));
+  assert.deepEqual(accepted,['first']);assert.equal(c.state.evaluating,true);
+  release({status:'completed',revision:2,payload:{name:'final'}});
+  await pending;
+  assert.deepEqual(accepted,['first','final']);assert.equal(c.state.evaluating,false);
+});

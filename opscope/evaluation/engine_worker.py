@@ -9,7 +9,13 @@ import subprocess
 import sys
 import time
 
-from evaluation_contract import digest, hardware_key
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+if __package__:
+    from .evaluation_contract import digest, hardware_key
+else:
+    from evaluation_contract import digest, hardware_key
 
 
 def engine_identity(root):
@@ -73,7 +79,7 @@ def roofline(config, hardware, identity):
             'wall_time_ms': (time.monotonic() - started) * 1000}
 
 
-def evaluate(request, root):
+def evaluate(request, root, on_row=None):
     identity, caps = engine_identity(root), capabilities()
     rows = []
     for hardware in request['hardware_ids']:
@@ -81,14 +87,20 @@ def evaluate(request, root):
             row = {'hardware': hardware, 'method': method, 'status': 'unsupported', 'result': None}
             key = hardware_key(hardware)
             reason = unavailable_reason(request, method, key, caps)
+            if method == 'roofline' and hardware in {'tilesim:910B1', 'tilesim:910B4'}:
+                reason = '缺少此型号的 Roofline 规格（矩阵/向量峰值、整卡 HBM 带宽）；现有 TileSim 配置不能直接替代'
             if reason:
                 row['reason'] = reason
             else:
+                if on_row:
+                    on_row({**row, 'status': 'running', 'reason': '正在评估…'})
                 try:
                     row.update(status='succeeded', result=roofline(request['configuration'], key, identity))
                 except Exception as exc:
                     row.update(status='failed', reason=f'评估失败（{type(exc).__name__}），请核对算子与硬件配置。')
             rows.append(row)
+            if on_row:
+                on_row(row)
     return {'rows': rows, 'capabilities': caps}
 
 
@@ -107,14 +119,17 @@ def unavailable_reason(request, method, key, caps):
 
 
 def main():
+    output = sys.stdout
+    def emit(row):
+        print(json.dumps({'row': row}, ensure_ascii=False, allow_nan=False), file=output, flush=True)
     root = Path(sys.argv[1]).resolve()
     for path in (root, root / 'backend/train', root / 'tilesim'):
         sys.path.insert(0, str(path))
     # Upstream import-time diagnostics must not corrupt the JSON protocol.
     with contextlib.redirect_stdout(sys.stderr):
         request = json.load(sys.stdin)
-        result = capabilities() if request.get('probe') else evaluate(request, root)
-    print(json.dumps(result, ensure_ascii=False, allow_nan=False))
+        result = capabilities() if request.get('probe') else evaluate(request, root, emit if request.get('_stream') else None)
+    print(json.dumps({'done': True} if request.get('_stream') else result, ensure_ascii=False, allow_nan=False), flush=True)
 
 
 if __name__ == '__main__':

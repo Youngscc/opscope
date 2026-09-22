@@ -1,7 +1,7 @@
 """Placeholder methods expose synthetic totals without claiming execution evidence."""
 import unittest
 
-from build import build_payload
+from opscope.offline.build import build_payload
 
 
 class VirtualMethodsTest(unittest.TestCase):

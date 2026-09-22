@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from fixtures import HARDWARE, METHODS
+from .fixtures import HARDWARE, METHODS
 
 
 TEMPLATE_LABELS = {
@@ -36,7 +36,8 @@ def operator_groups(operators):
 
 
 def catalog_payload():
-    catalog = json.loads(Path(__file__).with_name('data').joinpath('modeling-catalog.json').read_text())
+    root = Path(__file__).resolve().parents[2]
+    catalog = json.loads(root.joinpath('data/modeling-catalog.json').read_text())
     demo = {'id': 'demo:matmul', 'key': 'matmul', 'name': 'MatMul', 'domain': 'demo',
             'category': 'Linear', 'op_type': 'MatMul', 'configurable': True,
             'reason': None, 'description': '用于界面对比的合成示例配置。',

@@ -1,8 +1,8 @@
 """Check task context, units and provenance independently of a running backend."""
 import unittest
 
-from build import build_payload
-from task_details import facts
+from opscope.offline.build import build_payload
+from opscope.offline.task_details import facts
 
 
 class TaskDetailTest(unittest.TestCase):

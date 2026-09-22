@@ -235,7 +235,7 @@ function export_results(detail_only = false) {
     const {trace_view, ...execution} = fields.execution;
     return {...fields, execution};
   });
-  const payload = {schema: data.schema, synthetic: data.synthetic, notice: data.notice, workload: data.workload, configuration: state.config, catalog_revision: data.catalog.revision, results};
+  const payload = {schema: data.schema, synthetic: data.synthetic, notice: data.notice, workload: data.workload, configuration: state.config, catalog_revision: data.catalog.revision, evaluation: data.evaluation, results};
   const large_trace = results.some(row => row.execution?.events?.length > 5000);
   const json = JSON.stringify(Configuration.public_export(payload, data.catalog), null, large_trace ? 0 : 2);
   by_id('export-json').value = json;

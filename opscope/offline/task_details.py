@@ -1,7 +1,7 @@
 """Task context for synthetic single-operator results, without invented runs."""
 import html
 
-from fixtures import HARDWARE, METHODS
+from .fixtures import HARDWARE, METHODS
 
 
 def workload_record():

@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { EvaluationSession } from '../src/stores/evaluation-session.ts'
+import { initialHardwareIds } from '../src/stores/hardware-selection.ts'
 const Configuration = createRequire(import.meta.url)('../../configuration.js')
 
 test('old completion cannot replace a newly configured run', async () => {
@@ -23,4 +24,15 @@ test('shape edits preserve unknowns and enforce contraction dimensions', () => {
   assert.deepEqual(Configuration.parse_shape('128 × 256'),[128,256])
   const config={operator_id:'demo:matmul',inputs:[{name:'A',shape:[128,256],dtype:'bf16'},{name:'B',shape:[128,128],dtype:'bf16'}],options:{}}
   assert.equal(Configuration.validate(config,{configurable:true},['bf16'])[0].field,'shape-1')
+})
+
+test('TileSim startup selects catalog IDs instead of backend model names', () => {
+  const hardware = [
+    {id:'h200', name:'NVIDIA H200', group:'demo'},
+    {id:'modeling:H200_Server', name:'H200_Server', group:'modeling'},
+    {id:'tilesim:910B1', name:'Ascend 910B1', group:'tilesim'},
+    {id:'tilesim:910B4', name:'Ascend 910B4', group:'tilesim'},
+  ]
+  assert.deepEqual(initialHardwareIds(hardware, true), ['h200','tilesim:910B1','tilesim:910B4'])
+  assert.deepEqual(initialHardwareIds(hardware, false), ['h200'])
 })

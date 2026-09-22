@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const {test} = require('node:test');
 const fs = require('node:fs');
-const Config = require('./configuration.js');
+const Config = require('../configuration.js');
 const payload = JSON.parse(fs.readFileSync(0, 'utf8'));
 const catalog = payload.catalog;
 const demo = catalog.default_config;

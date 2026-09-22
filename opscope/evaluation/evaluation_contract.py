@@ -3,13 +3,14 @@ import hashlib
 import json
 import math
 
-from catalog_data import all_hardware, catalog_payload
-from fixtures import METHODS
+from opscope.offline.catalog_data import all_hardware, catalog_payload
+from opscope.offline.fixtures import METHODS
 
 BASIC = {'matmul', 'linear', 'bmm', 'flash_attention', 'layernorm', 'rms_norm',
          'swiglu', 'embedding', 'silu', 'gelu', 'softmax'}
 ALIASES = {'ascend': 'Adevice03_Server', 'h100': 'H100_Server',
-           'h200': 'H200_Server', 'b200': 'B200_Server', 'b300': 'B300_Server'}
+           'h200': 'H200_Server', 'b200': 'B200_Server', 'b300': 'B300_Server',
+           'r200': 'R200_Server'}
 BOUNDARY = 'operator performance model; no host or transfers; device kernel unspecified'
 
 
@@ -18,11 +19,11 @@ def digest(value):
                                      allow_nan=False).encode()).hexdigest()
 
 
-def selected_ids(value, allowed):
+def selected_ids(value, allowed, label):
     if not isinstance(value, list) or not value or len(value) > len(allowed):
-        raise ValueError('请至少选择一个有效比较项。')
+        raise ValueError(f'请至少选择一个有效{label}。')
     if any(not isinstance(x, str) or x not in allowed for x in value):
-        raise ValueError('比较项不在内置目录中。')
+        raise ValueError(f'所选{label}不在内置目录中，请刷新页面后重试。')
     return list(dict.fromkeys(value))
 
 
@@ -48,8 +49,8 @@ def normalize_request(body):
     supported = op['id'] == 'demo:matmul' or (op['domain'] == 'train' and op['key'] in BASIC)
     if supported:
         validate_tensors(op['key'], tensors)
-    hardware = selected_ids(body.get('hardware_ids'), {x['id'] for x in all_hardware(catalog)})
-    methods = selected_ids(body.get('method_ids'), {x[0] for x in METHODS})
+    hardware = selected_ids(body.get('hardware_ids'), {x['id'] for x in all_hardware(catalog)}, '硬件')
+    methods = selected_ids(body.get('method_ids'), {x[0] for x in METHODS}, '方法')
     return {'configuration': canonical, 'hardware_ids': hardware, 'method_ids': methods,
             'supported': supported, 'configuration_hash': digest(canonical)}
 

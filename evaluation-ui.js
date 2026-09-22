@@ -17,7 +17,7 @@ function render_evaluation_controls() {
   const busy = Boolean(state.evaluating);
   by_id('run-evaluation').disabled = busy || !state.serviceReady || !state.hardware.size || !state.methods.size;
   by_id('run-evaluation').textContent = busy ? '评估中…' : '运行评估';
-  by_id('snapshot-link').hidden = !data.evaluation || !state.serviceReady;
+  by_id('snapshot-link').hidden = !data.evaluation || state.evaluating || data.evaluation.status === 'failed' || !state.serviceReady;
   if (data.evaluation) by_id('snapshot-link').href = `/api/opscope/evaluations/${data.evaluation.id}/snapshot`;
   by_id('data-kind').textContent = evaluation_label();
   document.querySelector('.detail-demo').textContent = '/ ' + evaluation_label();
@@ -43,8 +43,8 @@ function show_evaluation_pending() {
   delete data.evaluation;
   data.results = Configuration.project(state.config, [], data.pending_results, {}).map(row => {
     const selected = state.hardware.has(row.hardware) && state.methods.has(row.method);
-    return {...row, synthetic: false, workload: {...row.workload, synthetic: false}, reason: selected ? '正在评估…' : '本批次未选择此组合',
-      task: {...row.task, synthetic: false, status: selected ? 'running' : 'not_run'}};
+    return {...row, synthetic: false, workload: {...row.workload, synthetic: false}, reason: selected ? '等待评估' : '本批次未选择此组合',
+      task: {...row.task, synthetic: false, status: selected ? 'queued' : 'not_run'}};
   });
   data.workload = {...Configuration.workload(state.config), synthetic: false};
   state.selected = []; state.selecting = false; state.scope = null;
@@ -52,15 +52,17 @@ function show_evaluation_pending() {
   render_workload_heading(); update_filters(); render_evaluation_controls();
 }
 
-function accept_evaluation(payload) {
+function accept_evaluation(payload, status = 'completed') {
   Object.assign(data, payload);
   state.config = Configuration.clone(payload.initial_configuration);
-  state.chart = 'latency'; state.metric = 'latency';
-  state.evaluating = false;
+  state.evaluating = status === 'running';
   const info = payload.evaluation;
-  by_id('evaluation-message').textContent = `${info.success_count} / ${info.total} 个组合完成预测；其余组合可点开查看原因。`;
+  by_id('evaluation-message').textContent = state.evaluating
+    ? `已处理 ${info.finished_count} / ${info.total} 个组合 · 已有 ${info.success_count} 个预测，结果持续更新中…`
+    : `${info.success_count} / ${info.total} 个组合完成预测；其余组合可点开查看原因。`;
   render_workload_heading(); render_filters(); update_filters(); render_evaluation_controls();
-  announce('评估完成，矩阵与图表已更新。');
+  if (by_id('detail-panel').open) render_detail_content();
+  if (!state.evaluating) announce('评估完成，矩阵与图表已更新。');
 }
 
 async function run_evaluation() {
@@ -68,16 +70,18 @@ async function run_evaluation() {
   const token = state.evaluationToken = (state.evaluationToken || 0) + 1;
   const request = {configuration: Configuration.clone(state.config),
     hardware_ids: [...state.hardware], method_ids: [...state.methods]};
-  state.evaluating = true;
+  state.evaluating = true; state.chart = 'latency'; state.metric = 'latency';
   show_evaluation_pending();
-  by_id('evaluation-message').textContent = '正在计算所选组合，结果将统一更新…';
+  by_id('evaluation-message').textContent = '正在计算所选组合，结果将逐个显示…';
   try {
     const job = await evaluation_request('/api/evaluations', request);
+    let revision = -1;
     while (token === state.evaluationToken) {
-      const current = await evaluation_request(`/api/evaluations/${job.id}`);
+      const current = await evaluation_request(`/api/evaluations/${job.id}?since_revision=${revision}`);
       if (token !== state.evaluationToken) return;
+      if (current.payload) {accept_evaluation(current.payload, current.status); revision = current.revision ?? revision;}
       if (current.status === 'failed') throw new Error(current.reason);
-      if (current.status === 'completed') {accept_evaluation(current.payload); return;}
+      if (current.status === 'completed') return;
       await new Promise(resolve => setTimeout(resolve, 700));
     }
   } catch (error) {
@@ -85,7 +89,7 @@ async function run_evaluation() {
     state.evaluating = false;
     const message = error.name === 'TimeoutError' ? '服务响应超时，请稍后重新运行。' : error.message;
     by_id('evaluation-message').textContent = message;
-    data.results.filter(row => row.task.status === 'running').forEach(row => {
+    data.results.filter(row => ['queued', 'running'].includes(row.task.status)).forEach(row => {
       row.task.status = 'failed'; row.reason = message;
     });
     render_workload_heading(); update_filters(); render_evaluation_controls();
@@ -103,7 +107,7 @@ async function initialize_evaluation() {
     try {
       const info = await evaluation_request('/api/capabilities');
       state.serviceReady = info.ready;
-      state.serviceMessage = info.ready ? (info.tilesim ? 'Roofline / TileSim 已就绪 · TileSim 支持 MatMul · Ascend 910B1 / 910B4' : 'Roofline 已就绪 · ' + (info.tilesim_reason || 'TileSim 待接入')) : info.reason;
+      state.serviceMessage = info.ready ? (info.tilesim ? 'Roofline / TileSim 已就绪 · 支持范围按算子与硬件配置判定' : 'Roofline 已就绪 · ' + (info.tilesim_reason || 'TileSim 待接入')) : info.reason;
       if (info.tilesim && data.synthetic && !data.evaluation) {
         info.tilesim_hardware.forEach(id => state.hardware.add(id));
         render_filters(); update_filters();

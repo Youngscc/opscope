@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from build import FLOPS, LOGICAL_BYTES, build_payload, deviation
+from opscope.offline.build import FLOPS, LOGICAL_BYTES, build_payload, deviation
 
 
 class PresentationDataTest(unittest.TestCase):

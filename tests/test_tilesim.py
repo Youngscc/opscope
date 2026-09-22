@@ -4,13 +4,15 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from evaluation_contract import normalize_request
-from evaluation_results import evaluation_payload
-from evaluation_runtime import EvaluationRuntime
-from test_evaluation import request_body, raw_result
-from tilesim_contract import unsupported
-from tilesim_details import trace_geometry, union_time
-from tilesim_worker import compact_events
+from opscope.evaluation.evaluation_contract import normalize_request
+from opscope.evaluation.evaluation_results import evaluation_payload
+from opscope.evaluation.evaluation_runtime import EvaluationRuntime
+from opscope.evaluation.tilesim_contract import OPERATOR_KINDS, unsupported
+from opscope.evaluation.tilesim_adapters import api_request, logical_work, output_tensors
+from opscope.evaluation.tilesim_details import trace_geometry, union_time
+from opscope.evaluation.tilesim_worker import compact_events
+from opscope.offline.catalog_data import catalog_payload
+from tests.test_evaluation import request_body, raw_result
 
 
 def tile_result():
@@ -31,17 +33,17 @@ def tile_result():
 
 class TileSimTest(unittest.TestCase):
     def test_allowlist_and_limits(self):
-        # Names cannot substitute 9382/H200 for a certified 910B chip; bounds avoid runaway traces.
+        # Explicit mapped models are allowed; bounds still prevent runaway traces.
         body = request_body(); body['hardware_ids'] = ['tilesim:910B1']
         config = normalize_request(body)['configuration']
         self.assertIsNone(unsupported(config, 'tilesim:910B1'))
-        self.assertIn('未借用', unsupported(config, 'ascend'))
+        self.assertIsNone(unsupported(config, 'ascend'))
         config['inputs'][0]['shape'][0] = 129
         self.assertIn('尾块', unsupported(config, 'tilesim:910B1'))
         config['inputs'][0]['shape'][0] = 1048576
         self.assertIn('上限', unsupported(config, 'tilesim:910B1'))
         config['operator_id'] = 'train:flash_attention'
-        self.assertIn('其他算子', unsupported(config, 'tilesim:910B1'))
+        self.assertIn('BNSD', unsupported(config, 'tilesim:910B1'))
 
     def test_trace_union_not_sum_and_full_axis(self):
         # Overlapping channels occupy 10us, not 12us; all lanes share the same run-wide axis.
@@ -52,6 +54,52 @@ class TileSimTest(unittest.TestCase):
         self.assertEqual(view['cores'][0]['count'], 2)
         self.assertEqual(view['ticks'], ['0.000','2.500','5.000','7.500','10.000'])
         self.assertIn('M 160.0000 0 h 640.0000', view['cores'][0]['lanes'][1]['path'])
+
+    def test_expanded_operator_contracts(self):
+        # Every declared adapter has a complete default catalog contract, except the intentionally unresolved FA alias.
+        catalog = catalog_payload()
+        for operator_id in OPERATOR_KINDS:
+            op = next(item for item in catalog['operators'] if item['id'] == operator_id)
+            config = {'operator_id': operator_id, 'key': op['key'],
+                      'inputs': [{key: tensor[key] for key in ('name', 'role', 'shape', 'dtype')}
+                                 for tensor in op['inputs']]}
+            if any(None in tensor['shape'] for tensor in config['inputs']):
+                self.assertEqual(operator_id, 'infer:FlashAttentionScore')
+                self.assertIn('BNSD', unsupported(config, 'tilesim:910B1'))
+                continue
+            self.assertIsNone(unsupported(config, 'tilesim:910B1'), operator_id)
+            work = logical_work(config)
+            self.assertGreaterEqual(work['flops'], 0)
+            self.assertGreater(work['read_bytes'], 0)
+            self.assertEqual(work['outputs'], output_tensors(config))
+
+    def test_layernorm_and_theoretical_requests_preserve_semantics(self):
+        # LayerNorm fills the missing beta explicitly; Cast remains a TileSim theoretical model.
+        catalog = catalog_payload()
+        def config(operator_id):
+            op = next(item for item in catalog['operators'] if item['id'] == operator_id)
+            return {'operator_id': operator_id, 'key': op['key'],
+                    'inputs': [{key: tensor[key] for key in ('name', 'role', 'shape', 'dtype')}
+                               for tensor in op['inputs']]}
+        layer = api_request(config('train:layernorm'), '/tmp/910B1.yaml')
+        self.assertEqual(layer['op_name'], 'LayerNormV3')
+        self.assertEqual(layer['input_shapes'], [[1024, 4096], [4096], [4096]])
+        self.assertEqual(layer['output_shapes'], [[1024, 4096], [1024, 1], [1024, 1]])
+        cast = api_request(config('infer:Cast'), '/tmp/910B1.yaml', theoretical=True)
+        self.assertEqual(cast['op_name'], 'Cast')
+        self.assertEqual(cast['backend_type'], 'theo')
+        self.assertEqual(cast['output_precision'], ['FP32'])
+
+    def test_cost_theoretical_result_is_labeled_theoretical(self):
+        # A cost-model theoretical result must not be presented as an engineering prediction.
+        body = request_body(); body['hardware_ids'] = ['tilesim:910B1']; body['method_ids'] = ['tilesim']
+        request = normalize_request(body); result = tile_result()
+        result['engine']['mode'] = 'cost-theo'
+        raw = {'rows': [{'hardware': 'tilesim:910B1', 'method': 'tilesim',
+                         'status': 'succeeded', 'result': result}]}
+        row = next(r for r in evaluation_payload(request, raw, 'theo')['results'] if r['available'])
+        self.assertEqual(row['source_label'], '理论预测')
+        self.assertIn('成本模型理论模式', row['details']['overview'])
 
     def test_invalid_trace_is_not_shown(self):
         # Trace outside latency and zero/NaN durations are not accepted as usable simulation evidence.

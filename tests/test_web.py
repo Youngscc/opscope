@@ -13,9 +13,9 @@ try:
 except ImportError:
     FastAPI = None
 
-from build import build_payload
-from evaluation_contract import normalize_request
-from test_evaluation import request_body
+from opscope.offline.build import build_payload
+from opscope.evaluation.evaluation_contract import normalize_request
+from tests.test_evaluation import request_body
 
 JOB = 'a' * 32
 
@@ -28,8 +28,12 @@ class Runtime:
     def submit(self, body):
         self.body = normalize_request(body)
         return {'id': JOB, 'status': 'queued'}
-    def get(self, job_id):
-        return deepcopy(self.job) if job_id == JOB else None
+    def get(self, job_id, since_revision=None):
+        if job_id != JOB: return None
+        value = deepcopy(self.job)
+        if since_revision is not None and since_revision == value.get('revision'):
+            value.pop('payload', None)
+        return value
 
 
 @unittest.skipIf(FastAPI is None, 'Install backend/requirements-dev.txt to test FastAPI')
@@ -78,6 +82,18 @@ class WebTest(unittest.TestCase):
         self.runtime.job['status'] = 'running'
         self.assertEqual(self.client.get(f'/api/opscope/evaluations/{JOB}/snapshot').status_code, 409)
         self.assertEqual(self.client.get('/api/opscope/evaluations/unknown').status_code, 404)
+
+    def test_running_payload_and_revision_poll(self):
+        # Running responses may contain usable cards; unchanged polls omit their large traces.
+        self.runtime.job.update(status='running', revision=3)
+        path = f'/api/opscope/evaluations/{JOB}'
+        current = self.client.get(path+'?since_revision=2').json()
+        self.assertEqual(current['status'], 'running')
+        self.assertIn('payload', current)
+        unchanged = self.client.get(path+'?since_revision=3').json()
+        self.assertNotIn('payload', unchanged)
+        self.assertEqual(unchanged['revision'], 3)
+        self.assertEqual(self.client.get(path+'/snapshot').status_code, 409)
 
     def test_mount_in_existing_fastapi_host(self):
         # The host owns authentication/lifecycle; router works without standalone middleware.

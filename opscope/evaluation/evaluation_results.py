@@ -2,10 +2,10 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 
-from build import build_payload
-from matrix_data import prepare_matrix
-from task_details import facts
-from tilesim_details import tile_details, trace_geometry
+from opscope.offline.build import build_payload
+from opscope.offline.matrix_data import prepare_matrix
+from opscope.offline.task_details import facts
+from .tilesim_details import tile_details, trace_geometry
 
 
 def stamp():
@@ -79,12 +79,14 @@ def completed_row(row, raw, request, job_id):
                           'source': 'Roofline 模型预测', 'latency_us': latency,
                           'compute_us': r['compute_us'], 'memory_us': r['memory_us'],
                           'bound': r['bound'], 'events': [], 'instances': []})
-    row['task'].update(actual_backend='roofline', finished_at=stamp(), wall_time_ms=r['wall_time_ms'])
+    row['task'].update(actual_backend='roofline', finished_at=raw.get('finished_at') or stamp(), wall_time_ms=r['wall_time_ms'])
     if r['backend'] == 'tilesim':
-        row.update(source_label='工程预测', source_class='estimate-status generic')
+        mode = r['engine'].get('mode', 'dsl-eng')
+        label = '理论预测' if mode in {'dsl-theo', 'cost-theo'} else '工程预测'
+        row.update(source_label=label, source_class='estimate-status generic')
         row['task']['actual_backend'] = 'tilesim'
-        row['execution'].update(kind='tile_simulation', source='TileSim DSL 工程预测', events=events,
-                                trace_view=trace_geometry(events, latency))
+        row['execution'].update(kind='tile_simulation', source='TileSim ' + label, events=events,
+                                trace_view=trace_geometry(events, latency) if events else None)
         row['details'] = tile_details(row)
     else:
         row['details'] = detail_fields(row)
@@ -93,6 +95,7 @@ def completed_row(row, raw, request, job_id):
 
 def evaluation_payload(request, raw, job_id):
     payload = build_payload()
+    status = raw.get('status', 'completed')
     payload['demo_results'] = deepcopy(payload['results'])
     payload['demo_workload'] = payload['workload']
     payload['demo_matrix'] = payload['matrix']
@@ -116,8 +119,10 @@ def evaluation_payload(request, raw, job_id):
                    matrix=prepare_matrix(rows), initial_configuration=request['configuration'],
                    evaluation={'id': job_id, 'configuration_hash': request['configuration_hash'],
                                'hardware_ids': request['hardware_ids'], 'method_ids': request['method_ids'],
-                               'completed_at': stamp(), 'success_count': count, 'total': len(raw['rows'])})
+                               'status': status, 'completed_at': stamp() if status == 'completed' else None,
+                               'success_count': count, 'finished_count': sum(r['status'] in {'succeeded', 'failed', 'unsupported'} for r in raw['rows']),
+                               'total': len(request['hardware_ids']) * len(request['method_ids'])})
     for method in payload['methods']:
-        method['source'] = {'roofline': '解析预测', 'tilesim': '工程预测', 'profile': '未接入参考',
+        method['source'] = {'roofline': '解析预测', 'tilesim': '仿真预测', 'profile': '未接入参考',
                             'method3': '未接入', 'method4': '未接入'}[method['id']]
     return payload

@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from evaluation_runtime import EvaluationRuntime
+from opscope.evaluation.evaluation_runtime import EvaluationRuntime
 from .routes.opscope import router
 from .settings import Settings
 

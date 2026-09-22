@@ -4,11 +4,11 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from build import build_payload, render_page
-from engine_worker import unavailable_reason
-from evaluation_contract import digest, hardware_key, normalize_request
-from evaluation_results import evaluation_payload
-from evaluation_runtime import EvaluationRuntime
+from opscope.offline.build import build_payload, render_page
+from opscope.evaluation.engine_worker import unavailable_reason
+from opscope.evaluation.evaluation_contract import digest, hardware_key, normalize_request
+from opscope.evaluation.evaluation_results import evaluation_payload
+from opscope.evaluation.evaluation_runtime import EvaluationRuntime
 
 
 def request_body():
@@ -55,11 +55,15 @@ class EvaluationTest(unittest.TestCase):
 
     def test_unknown_methods_and_hardware(self):
         # A path or engine name cannot pass the fixed ID allowlist.
-        for key in ('hardware_ids', 'method_ids'):
+        for key, label in (('hardware_ids', '硬件'), ('method_ids', '方法')):
             body = request_body(); body[key] = ['../../private']
-            with self.assertRaises(ValueError): normalize_request(body)
+            with self.assertRaisesRegex(ValueError, f'所选{label}不在内置目录中'):
+                normalize_request(body)
+        body = request_body(); body['hardware_ids'] = ['910B1']
+        with self.assertRaisesRegex(ValueError, '所选硬件不在内置目录中'):
+            normalize_request(body)
         self.assertEqual(hardware_key('h200'), 'H200_Server')
-        self.assertIsNone(hardware_key('r200'))
+        self.assertEqual(hardware_key('r200'), 'R200_Server')
 
     def test_unsupported_template_is_explicit(self):
         # Catalog presence is not formula certification.
@@ -145,8 +149,8 @@ class EvaluationTest(unittest.TestCase):
         self.assertIn('/.venv/bin/python', runtime.python)
         request = normalize_request(request_body())
         runtime.jobs['job'] = {'id': 'job', 'status': 'queued', 'request': request}
-        invoke.side_effect = subprocess.TimeoutExpired('worker', 60)
-        runtime.run('job', request)
+        with patch.object(runtime, 'stream', side_effect=subprocess.TimeoutExpired('worker', 60)):
+            runtime.run('job', request)
         result = runtime.get('job')
         self.assertEqual(result['status'], 'failed')
         self.assertIn('超时', result['reason'])
@@ -155,5 +159,5 @@ class EvaluationTest(unittest.TestCase):
     def test_javascript_stale_response(self):
         # A completed old job must not replace a newly applied configuration.
         if not shutil.which('node'): self.skipTest('Node unavailable')
-        result = subprocess.run(['node', '--test', 'test_evaluation_ui.cjs'], capture_output=True, text=True)
+        result = subprocess.run(['node', '--test', 'tests/test_evaluation_ui.cjs'], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

@@ -7,8 +7,8 @@ import shutil
 import subprocess
 import unittest
 
-from build import build_payload
-from catalog_data import catalog_payload
+from opscope.offline.build import build_payload
+from opscope.offline.catalog_data import catalog_payload
 from tools.snapshot_catalog import dimension, tensor_template
 
 

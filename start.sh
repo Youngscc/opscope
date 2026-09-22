@@ -13,17 +13,25 @@ for arg in "$@"; do
     *) args+=("$arg") ;;
   esac
 done
-if [[ ! -x .venv/bin/python ]]; then
-  runtime_python="${PYTHON_BIN:-python3}"
-  if [[ -z "${PYTHON_BIN:-}" ]] && ! "$runtime_python" -c 'import sys; sys.exit(sys.version_info < (3,10))'; then
-    for candidate in python3.12 python3.11 python3.10; do
-      if command -v "$candidate" >/dev/null; then runtime_python="$candidate"; break; fi
-    done
+if command -v uv >/dev/null 2>&1; then
+  uv sync
+else
+  if [[ ! -x .venv/bin/python ]]; then
+    runtime_python="${PYTHON_BIN:-python3}"
+    if [[ -z "${PYTHON_BIN:-}" ]] && ! "$runtime_python" -c 'import sys; sys.exit(sys.version_info < (3,10))'; then
+      for candidate in python3.12 python3.11 python3.10; do
+        if command -v "$candidate" >/dev/null; then runtime_python="$candidate"; break; fi
+      done
+    fi
+    "$runtime_python" -c 'import sys; assert sys.version_info >= (3,10), "Python >= 3.10 required; set PYTHON_BIN"'
+    "$runtime_python" -m venv .venv
   fi
-  "$runtime_python" -c 'import sys; assert sys.version_info >= (3,10), "Python >= 3.10 required; set PYTHON_BIN"'
-  "$runtime_python" -m venv .venv
+  if ! .venv/bin/python -m pip --version >/dev/null 2>&1; then
+    echo '.venv 缺少 pip：该环境由 uv 创建但 uv 不在 PATH。请运行 uv sync，或删除 .venv 后重试。' >&2
+    exit 1
+  fi
+  .venv/bin/python -m pip install --disable-pip-version-check -q -r backend/requirements.txt
 fi
-.venv/bin/python -m pip install --disable-pip-version-check -q -r backend/requirements.txt
 if [[ ! -d frontend/node_modules ]]; then npm --prefix frontend ci; fi
 if [[ "$mode" == production ]]; then
   npm --prefix frontend run build

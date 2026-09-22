@@ -1,0 +1,16 @@
+# uv 用户的一键环境声明；精确版本与 backend/requirements*.txt 保持一致。
+# 未声明 build-system，uv 视为虚拟项目，只安装依赖，不把 opscope 本身装入环境。
+[project]
+name = "opscope"
+version = "0.1.0"
+description = "OpScope · 算子性能观察台的 Web 运行环境"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn==0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+]

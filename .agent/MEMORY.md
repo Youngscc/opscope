@@ -1,5 +1,27 @@
 # 项目记忆
 
+## 分类提交（2026-09-22，第二批）
+
+用户要求将未提交修改分类提交。本轮按“功能代码主体（逐结果增量+覆盖扩展+包重组）79dc0be”“CI与测试路径配套 cd44636”“文档与项目记忆”三类整理本地提交。提交前重新通过59项Python测试、3项前端测试、5份JS语法、Vue构建、离线构建确定性与产物一致性检查。opscope/ 新包与根目录删除在同一提交中由git识别为重命名。.arts/、.vscode/、trace.json 保持untracked不提交。本轮仅本地提交，未推送。
+
+## 最新：TileSim算子覆盖扩展（2026-09-22）
+
+TileSim不再只开放MatMul/FlashAttention。按当前目录契约登记26个模板，覆盖MatMul/Linear/BMM、稠密FA、LayerNorm/RMSNorm/AddRmsNorm、SiLU/GELU/Softmax、Mul/Add/Sigmoid/SwiGLU激活、固定axis=0 Embedding、Cast、DynamicQuant、MoeGatingTopK和TransposeBatchMatMul；DSL工程、成本模型工程和成本模型理论路径分别标记，不回退Roofline。融合SwiGLU MLP、未知axis/perm/group_list、量化缺完整输入和复合边界仍明确不支持。
+
+默认可解析的25个模板已在910B1与910B4逐项实跑成功；FlashAttentionScore默认head_dim为空且规模超过流水上限，缩小到[1,8,512,128]后两卡分别13.977425/18.839385μs并各输出1328事件。LayerNorm默认分别54.266292/72.481067μs，RMSNorm20.136326/24.294752μs。LayerNorm补零beta、LayerNormV4补单位gamma/零beta、GemmaRmsNorm借普通RMSNorm模型等假设进入详情。59项Python测试、3项前端状态测试、JS语法、Vue构建、离线构建和diff检查通过；尚未真机精度认证。详见[TileSim算子覆盖](../docs/tilesim-operator-coverage.md)。
+
+## 最新：按现有模型补齐覆盖（2026-09-22）
+
+已增加 R200_Server Roofline、910B1/B4 的 FA DSL 工程适配及现有 TileSim 硬件映射。9382→910B4、H100/B300→H200 明确标记借用；H200配置FP16 MatMul理论/FA工程API也已跑通。三种模式分别保留mode，流水可为空，占位与缺失不冒充实测。当前页面BF16 FA [2,32,512,128]已有9个预测：新增R200 Roofline3.935μs和910B1/910B4/借用910B4的TileSim71.165/109.768/109.768μs。8768服务已更新，页面配置保留并重新评估。
+
+仍不能从现有来源补齐：910B1/B4完整Roofline规格、GPU TileSim BF16参数、GB200/R200的L0C→L2带宽与FA工程存储参数。已改为明确原因。56项Python测试及前端检查通过，实跑batch/head对照、MatMul回归、浏览器FA详情/流水/JSON预览。无真机精度验证、未提交/推送，外部仓库未改。详见[覆盖计划与实跑记录](../docs/modeling-coverage-plan.md)。下文较早的仅MatMul/不允许借用说明为历史范围。
+
+## 最新：按组合逐卡展示（2026-09-22）
+
+按用户要求取消整批结束后统一显示。Roofline/TileSim worker通过逐行JSON输出组合状态；运行时增量发布带revision的部分payload，Vue和离线客户端700ms轮询更新。等待/运行/不支持/失败分别显示，已完成预测即时可查看、比较、导出；后续失败保留前面成功结果，修改配置继续隔离旧响应。HTML快照等整批完成；中途JSON保留批次状态与进度。细节见[逐结果方案](../docs/incremental-results.md)。
+
+本机8768服务已重启。浏览器确认16/40时4个Roofline预测可见、TileSim仍等待；32/40时部分JSON状态running且H100为277.935μs；最终7个预测且TileSim数值未变。52项Python测试（含4项离线交互检查）、2项前端状态测试、类型检查、Vue/离线构建及差异格式通过；新增屏障/子进程输出/超时/版本轮询覆盖。未提交或推送本轮修改。
+
 ## 分类提交（2026-09-22）
 
 用户要求将累计改动分类提交。本轮按“组件分析与输出审计”“实际评估与流水展示”“Vue/FastAPI框架与启动CI”“使用说明与项目记忆”四类整理本地提交。前三类提交为36d942a、00fb20a、1b38a92；本条记录随第四类文档提交。提交前重新通过47项Python测试、2项前端测试、Vue类型检查/构建、离线产物一致性与diff格式检查；未修改业务行为，未重复浏览器验收，沿用上一轮结果。本轮仅本地提交，未推送。
@@ -144,3 +166,15 @@ Vue页面位于frontend/src，FastAPI可挂载路由位于backend/web/routes/ops
 快照工具只读modeling受跟踪源码，保留路径/提交号/内容摘要，日常构建不依赖原仓库。未导入用户数据库或私有生产覆盖；未运行后端评估或修改modeling。23项Python测试（含6项Node配置测试）、三份JS语法通过。浏览器覆盖1366×768、375×812、算子搜索/类别筛选、未知维度阻止应用、配置取消/应用/示例恢复、通信禁用、硬件POD搜索选择、方法3详情、双比较及1/2条JSON内容。文件下载落盘、完整屏幕阅读器与真实后端仍未验收。临时小屏视口完成后恢复。见 [目录方案](../docs/operator-catalog-plan.md)。
 
 - 用户最新明确：不用考虑小屏，移动端用不上。后续设计与验收聚焦PC桌面；本轮此前进行过的小屏检查仅为历史记录，临时视口已恢复。
+
+## Python 目录整理（2026-09-22，已实现）
+
+根目录只保留 `build.py`、`serve.py` 两个 Python 兼容入口。离线构建和示例数据移入 `opscope/offline/`，请求契约、结果转换、运行时与 worker 移入 `opscope/evaluation/`，所有测试移入 `tests/`。后端直接从包导入；Roofline/TileSim worker 继续支持外部解释器按脚本启动。当前测试命令使用 `unittest discover -s tests`，详细边界见 [目录设计](../docs/python-layout.md)。
+
+已验证 56 项 Python 测试、两组离线 Node 契约测试、2 项前端状态测试、JS 语法、Vue 类型检查/构建和离线生成。两个 worker 的独立解释器 probe 均成功；TileSim 输出一个不影响执行的 Fontconfig 缓存警告。目录迁移不改变数据语义或页面交互。
+
+目录迁移后修复在线页启动选择：能力接口的 `tilesim_hardware` 是后端模型名称，不是目录 ID；前端现从 bootstrap 硬件目录选择 `tilesim:*` ID，不再提交 `910B1/H200` 等名称。后端非法选择提示区分硬件与方法。回归覆盖 TileSim 可用/不可用的初始选择，最小 Roofline 提交返回 202。
+
+## 算子语义去重审计（2026-09-22，仅分析）
+
+用户要求按算子内部逻辑而非名称去重。审计确认当前名称规则既漏合并异名同义项，也误合并同名异义项：MatMul/BMM/Linear/MatMulV3/TorchMm 可通过 batch、rank、weight transpose 形成同一规范算子的输入变体；训练 SwiGLU 是含三组权重投影的完整 MLP，推理 SwiGlu 只是末维二分激活，必须拆开。Embedding 推理资产缺显式权重，合并前需修正契约。量化、稀疏、分布式和融合算子只归同族，不直接去重。详细清单见 [语义去重审计](../docs/operator-semantic-dedup-audit.md)。本轮未修改目录或界面。

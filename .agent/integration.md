@@ -65,3 +65,7 @@ TileSim本体与硬件配置仍缺失，因此只提供可观察的不可用原�
 ## TileSim 接入状态（2026-09-22，已实现）
 
 已通过可选--tilesim-python连接独立环境，MatMul+910B1/910B4使用DSL工程路径，和Roofline分别执行，不使用旧适配器。支持范围、固定分块及事件预算见[接入设计](../docs/tilesim-integration-plan.md)。真实来源字段、流水、JSON与详情已联通；其他算子/芯片仍未验证，无真机精度认证。默认4096²FP16和128²BF16均在两个硬件模型上实跑成功。
+
+## 覆盖补齐更新（2026-09-22）
+
+已接入 R200_Server Roofline、910B1/B4 的 DSL 工程 FA（保留 B/N/S/D）和现有硬件到 TileSim 的映射。Ascend 9382 使用 910B4，H100/B300 使用 H200 均明确标记借用；不能解释为对应 SKU 的独立预测。H200 配置 FP16 MatMul 理论、FA 工程 API 已跑通；GPU BF16 配置不存在，GB200/R200 理论路径缺 L0C→L2 带宽、FA 工程缺 UB/L0；原仓库没有 910B1/B4 完整 Roofline 规格。详细验证及限制见[覆盖记录](../docs/modeling-coverage-plan.md)。外部仓库没有修改。

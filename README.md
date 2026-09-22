@@ -4,7 +4,7 @@
 
 用于比较同一个算子在不同硬件、不同评估方法下性能的 PC 应用。前端 Vue 3 / TypeScript / Vite / Pinia / Vue Router，后端 FastAPI / Uvicorn，与 modeling 的技术栈对齐。保留独立离线页面。
 
-**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 当前支持 910B1 / 910B4 的二维 MatMul；预测不等于真机实测，Profiling 尚未接入。**
+**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 已接入矩阵、Attention、归一化、激活、逐元素和固定轴查表等已验证算子族，具体支持取决于算子契约、硬件模型与 dtype；预测不等于真机实测，Profiling 尚未接入。**
 
 ## 快速使用
 
@@ -46,7 +46,7 @@
 
 ```bash
 .venv/bin/python -m pip install -r backend/requirements-dev.txt
-.venv/bin/python -B -m unittest discover -s . -p 'test_*.py' -v
+.venv/bin/python -B -m unittest discover -s tests -p 'test_*.py' -v
 npm --prefix frontend test
 npm --prefix frontend run build
 python3 -B build.py
@@ -58,25 +58,22 @@ python3 -B build.py
 
 ## 项目结构
 
+文档按主题整理在 [`docs/README.md`](docs/README.md)，维护脚本说明见 [`tools/README.md`](tools/README.md)。
+
 | 文件 | 作用 |
 | --- | --- |
 | `frontend/src` | Vue 页面、Pinia 状态、API 客户端与可复用组件 |
 | `backend/web` | FastAPI 应用、可挂载 APIRouter、运行配置与生命周期 |
+| `opscope/offline` | 示例数据、详情、矩阵预处理和离线单文件构建 |
+| `opscope/evaluation` | 请求契约、结果转换、独立 worker 与任务运行时 |
+| `tests` | Python 单元测试和离线 JavaScript 契约测试 |
 | `start.sh` / `.env.example` | 单端口启动、开发模式、外部引擎路径示例 |
 | `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
 | `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
-| `data/modeling-catalog.json` / `catalog_data.py` | 内置目录快照、示例配置、无结果模板 |
+| `data/modeling-catalog.json` / `opscope/offline/catalog_data.py` | 内置目录快照、示例配置、无结果模板 |
 | `configuration.js` / `catalog-ui.js` | 表单验证、配置隔离、目录及张量编辑窗口 |
 | `tools/snapshot_catalog.py` | 按需从 modeling 的受跟踪文件刷新目录，仅标准库 |
-| `test_catalog.py` / `test_configuration.cjs` | 目录完整性、未知值、配置隔离及恢复检查 |
-| `fixtures.py` | 固定硬件/方法、合成数值和校准元数据 |
-| `execution_data.py` | 合成执行记录、局部事件、资源活动 |
-| `build.py` | Python 预处理、详情生成、单文件打包 |
-| `task_details.py` | 任务来源、输入输出、硬件快照及新增详情内容 |
-| `matrix_data.py` | 统一图表尺度、详情字段分组、双结果可比性及差值预处理 |
-| `test_matrix_data.py` | 图表坐标、零值/缺失、比较口径及未知字段测试 |
-| `test_task_details.py` | 任务上下文、字节数和缺失语义测试 |
-| `test_build.py` | 数据口径与缺失语义测试 |
+| `build.py` / `serve.py` | 保持稳定的离线构建和服务启动入口 |
 | `AGENTS.md` | Agent 首先读取的工作规则 |
 | `.agent/MEMORY.md` | 已确认决策、验证边界和接入任务索引 |
 | `ARCHITECTURE.md` | 当前数据流及实现边界 |
@@ -103,7 +100,7 @@ python3 -B build.py
 
 ## 已验证与限制
 
-47 项 Python 测试、2 项前端状态测试、TypeScript 检查、Vite 和离线构建通过。FastAPI 路由在独立宿主挂载验证通过；真实 Roofline / TileSim 的端到端结果和原适配器一致。桌面验证配置校验/清空、双结果比较、流水选核/翻页和完整 JSON。仅PC使用，未做真机精度认证，尚未实际合入 modeling；集成边界见 [框架对齐说明](docs/framework-alignment.md)。
+56 项 Python 测试、2 项前端状态测试、TypeScript 检查、Vite 和离线构建通过。FastAPI 路由在独立宿主挂载验证通过；真实 Roofline / TileSim 的端到端结果和原适配器一致。桌面验证配置校验/清空、双结果比较、流水选核/翻页和完整 JSON。仅PC使用，未做真机精度认证，尚未实际合入 modeling；集成边界见 [框架对齐说明](docs/framework-alignment.md)。
 
 本包不包含 modeling 后端、数据库、原 Git 历史、个人 Skill 或外部服务凭据。源码仓库已同步到 GitHub 的 Youngscc/opscope；未部署网站，未新增开源许可证授权。
 
@@ -124,8 +121,8 @@ OPSCOPE_PORT=8768
 
 - 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
 - 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
-- 每个硬件/方法独立运行，无自动方法回退。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
-- `--tilesim-python` 可省略；配置后使用独立安装的 msopmodeling 1.0.9 DSL 工程路径。当前开放 Ascend 910B1 / 910B4 的二维 MatMul，FP16/BF16，M/N/K为128的倍数，最多80,000个流水事件。固定分块128/256/512/128，不执行自动寻优；其他硬件、算子及尾块明确不支持，不借用硬件配置。
+- 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
+- `--tilesim-python` 可省略；配置后使用独立安装的 msopmodeling 1.0.9。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
 - TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
 - “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。
 - 服务仅监听本机。任务保存在内存，最多同时2个、保留最近12个，每批计算超时60秒；重启会清空任务。需要留存的结果请下载HTML或JSON。

@@ -54,6 +54,14 @@ available=false 表示组合缺失，reason 保留原因；零耗时/零比例�
 
 ## TileSim 工程结果（2026-09-22，已接入）
 
-独立msopmodeling1.0.9的DSL EngMatmulL0，当前仅910B1/910B4二维MatMul。synthetic=false、measurement=false，execution.kind=tile_simulation，不冒充设备实测。通道分项与周期属于最晚结束核；各通道可重叠。L2字段为预测字节命中率；data_transfer为模型路径累计字节，不能当作真机HBM计数器。逻辑FLOPs=2MNK、逻辑张量字节和有效算力为本系统推导。
+独立msopmodeling1.0.9按算子选择DSL工程、成本模型工程或成本模型理论路径。910B1/910B4的MatMul和FA可提供DSL流水；LayerNorm/RMSNorm/BMM/激活等成本模型通常只提供汇总。synthetic=false、measurement=false，execution.kind=tile_simulation，不冒充设备实测。通道分项可重叠；L2字段为预测字节命中率；data_transfer为模型路径累计量，不能当作真机HBM计数器。逻辑FLOPs、张量字节和有效算力由本系统按算子语义推导，并与TileSim内部工作周期区分。
 
 固定输入分块128/256/512/128明确记录，非自动最优。输出与输入同FP16/BF16，累加精度未单独建模。整体compute_us/memory_us/bound、等待原因、实测参考与偏差均空。trace保留全部事件及6个规范字段（name/ts/dur/pid/tid/ph），省略冗长cat；原始模型占位值不提升为UI事实。按核通道活动用区间并集/全程时延，既非峰值利用率，也不用于推断同步等待。
+
+## 部分结果与进度（2026-09-22）
+
+任务运行中也可有payload与available=true结果。组合状态queued/running/succeeded/failed/unsupported/not_run分别表示等待/计算/成功/失败/不支持/本批未选；只有succeeded有预测数值，空缺为null。evaluation.total固定为本次请求硬件×方法数，finished_count统计所有终态组合，success_count只统计成功；status与completed_at表示整批状态。发布新组合保持已有结果ID与finished_at。中途JSON含evaluation元数据，不把部分结果当整批已完成；整批HTML快照仍需completed。
+
+## 预测模式与借用模型（2026-09-22）
+
+TileSim engine.mode区分dsl-eng/dsl-theo/cost-eng；只有真实events生成trace_view，其他路径为空且说明无流水。理论路径未赋值的周期/L2命中率/MTE1默认零改为null；工程API CUBE工作量为速率不能当周期，L1_cache元素按输入2B换算，API原值保留并标注固定占位字段。FA逻辑工作量采用B×N×S²×(4D+4)，不是引擎通道周期。借用硬件配置显示在卡片、硬件详情、JSON；涉及借用的跨硬件比较不计算真实型号加速比。

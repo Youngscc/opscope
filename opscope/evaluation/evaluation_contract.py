@@ -5,6 +5,10 @@ import math
 
 from opscope.offline.catalog_data import all_hardware, catalog_payload
 from opscope.offline.fixtures import METHODS
+if __package__:
+    from .operator_parameters import normalize as normalize_parameters
+else:
+    from operator_parameters import normalize as normalize_parameters
 
 BASIC = {'matmul', 'linear', 'bmm', 'flash_attention', 'layernorm', 'rms_norm',
          'swiglu', 'embedding', 'silu', 'gelu', 'softmax'}
@@ -43,8 +47,10 @@ def normalize_request(body):
     options = config.get('options', {})
     if not isinstance(options, dict) or options not in ({}, catalog['default_config']['options']):
         raise ValueError('当前评估不支持转置、非默认布局或累加精度选项。')
+    attributes = normalize_parameters(op['id'], config.get('attributes'))
     canonical = {'operator_id': op['id'], 'operator': op['display_name'], 'key': op['key'],
                  'domain': op['domain'], 'inputs': tensors, 'options': options,
+                 'attributes': attributes,
                  'boundary': BOUNDARY, 'source': op['source']}
     supported = op['id'] == 'demo:matmul' or (op['domain'] == 'train' and op['key'] in BASIC)
     if supported:

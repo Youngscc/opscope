@@ -1,0 +1,6393 @@
+[
+  {
+    "id": "demo:matmul",
+    "key": "matmul",
+    "name": "MatMul",
+    "domain": "demo",
+    "category": "Linear",
+    "op_type": "MatMul",
+    "configurable": true,
+    "reason": null,
+    "description": "用于界面对比的合成示例配置。",
+    "inputs": [
+      {
+        "name": "A",
+        "role": "input",
+        "shape": [
+          4096,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[M, K]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "B",
+        "role": "input",
+        "shape": [
+          4096,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[K, N]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "fixtures.py",
+      "sha256": null
+    },
+    "group_id": "matmul",
+    "display_name": "MatMul",
+    "public_id": "matmul:template-1",
+    "template_label": "二维矩阵 · A × B（示例）"
+  },
+  {
+    "id": "train:matmul",
+    "key": "matmul",
+    "name": "MatMul",
+    "domain": "train",
+    "category": "Linear",
+    "op_type": "aten.matmul",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "A",
+        "role": "input",
+        "shape": [
+          1024,
+          512
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 512]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "B",
+        "role": "input",
+        "shape": [
+          512,
+          256
+        ],
+        "dtype": "bf16",
+        "expression": "[512, 256]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "matmul",
+    "display_name": "MatMul",
+    "public_id": "matmul:template-2",
+    "template_label": "矩阵相乘 · A × B"
+  },
+  {
+    "id": "train:linear",
+    "key": "linear",
+    "name": "Linear",
+    "domain": "train",
+    "category": "Linear",
+    "op_type": "aten.linear",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          1024,
+          512
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 512]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          256,
+          512
+        ],
+        "dtype": "bf16",
+        "expression": "[256, 512]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "linear",
+    "display_name": "Linear",
+    "public_id": "linear:template-1",
+    "template_label": "二维输入 · input / weight"
+  },
+  {
+    "id": "train:bmm",
+    "key": "bmm",
+    "name": "BMM",
+    "domain": "train",
+    "category": "Linear",
+    "op_type": "aten.bmm",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "A",
+        "role": "input",
+        "shape": [
+          32,
+          128,
+          512
+        ],
+        "dtype": "bf16",
+        "expression": "[32, 128, 512]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "B",
+        "role": "input",
+        "shape": [
+          32,
+          512,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[32, 512, 128]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "bmm",
+    "display_name": "BMM",
+    "public_id": "bmm:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "train:flash_attention",
+    "key": "flash_attention",
+    "name": "FlashAttention",
+    "domain": "train",
+    "category": "Attention",
+    "op_type": "aten.scaled_dot_product_attention.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "Q",
+        "role": "input",
+        "shape": [
+          2,
+          32,
+          512,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[2, 32, 512, 128]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "K",
+        "role": "input",
+        "shape": [
+          2,
+          32,
+          512,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[2, 32, 512, 128]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "V",
+        "role": "input",
+        "shape": [
+          2,
+          32,
+          512,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[2, 32, 512, 128]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "flashattention",
+    "display_name": "FlashAttention",
+    "public_id": "flashattention:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "train:layernorm",
+    "key": "layernorm",
+    "name": "LayerNorm",
+    "domain": "train",
+    "category": "Normalization",
+    "op_type": "aten.layer_norm.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          1024,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[4096]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "layernorm",
+    "display_name": "LayerNorm",
+    "public_id": "layernorm:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "train:rms_norm",
+    "key": "rms_norm",
+    "name": "RMSNorm",
+    "domain": "train",
+    "category": "Normalization",
+    "op_type": "rms_norm",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          1024,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[4096]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "rmsnorm",
+    "display_name": "RMSNorm",
+    "public_id": "rmsnorm:template-1",
+    "template_label": "输入 + weight"
+  },
+  {
+    "id": "train:swiglu",
+    "key": "swiglu",
+    "name": "SwiGLU",
+    "domain": "train",
+    "category": "Activation",
+    "op_type": "swiglu",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "hidden",
+        "role": "input",
+        "shape": [
+          1024,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gate_w",
+        "role": "input",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[11008, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "up_w",
+        "role": "input",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[11008, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "down_w",
+        "role": "input",
+        "shape": [
+          4096,
+          11008
+        ],
+        "dtype": "bf16",
+        "expression": "[4096, 11008]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "swiglu",
+    "display_name": "SwiGLU",
+    "public_id": "swiglu:template-1",
+    "template_label": "融合投影 · hidden + 三组权重"
+  },
+  {
+    "id": "train:embedding",
+    "key": "embedding",
+    "name": "Embedding",
+    "domain": "train",
+    "category": "Embedding",
+    "op_type": "aten.embedding.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          32000,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[32000, 4096]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "indices",
+        "role": "input",
+        "shape": [
+          2,
+          512
+        ],
+        "dtype": "int32",
+        "expression": "[2, 512]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "embedding",
+    "display_name": "Embedding",
+    "public_id": "embedding:template-1",
+    "template_label": "权重表 + indices"
+  },
+  {
+    "id": "train:silu",
+    "key": "silu",
+    "name": "SiLU",
+    "domain": "train",
+    "category": "Activation",
+    "op_type": "aten.silu.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          1024,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 4096]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "silu",
+    "display_name": "SiLU",
+    "public_id": "silu:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "train:gelu",
+    "key": "gelu",
+    "name": "GELU",
+    "domain": "train",
+    "category": "Activation",
+    "op_type": "aten.gelu.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          1024,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[1024, 4096]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "gelu",
+    "display_name": "GELU",
+    "public_id": "gelu:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "train:softmax",
+    "key": "softmax",
+    "name": "Softmax",
+    "domain": "train",
+    "category": "Activation",
+    "op_type": "aten._softmax.default",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input",
+        "role": "input",
+        "shape": [
+          32,
+          32,
+          512,
+          512
+        ],
+        "dtype": "bf16",
+        "expression": "[32, 32, 512, 512]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [],
+    "source": {
+      "path": "backend/web/services/train/op_sim.py",
+      "sha256": "6e5379a5822239016577cc7daec6e064a7ee6420e39dc6378735b9e2892ad9dd"
+    },
+    "group_id": "softmax",
+    "display_name": "Softmax",
+    "public_id": "softmax:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:ChunkGatedDeltaRule",
+    "key": "ChunkGatedDeltaRule",
+    "name": "ChunkGatedDeltaRule",
+    "domain": "infer",
+    "category": "LinearAttention",
+    "op_type": "ChunkGatedDeltaRule",
+    "description": "Chunked Gated Delta Rule（chunk 版门控 Delta 规则，线性注意力的 prefill 形态）：按 chunk 切块并行地递推状态 S_t = α_t·S_{t-1} + β_t·(v_t − α_t·S_{t-1}k_t)k_t^T，并输出 o_t = S_t·(q_t·scale)。真机 op_def：ops-transformer/attention/chunk_gated_delta_rule/op_host/chunk_gated_delta_rule_def.cpp（query/key/value/beta/initial_state/actual_seq_lengths 全 REQUIRED，g 是 OPTIONAL 输入、scale_value 是 OPTIONAL 属性，按仓规落实现类不进资产）。张量名序与 op_def 声明序逐位一致（query key value beta initial_state actual_seq_lengths → out final_state；OPTIONAL 的 g 声明在 actual_seq_lengths 之后，被跳过不影响必填位逐位对齐）。真机内核 KERNEL_TYPE_MIX_AIC_1_2（cube 打 3 组 V×K 矩阵乘、vector/SFU 做 g 的累积与状态逐元素缩放），故 compute_unit 取 mix。形状按真机 aclnn 表取：query/key (T, Nk, Dk)、value (T, Nv, Dv)、beta (T, Nv)、initial_state (B, Nv, Dv, Dk)、actual_seq_lengths (B,)，输出 out (T, Nv, Dv)、final_state (B, Nv, Dv, Dk)。T 是打包后的扁平 token 轴（无 batch 分维），建模侧写 B * S。compute_flops 取每 token 每 value head 的 3 组 Dv×Dk 矩阵乘（v−α·Sk、⊗k 外积更新、S·q），与同算法的建模层算子 GatedDeltaNet 同口径（其表达式为 6 * B * S * linear_num_value_heads * linear_key_head_dim * linear_value_head_dim）；chunk 内的 q·k^T 与 attn·v 两组块内矩阵乘不计入，两侧一致。",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          2048,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_key_heads, key_head_dim]",
+        "unresolved_dimensions": [
+          "key_head_dim",
+          "num_key_heads"
+        ]
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          2048,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_key_heads, key_head_dim]",
+        "unresolved_dimensions": [
+          "key_head_dim",
+          "num_key_heads"
+        ]
+      },
+      {
+        "name": "value",
+        "role": "input",
+        "shape": [
+          2048,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_value_heads, value_head_dim]",
+        "unresolved_dimensions": [
+          "num_value_heads",
+          "value_head_dim"
+        ]
+      },
+      {
+        "name": "beta",
+        "role": "input",
+        "shape": [
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_value_heads]",
+        "unresolved_dimensions": [
+          "num_value_heads"
+        ]
+      },
+      {
+        "name": "initial_state",
+        "role": "input",
+        "shape": [
+          1,
+          null,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_value_heads, value_head_dim, key_head_dim]",
+        "unresolved_dimensions": [
+          "key_head_dim",
+          "num_value_heads",
+          "value_head_dim"
+        ]
+      },
+      {
+        "name": "actual_seq_lengths",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int32",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "shape": "[B * S, num_value_heads, value_head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "final_state",
+        "shape": "[B, num_value_heads, value_head_dim, key_head_dim]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention/ChunkGatedDeltaRule.json",
+      "sha256": "6a219c82a0fa4851a90241ac17c2e0a0e3c1476f171f7364a9e657b1b4d5fc81"
+    },
+    "group_id": "chunkgateddeltarule",
+    "display_name": "ChunkGatedDeltaRule",
+    "public_id": "chunkgateddeltarule:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:FlashAttentionScore",
+    "key": "FlashAttentionScore",
+    "name": "FlashAttentionScore",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "FlashAttentionScore",
+    "description": "FlashAttention score computation: softmax(QK^T * scale + mask) @ V with on-line softmax, BNSD layout; real_shift, drop_mask, padding_mask, atten_mask and the actual-seq/scale/rope inputs are all optional and live in the implementation class (aclnnFlashAttentionScore)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, S, qk_head_dim]",
+        "unresolved_dimensions": [
+          "qk_head_dim"
+        ]
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, seq_len, qk_head_dim]",
+        "unresolved_dimensions": [
+          "qk_head_dim"
+        ]
+      },
+      {
+        "name": "value",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, seq_len, qk_nope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_nope_head_dim"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "softmax_max",
+        "shape": "[B, num_attention_heads // tp_size, S, 8]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "softmax_sum",
+        "shape": "[B, num_attention_heads // tp_size, S, 8]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "softmax_out",
+        "shape": "[0, 0, 0, 0]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "attention_out",
+        "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention/FlashAttentionScore.json",
+      "sha256": "189f1c02153dbb2dcc60cf05a61b2e5d729f173b4f3ea3fcf9641fcb33f727a2"
+    },
+    "group_id": "flashattentionscore",
+    "display_name": "FlashAttentionScore",
+    "public_id": "flashattentionscore:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:FusedInferAttentionScore",
+    "key": "FusedInferAttentionScore",
+    "name": "FusedInferAttentionScore",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "FusedInferAttentionScore",
+    "description": "Fused inference attention (aclnnFusedInferAttentionScore V4): softmax(QK^T * scale) @ V, BNSD layout. The 31 inputs are declared in op_def order; key/value/several scale inputs are DYNAMIC rather than OPTIONAL, so the naming rule requires every one of them to be registered here. Attributes: num_heads=1, scale=1.0, pre_tokens/next_tokens=2147483647, input_layout=\"BSH\", num_key_value_heads=0, sparse_mode=0, inner_precise=1, block_size=0, antiquant_mode=0, softmax_lse_flag=false, out_dtype=0 (ops-transformer/attention/fused_infer_attention_score/op_host/fused_infer_attention_score_def.cpp)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, S, qk_head_dim]",
+        "unresolved_dimensions": [
+          "qk_head_dim"
+        ]
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]",
+        "unresolved_dimensions": [
+          "qk_head_dim"
+        ]
+      },
+      {
+        "name": "value",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_nope_head_dim"
+        ]
+      },
+      {
+        "name": "pse_shift",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          2048
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, S, kv_len]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "atten_mask",
+        "role": "input",
+        "shape": [
+          2048,
+          2048
+        ],
+        "dtype": "bool",
+        "expression": "[2048, 2048]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "actual_seq_lengths",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "actual_seq_lengths_kv",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "dequant_scale1",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "quant_scale1",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "dequant_scale2",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "quant_scale2",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "quant_offset2",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "antiquant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "antiquant_offset",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "block_table",
+        "role": "input",
+        "shape": [
+          1,
+          null
+        ],
+        "dtype": "int32",
+        "expression": "[B, max_num_blocks]",
+        "unresolved_dimensions": [
+          "max_num_blocks"
+        ]
+      },
+      {
+        "name": "query_padding_size",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "kv_padding_size",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key_antiquant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key_antiquant_offset",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "value_antiquant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "value_antiquant_offset",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key_shared_prefix",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]",
+        "unresolved_dimensions": [
+          "qk_head_dim"
+        ]
+      },
+      {
+        "name": "value_shared_prefix",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_nope_head_dim"
+        ]
+      },
+      {
+        "name": "actual_shared_prefix_len",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[B]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "query_rope",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_attention_heads // tp_size, S, qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "key_rope",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "key_rope_antiquant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          8,
+          2048,
+          1
+        ],
+        "dtype": "bf16",
+        "expression": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "dequant_scale_query",
+        "role": "input",
+        "shape": [
+          1,
+          32,
+          2048,
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[B, num_attention_heads // tp_size, S, 1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "learnable_sink",
+        "role": "input",
+        "shape": [
+          32
+        ],
+        "dtype": "bf16",
+        "expression": "[num_attention_heads // tp_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "q_start_idx",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "kv_start_idx",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "attention_out",
+        "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "softmax_lse",
+        "shape": "[B, num_attention_heads // tp_size, S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention/FusedInferAttentionScore.json",
+      "sha256": "add415435f34ada501dfb15608f208cc9806e96569c28261355c248a174575ef"
+    },
+    "group_id": "fusedinferattentionscore",
+    "display_name": "FusedInferAttentionScore",
+    "public_id": "fusedinferattentionscore:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:KvQuantSparseFlashAttention",
+    "key": "KvQuantSparseFlashAttention",
+    "name": "KvQuantSparseFlashAttention",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "KvQuantSparseFlashAttention",
+    "description": "Sparse FlashAttention with FP8-quantized paged K/V (aclnnKvQuantSparseFlashAttention); the dequant scales, block table and sequence-length tensors are OPTIONAL and not modeled",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, num_attention_heads // tp_size, kv_lora_rank + qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "kv_lora_rank",
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          null
+        ],
+        "dtype": "fp8",
+        "expression": "[B, seq_len, 1, kv_lora_rank + qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "kv_lora_rank",
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "value",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          null
+        ],
+        "dtype": "fp8",
+        "expression": "[B, seq_len, 1, kv_lora_rank]",
+        "unresolved_dimensions": [
+          "kv_lora_rank"
+        ]
+      },
+      {
+        "name": "sparse_indices",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, index_topk]",
+        "unresolved_dimensions": [
+          "index_topk"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "attention_out",
+        "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]",
+        "dtype": "fp8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention/KvQuantSparseFlashAttention.json",
+      "sha256": "9606ebd2b54d0d5d27b4c6af44ae2883afc3c295757da0d70226fdf609e1af17"
+    },
+    "group_id": "kvquantsparseflashattention",
+    "display_name": "KvQuantSparseFlashAttention",
+    "public_id": "kvquantsparseflashattention:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SparseFlashAttention",
+    "key": "SparseFlashAttention",
+    "name": "SparseFlashAttention",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "SparseFlashAttention",
+    "description": "Sparse flash attention: fused attention over index-selected KV positions (aclnnSparseFlashAttention)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, num_attention_heads, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, seq_len, 1, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "value",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, seq_len, 1, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "sparse_indices",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, index_topk]",
+        "unresolved_dimensions": [
+          "index_topk"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "attention_out",
+        "shape": "[B, S, num_attention_heads, head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "softmax_max",
+        "shape": "[B, num_attention_heads, S]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "softmax_sum",
+        "shape": "[B, num_attention_heads, S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention/SparseFlashAttention.json",
+      "sha256": "3aa6ac5e750f2e5013f65f6ffb5a4e3aa8528d697755dbf67cf93341012935b8"
+    },
+    "group_id": "sparseflashattention",
+    "display_name": "SparseFlashAttention",
+    "public_id": "sparseflashattention:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MatMulV3",
+    "key": "MatMulV3",
+    "name": "MatMulV3",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "MatMulV3",
+    "description": "Dense GEMM Y = X @ W^T (aclnnMatmul)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[intermediate_size, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/gemm/MatMulV3.json",
+      "sha256": "7ef1658a79aedefbe3fb75d59d605c52d9a179308d1b232d3199a4b6a6bc90a2"
+    },
+    "group_id": "matmulv3",
+    "display_name": "MatMulV3",
+    "public_id": "matmulv3:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:QuantBatchMatmulV3",
+    "key": "QuantBatchMatmulV3",
+    "name": "QuantBatchMatmulV3",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "QuantBatchMatmulV3",
+    "description": "Quantized batch matmul Y = X @ W^T with per-tensor dequant scale (aclnnQuantMatmulV3)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "fp8",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "fp8",
+        "expression": "[intermediate_size, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "scale",
+        "role": "parameter",
+        "shape": [
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/bmm/QuantBatchMatmulV3.json",
+      "sha256": "8c49edcc9f1b352ae8ac396ff8aa78cda7da49a610c0c2ec9722a4f13fd70206"
+    },
+    "group_id": "quantbatchmatmulv3",
+    "display_name": "QuantBatchMatmulV3",
+    "public_id": "quantbatchmatmulv3:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TransposeBatchMatMul",
+    "key": "TransposeBatchMatMul",
+    "name": "TransposeBatchMatMul",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "TransposeBatchMatMul",
+    "description": "Transpose fused batch matmul C[m,b,n] = A[b,m,k] @ B[b,k,n], the A transpose being selected by perm_x1 (aclnnTransposeBatchMatMul); bias and scale are optional and live in the implementation class",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "parameter",
+        "shape": [
+          1,
+          4096,
+          11008
+        ],
+        "dtype": "bf16",
+        "expression": "[B, hidden_size, intermediate_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/bmm/TransposeBatchMatMul.json",
+      "sha256": "4bb4a97f8cce8002f8663965d751dfbeaf9c4dd294073a9fddabf200ccbb17d8"
+    },
+    "group_id": "transposebatchmatmul",
+    "display_name": "TransposeBatchMatMul",
+    "public_id": "transposebatchmatmul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:AddRmsNorm",
+    "key": "AddRmsNorm",
+    "name": "AddRmsNorm",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "AddRmsNorm",
+    "description": "Residual add fused with RMS normalization: y = rmsnorm(x1 + x2), rstd is the reciprocal standard deviation and the pre-norm residual (aclnnAddRmsNorm)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gamma",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "rstd",
+        "shape": "[B * S, 1]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "x",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/AddRmsNorm.json",
+      "sha256": "bf7a7128e84f829c48a61527a55da4ef97be0da6a26ed4fc9bd9ba3e8fa9b658"
+    },
+    "group_id": "addrmsnorm",
+    "display_name": "AddRmsNorm",
+    "public_id": "addrmsnorm:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:AddRmsNormBias",
+    "key": "AddRmsNormBias",
+    "name": "AddRmsNormBias",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "AddRmsNormBias",
+    "description": "Residual add fused with biased RMS normalization: y = rmsnorm(x1 + x2, gamma, beta), rstd is the reciprocal standard deviation and x the pre-norm residual sum (aclnnAddRmsNormBias)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gamma",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "beta",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "rstd",
+        "shape": "[B * S, 1]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "x",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/AddRmsNormBias.json",
+      "sha256": "b6af0a6201a36d521c37f39174618e4a99af03122b82cfb0e9b68d2877ce878e"
+    },
+    "group_id": "addrmsnormbias",
+    "display_name": "AddRmsNormBias",
+    "public_id": "addrmsnormbias:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Cast",
+    "key": "Cast",
+    "name": "Cast",
+    "domain": "infer",
+    "category": "Quantization",
+    "op_type": "Cast",
+    "description": "Element-wise dtype conversion; the output dtype is chosen by the required dst_type attribute, so the asset models the bf16 -> fp32 path (aclnnCast)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/Cast.json",
+      "sha256": "f6021604a138fa6291cb377a1f619786e1b8ba476cd5b30a0d830c299ea63312"
+    },
+    "group_id": "cast",
+    "display_name": "Cast",
+    "public_id": "cast:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:CausalConv1d",
+    "key": "CausalConv1d",
+    "name": "CausalConv1d",
+    "domain": "infer",
+    "category": "LinearAttention",
+    "op_type": "CausalConv1d",
+    "description": "Causal depthwise 1-D convolution over the sequence axis with in-place conv-state update: y takes x's shape, conv_states output takes conv_states input's shape (same name declared as both input and output in the op_def). attrs: activation_mode default \"silu\", null_block_id default 0 (ops-transformer/mamba/causal_conv1d/op_host/causal_conv1d_def.cpp)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          512,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[K, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "conv_states",
+        "role": "input",
+        "shape": [
+          null,
+          null,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[num_cache_lines, state_len, hidden_size]",
+        "unresolved_dimensions": [
+          "num_cache_lines",
+          "state_len"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "conv_states",
+        "shape": "[num_cache_lines, state_len, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/CausalConv1d.json",
+      "sha256": "828f8fb64fac6a96a8e2ba0e8935c7fa69b69430b31cf4f1fb49df2ad5a6d42f"
+    },
+    "group_id": "causalconv1d",
+    "display_name": "CausalConv1d",
+    "public_id": "causalconv1d:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Cumsum",
+    "key": "Cumsum",
+    "name": "Cumsum",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "Cumsum",
+    "description": "Prefix sum over the token axis for low-latency MoE routing metadata (aclnnCumsum)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int64",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "axis",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, top_k]",
+        "dtype": "int64"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/Cumsum.json",
+      "sha256": "5f24e0426fd308490d5a8ffca41281766a5d3d5d8f26657b30f597236bbf9448"
+    },
+    "group_id": "cumsum",
+    "display_name": "Cumsum",
+    "public_id": "cumsum:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:DynamicMxQuant",
+    "key": "DynamicMxQuant",
+    "name": "DynamicMxQuant",
+    "domain": "infer",
+    "category": "Quantization",
+    "op_type": "DynamicMxQuant",
+    "description": "Dynamic block-MX quantization of activations: per-64-element E8M0 scale and FP8 result (aclnnDynamicMxQuant)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "fp8"
+      },
+      {
+        "name": "mxscale",
+        "shape": "[B * S, (hidden_size + 63) // 64, 2]",
+        "dtype": "fp8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/DynamicMxQuant.json",
+      "sha256": "04e4db80be968f345027bbfb06b531c2ac1528f4b1a4e14a40f44f04ca5c27a9"
+    },
+    "group_id": "dynamicmxquant",
+    "display_name": "DynamicMxQuant",
+    "public_id": "dynamicmxquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:DynamicQuantV2",
+    "key": "DynamicQuantV2",
+    "name": "DynamicQuantV2",
+    "domain": "infer",
+    "category": "Quantization",
+    "op_type": "DynamicQuantV2",
+    "description": "Dynamic per-token quantization to INT8 with a smoothing factor (aclnnDynamicQuantV2); smooth_scales and group_index are optional and live in the implementation class",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "int8"
+      },
+      {
+        "name": "scale",
+        "shape": "[B, S]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "offset",
+        "shape": "[B, S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/DynamicQuantV2.json",
+      "sha256": "6a547873002e466d615eea82464266852c08b67e2d2c569ef9a0be534d3204aa"
+    },
+    "group_id": "dynamicquantv2",
+    "display_name": "DynamicQuantV2",
+    "public_id": "dynamicquantv2:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:FusedGdnGating",
+    "key": "FusedGdnGating",
+    "name": "FusedGdnGating",
+    "domain": "infer",
+    "category": "LinearAttention",
+    "op_type": "FusedGdnGating",
+    "description": "GDN (Gated Delta Network) 融合门控：一次 kernel 出两路——g = -exp(a_log) * softplus(a + dt_bias)，beta_output = sigmoid(b)。softplus 取 (1/beta)*ln(1+exp(beta*(a+dt_bias)))，当 beta*(a+dt_bias) > threshold 时退线性近似防溢出。真机 op_def：ops-transformer/experimental/attention/fused_gdn_gating/op_host/fused_gdn_gating_def.cpp（a_log/a/b/dt_bias 全 REQUIRED，g/beta_output 全 REQUIRED，beta/threshold 是 OPTIONAL 属性、落实现类）。张量名序与 op_def 声明序逐位一致（校验器按序比，错了直接判违规）；校准侧要的 numel 是主数据路 a 的逐元素数，而族级 elementwise 取形固定读 inputs[0]、这里却是常量 a_log，故由算子类用 `calibration_semantics` 显式指到 a（见 `layers/elementwise/fused_gdn_gating.py`）。族目录按语义域取 elementwise（纯向量，无 cube 通道），与真机 op_def 所在的 attention 目录是两回事。profiling 实测：input '48;8192,48;8192,48;48'（a/b 各 48 个长 8192 的 run，a_log/dt_bias 各 48 个标量），output '1,8192,48;1,8192,48'，故主数据路为扁平 [B * S, num_heads] 且 a/b 与 a_log/dt_bias 数量相等（每 head 一项）。g 真机固定 FLOAT32，beta_output 与 b 同 dtype。",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "a_log",
+        "role": "input",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[num_heads]",
+        "unresolved_dimensions": [
+          "num_heads"
+        ]
+      },
+      {
+        "name": "a",
+        "role": "input",
+        "shape": [
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_heads]",
+        "unresolved_dimensions": [
+          "num_heads"
+        ]
+      },
+      {
+        "name": "b",
+        "role": "input",
+        "shape": [
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_heads]",
+        "unresolved_dimensions": [
+          "num_heads"
+        ]
+      },
+      {
+        "name": "dt_bias",
+        "role": "input",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[num_heads]",
+        "unresolved_dimensions": [
+          "num_heads"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "g",
+        "shape": "[1, B * S, num_heads]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "beta_output",
+        "shape": "[1, B * S, num_heads]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/FusedGdnGating.json",
+      "sha256": "aa7ab17ae9090c5036f27e13bfce2b573b5b7d1b2d67d41ac301774496556a29"
+    },
+    "group_id": "fusedgdngating",
+    "display_name": "FusedGdnGating",
+    "public_id": "fusedgdngating:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GatherV2",
+    "key": "GatherV2",
+    "name": "GatherV2",
+    "domain": "infer",
+    "category": "Embedding",
+    "op_type": "GatherV2",
+    "description": "Indexed row gather from a table; the real-machine kernel behind token embedding lookup (aclnnGatherV2)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          128256,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[vocab_size, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "indices",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int64",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "axis",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/GatherV2.json",
+      "sha256": "4a7f042bb4665a21544f38f33f7a59b70393a2d5178132d028f4de0200022352"
+    },
+    "group_id": "gatherv2",
+    "display_name": "GatherV2",
+    "public_id": "gatherv2:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GemmaRmsNorm",
+    "key": "GemmaRmsNorm",
+    "name": "GemmaRmsNorm",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "GemmaRmsNorm",
+    "description": "Gemma-style RMS normalization with offset scale y = x * rstd * (1 + gamma); same kernel as RmsNorm (gemma_rms_norm_apt.cpp includes rms_norm/arch35/rms_norm_regbase_perf.h with IS_GEMMA=true), whose only extra work is one Adds(gamma, 1.0f) per element -> 7 vector ops and no SFU; profiled at [8192, 5120] + [5120] -> [8192, 5120] + [8192, 1]",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gamma",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "rstd",
+        "shape": "[B * S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/GemmaRmsNorm.json",
+      "sha256": "6e7cdacd935b93dc410cc62b660ae6594c41c60a6e4dea4f351390e2002c352e"
+    },
+    "group_id": "gemmarmsnorm",
+    "display_name": "GemmaRmsNorm",
+    "public_id": "gemmarmsnorm:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:LayerNormV4",
+    "key": "LayerNormV4",
+    "name": "LayerNormV4",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "LayerNormV4",
+    "description": "LayerNorm with mean/variance reductions, optional scale and bias (aclnnLayerNormV4)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp32",
+        "expression": "[B, S, index_head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "normalized_shape",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, index_head_dim]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "mean",
+        "shape": "[B, S, 1]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "rstd",
+        "shape": "[B, S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/LayerNormV4.json",
+      "sha256": "738819d8dd9fbd893c92a437c5bfc70b93146501bee10d170aab07a2eb50c57c"
+    },
+    "group_id": "layernormv4",
+    "display_name": "LayerNormV4",
+    "public_id": "layernormv4:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Mul",
+    "key": "Mul",
+    "name": "Mul",
+    "domain": "infer",
+    "category": "Elementwise",
+    "op_type": "Mul",
+    "description": "Element-wise multiply y = x1 * x2 with numpy-style broadcasting; no attributes (ops-math/math/mul/op_host/mul_def.cpp)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/Mul.json",
+      "sha256": "8e1c900f3ec045346808d9a75a2b175c3dcb72633d9fbce41c4f40aeee2b4691"
+    },
+    "group_id": "mul",
+    "display_name": "Mul",
+    "public_id": "mul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:RmsNorm",
+    "key": "RmsNorm",
+    "name": "RmsNorm",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "RmsNorm",
+    "description": "Root mean square normalization with per-channel gamma (aclnnRmsNorm); rstd is a required output. A5 regbase kernel counts 6 vector ops per element and no SFU (arch35: Mul square, fold/head Add tree, Mul(rstd), Mul(gamma); rstd comes from Adds(eps)/Div/Sqrt/Newton-Raphson, all inside __VEC_SCOPE__)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gamma",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "rstd",
+        "shape": "[B * S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/RmsNorm.json",
+      "sha256": "65e927c6e84f2de1e9a140d321b4f34f596131dec6df7ff7516351688220fde0"
+    },
+    "group_id": "rmsnorm",
+    "display_name": "RMSNorm",
+    "public_id": "rmsnorm:template-2",
+    "template_label": "输入 + gamma · 含 rstd 输出"
+  },
+  {
+    "id": "infer:ScatterNdUpdate",
+    "key": "ScatterNdUpdate",
+    "name": "ScatterNdUpdate",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "ScatterNdUpdate",
+    "description": "In-place indexed write into the DSA index cache (aclnnScatterNdUpdate)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "var",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp8",
+        "expression": "[B, seq_len, index_head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "indices",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int32",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "updates",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp8",
+        "expression": "[B, S, index_head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "var",
+        "shape": "[B, seq_len, index_head_dim]",
+        "dtype": "fp8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/ScatterNdUpdate.json",
+      "sha256": "3bc10bfd033a97d15e22767c07f2a18be58902aea380613ea8cfa5fbcf015436"
+    },
+    "group_id": "scatterndupdate",
+    "display_name": "ScatterNdUpdate",
+    "public_id": "scatterndupdate:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Sigmoid",
+    "key": "Sigmoid",
+    "name": "Sigmoid",
+    "domain": "infer",
+    "category": "Activation",
+    "op_type": "Sigmoid",
+    "description": "Sigmoid activation y = 1 / (1 + exp(-x)); no attributes (ops-nn/experimental/activation/sigmoid/op_host/sigmoid_def.cpp)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/Sigmoid.json",
+      "sha256": "22eb9321bd18932852e02f08827451ee0b8e08f57d3b4c702175902248b9d7e5"
+    },
+    "group_id": "sigmoid",
+    "display_name": "Sigmoid",
+    "public_id": "sigmoid:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SwiGlu",
+    "key": "SwiGlu",
+    "name": "SwiGlu",
+    "domain": "infer",
+    "category": "Activation",
+    "op_type": "SwiGlu",
+    "description": "SwiGLU activation y = silu(gate) * up, the last-dim input half split being the GLU axis (aclnnSwiGlu)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          22016
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, 2 * intermediate_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/SwiGlu.json",
+      "sha256": "0f6ec30a0a47f83b5c92a8005568224dc40f8878173b51b1fdc1d8e97c27c9eb"
+    },
+    "group_id": "swiglu",
+    "display_name": "SwiGLU",
+    "public_id": "swiglu:template-2",
+    "template_label": "逐元素门控 · x"
+  },
+  {
+    "id": "infer:SwiGluQuant",
+    "key": "SwiGluQuant",
+    "name": "SwiGluQuant",
+    "domain": "infer",
+    "category": "Activation",
+    "op_type": "SwiGluQuant",
+    "description": "SwiGLU activation with dynamic per-token FP8 quantization (aclnnSwiGluQuant)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          22016
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, 2 * intermediate_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, intermediate_size]",
+        "dtype": "fp8"
+      },
+      {
+        "name": "scale",
+        "shape": "[B * S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/SwiGluQuant.json",
+      "sha256": "72227828a52fbc59724423e043e68d33009a5a7619f63f0af485e9b30e32dab4"
+    },
+    "group_id": "swigluquant",
+    "display_name": "SwiGluQuant",
+    "public_id": "swigluquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SwigluGroupQuant",
+    "key": "SwigluGroupQuant",
+    "name": "SwigluGroupQuant",
+    "domain": "infer",
+    "category": "Activation",
+    "op_type": "SwigluGroupQuant",
+    "description": "Grouped SwiGLU activation with dynamic per-token quantization (aclnnSwigluGroupQuant)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          null,
+          2816
+        ],
+        "dtype": "bf16",
+        "expression": "[routed_tokens_per_rank, 2 * moe_intermediate_size]",
+        "unresolved_dimensions": [
+          "routed_tokens_per_rank"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[routed_tokens_per_rank, moe_intermediate_size]",
+        "dtype": "fp8"
+      },
+      {
+        "name": "y_scale",
+        "shape": "[routed_tokens_per_rank]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "y_origin",
+        "shape": "[routed_tokens_per_rank, moe_intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/SwigluGroupQuant.json",
+      "sha256": "c97df04f7c7de6f30592a14ebbd4f3ec31e52fee8ffb880e271a1cb5b6cab27e"
+    },
+    "group_id": "swiglugroupquant",
+    "display_name": "SwigluGroupQuant",
+    "public_id": "swiglugroupquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Transpose",
+    "key": "Transpose",
+    "name": "Transpose",
+    "domain": "infer",
+    "category": "Quantization",
+    "op_type": "Transpose",
+    "description": "Permute the axes of x into y; the permutation is a tensor input (perm) rather than an attribute, so the asset models the 3D [B, S, D] <-> [B, D, S] case (aclnnTranspose)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "perm",
+        "role": "input",
+        "shape": [
+          3
+        ],
+        "dtype": "int64",
+        "expression": "[3]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, hidden_size, S]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/elementwise/Transpose.json",
+      "sha256": "d9f3e301998348f4ee6c71a8862200311cd718af5d24301a42d9bf2dabcf30f8"
+    },
+    "group_id": "transpose",
+    "display_name": "Transpose",
+    "public_id": "transpose:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GroupedMatmul",
+    "key": "GroupedMatmul",
+    "name": "GroupedMatmul",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "GroupedMatmul",
+    "description": "Grouped matrix multiplication for MoE experts; every tensor except group_list and per_token_scale is declared DYNAMIC (tensor-list), the length of which is itself the group count (aclnnGroupedMatmul)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "input",
+        "shape": [
+          1,
+          4096,
+          1408
+        ],
+        "dtype": "bf16",
+        "expression": "[expert_groups, hidden_size, moe_intermediate_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "bias",
+        "role": "input",
+        "shape": [
+          1,
+          1408
+        ],
+        "dtype": "bf16",
+        "expression": "[expert_groups, moe_intermediate_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "scale",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "uint64",
+        "expression": "[expert_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "offset",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "fp32",
+        "expression": "[expert_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "antiquant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          1408
+        ],
+        "dtype": "fp16",
+        "expression": "[expert_groups, moe_intermediate_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "antiquant_offset",
+        "role": "input",
+        "shape": [
+          1,
+          1408
+        ],
+        "dtype": "fp16",
+        "expression": "[expert_groups, moe_intermediate_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "group_list",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[expert_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "per_token_scale",
+        "role": "input",
+        "shape": [
+          2048
+        ],
+        "dtype": "fp32",
+        "expression": "[B * S]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, moe_intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/grouped_matmul/GroupedMatmul.json",
+      "sha256": "c8bc0d632917dfc7090034940d293a47f33d4aac4fe9bd37029c3899ba61d732"
+    },
+    "group_id": "groupedmatmul",
+    "display_name": "GroupedMatmul",
+    "public_id": "groupedmatmul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GroupedMatmulSwigluQuantV2",
+    "key": "GroupedMatmulSwigluQuantV2",
+    "name": "GroupedMatmulSwigluQuantV2",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "GroupedMatmulSwigluQuantV2",
+    "description": "MoE grouped gate-up GEMM fused with dequant, SwiGLU and block-MX quantization (aclnnGroupedMatmulSwigluQuantV2)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          4096
+        ],
+        "dtype": "fp8",
+        "expression": "[B * S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x_scale",
+        "role": "input",
+        "shape": [
+          2048,
+          64,
+          2
+        ],
+        "dtype": "fp32",
+        "expression": "[B * S, (hidden_size + 63) // 64, 2]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "group_list",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[expert_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          1,
+          2816,
+          4096
+        ],
+        "dtype": "fp8",
+        "expression": "[expert_groups, 2 * moe_intermediate_size, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_scale",
+        "role": "parameter",
+        "shape": [
+          1,
+          2816,
+          64,
+          2
+        ],
+        "dtype": "fp32",
+        "expression": "[expert_groups, 2 * moe_intermediate_size, (hidden_size + 63) // 64, 2]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_assist_matrix",
+        "role": "parameter",
+        "shape": [
+          1,
+          2816
+        ],
+        "dtype": "fp32",
+        "expression": "[expert_groups, 2 * moe_intermediate_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, moe_intermediate_size]",
+        "dtype": "fp8"
+      },
+      {
+        "name": "y_scale",
+        "shape": "[B * S, (moe_intermediate_size + 63) // 64, 2]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mix_aic/GroupedMatmulSwigluQuantV2.json",
+      "sha256": "1db2d4809aa4be6c5ac4a5353c4efbe14104be797034fff261ff3a8621ec6981"
+    },
+    "group_id": "groupedmatmulswigluquantv2",
+    "display_name": "GroupedMatmulSwigluQuantV2",
+    "public_id": "groupedmatmulswigluquantv2:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MlaPrologV3",
+    "key": "MlaPrologV3",
+    "name": "MlaPrologV3",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "MlaPrologV3",
+    "description": "MLA prefill prolog: Q/KV down- and up-projections, the Cq/Ckv RMS norms, RoPE and the paged KV-cache write, all in one kernel (aclnnMlaPrologV3); cache_index, the dequant/quant scales, actual_seq_len and k_nope_clip_alpha are optional and live in the implementation class",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "token_x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_dq",
+        "role": "input",
+        "shape": [
+          4096,
+          1536
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size, q_lora_rank]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_uq_qr",
+        "role": "input",
+        "shape": [
+          1536,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[q_lora_rank, num_attention_heads // tp_size * (kv_lora_rank + qk_rope_head_dim)]",
+        "unresolved_dimensions": [
+          "kv_lora_rank",
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "weight_uk",
+        "role": "input",
+        "shape": [
+          32,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[num_attention_heads // tp_size, qk_nope_head_dim, kv_lora_rank]",
+        "unresolved_dimensions": [
+          "kv_lora_rank",
+          "qk_nope_head_dim"
+        ]
+      },
+      {
+        "name": "weight_dkv_kr",
+        "role": "input",
+        "shape": [
+          4096,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size, kv_lora_rank + qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "kv_lora_rank",
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "rmsnorm_gamma_cq",
+        "role": "input",
+        "shape": [
+          1536
+        ],
+        "dtype": "bf16",
+        "expression": "[q_lora_rank]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "rmsnorm_gamma_ckv",
+        "role": "input",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[kv_lora_rank]",
+        "unresolved_dimensions": [
+          "kv_lora_rank"
+        ]
+      },
+      {
+        "name": "rope_sin",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "rope_cos",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_rope_head_dim"
+        ]
+      },
+      {
+        "name": "kv_cache",
+        "role": "input",
+        "shape": [
+          1,
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, 1, seq_len, kv_lora_rank]",
+        "unresolved_dimensions": [
+          "kv_lora_rank"
+        ]
+      },
+      {
+        "name": "kr_cache",
+        "role": "input",
+        "shape": [
+          1,
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, 1, seq_len, qk_rope_head_dim]",
+        "unresolved_dimensions": [
+          "qk_rope_head_dim"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "query",
+        "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "query_rope",
+        "shape": "[B, S, num_attention_heads // tp_size, qk_rope_head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "kv_cache",
+        "shape": "[B, 1, seq_len, kv_lora_rank]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "kr_cache",
+        "shape": "[B, 1, seq_len, qk_rope_head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "dequant_scale_q_nope",
+        "shape": "[B * S, num_attention_heads // tp_size, 1]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "query_norm",
+        "shape": "[B, S, q_lora_rank]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "dequant_scale_q_norm",
+        "shape": "[B * S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mix_aic/MlaPrologV3.json",
+      "sha256": "8450efdcd0191e2fe262a8f60784d1f7cc365a8bce41a2ade1d8c2aa8eb12df2"
+    },
+    "group_id": "mlaprologv3",
+    "display_name": "MlaPrologV3",
+    "public_id": "mlaprologv3:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:QuantLightningIndexer",
+    "key": "QuantLightningIndexer",
+    "name": "QuantLightningIndexer",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "QuantLightningIndexer",
+    "description": "Quantized DSA lightning indexer: INT8 Q@K score, dequant by scaleQ*scaleK, ReLU and weighted head reduction, then top-k selection; BSND layout, key head count is 1 (aclnnQuantLightningIndexer)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "int8",
+        "expression": "[B, S, num_attention_heads, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          128
+        ],
+        "dtype": "int8",
+        "expression": "[B, S, 1, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weights",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, num_attention_heads]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "query_dequant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, num_attention_heads]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key_dequant_scale",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, 1]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "sparse_indices",
+        "shape": "[B, S, 1, sparse_count]",
+        "dtype": "int32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mix_aic/QuantLightningIndexer.json",
+      "sha256": "27f3e728491d7ee445e79581c5595c690ebe780496383118cdb485c6eb6c8cb2"
+    },
+    "group_id": "quantlightningindexer",
+    "display_name": "QuantLightningIndexer",
+    "public_id": "quantlightningindexer:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoeGatingTopK",
+    "key": "MoeGatingTopK",
+    "name": "MoeGatingTopK",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "MoeGatingTopK",
+    "description": "Fused MoE gating: score, optional bias, group-limited top-k selection and renorm in one kernel; the token axis is flattened, x is strictly 2D (aclnnMoeGatingTopK)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          2048,
+          64
+        ],
+        "dtype": "bf16",
+        "expression": "[B * S, num_experts]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B * S, top_k]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "expert_idx",
+        "shape": "[B * S, top_k]",
+        "dtype": "int32"
+      },
+      {
+        "name": "out",
+        "shape": "[B * S, num_experts]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_gating_top_k/MoeGatingTopK.json",
+      "sha256": "f499768eac72abd9c90dda65f93684e1485b6a4ff7dcd5a6f8f6ddba53134023"
+    },
+    "group_id": "moegatingtopk",
+    "display_name": "MoeGatingTopK",
+    "public_id": "moegatingtopk:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoeDistributeCombineV3",
+    "key": "MoeDistributeCombineV3",
+    "name": "MoeDistributeCombineV3",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "MoeDistributeCombineV3",
+    "description": "DeepEP low-latency MoE expert combine via AllToAll: gather expert outputs back to token order (aclnnMoeDistributeCombineV3)",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "context",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "expand_x",
+        "role": "input",
+        "shape": [
+          8,
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[top_k, B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "expert_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "assist_info_for_combine",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "ep_send_counts",
+        "role": "input",
+        "shape": [
+          null
+        ],
+        "dtype": "int32",
+        "expression": "[ep_size]",
+        "unresolved_dimensions": [
+          "ep_size"
+        ]
+      },
+      {
+        "name": "expert_scales",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "fp32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "x",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/comm/MoeDistributeCombineV3.json",
+      "sha256": "e1c164e340070242532ea2334846a3cf20749ab7f9a4610b8595dd88dbcad3dd"
+    },
+    "group_id": "moedistributecombinev3",
+    "display_name": "MoeDistributeCombineV3",
+    "public_id": "moedistributecombinev3:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoeDistributeDispatchV3",
+    "key": "MoeDistributeDispatchV3",
+    "name": "MoeDistributeDispatchV3",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "MoeDistributeDispatchV3",
+    "description": "DeepEP low-latency MoE token dispatch via AllToAll: route tokens to expert-hosting ranks (aclnnMoeDistributeDispatchV3)",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "context",
+        "role": "input",
+        "shape": [
+          1
+        ],
+        "dtype": "int64",
+        "expression": "[1]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "expert_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "expand_x",
+        "shape": "[top_k, B, S, hidden_size]",
+        "dtype": "int8"
+      },
+      {
+        "name": "dynamic_scales",
+        "shape": "[top_k, B, S, 1]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "assist_info_for_combine",
+        "shape": "[B, S, top_k]",
+        "dtype": "int32"
+      },
+      {
+        "name": "expert_token_nums",
+        "shape": "[n_routed_experts]",
+        "dtype": "int32"
+      },
+      {
+        "name": "ep_recv_count",
+        "shape": "[ep_size]",
+        "dtype": "int32"
+      },
+      {
+        "name": "tp_recv_count",
+        "shape": "[tp_size]",
+        "dtype": "int32"
+      },
+      {
+        "name": "expand_scales",
+        "shape": "[top_k, B, S, 1]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/comm/MoeDistributeDispatchV3.json",
+      "sha256": "7255574ac3afbf0258e879096a570bf101ad0cb6c1fb504bad5e5c43edf014bf"
+    },
+    "group_id": "moedistributedispatchv3",
+    "display_name": "MoeDistributeDispatchV3",
+    "public_id": "moedistributedispatchv3:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SituAndMul",
+    "key": "SituAndMul",
+    "name": "SituAndMul",
+    "domain": "infer",
+    "category": "Activation",
+    "op_type": "activation_situ_and_mul",
+    "description": "SituAndMul activation: y = beta * tanh(gate / beta) * sigmoid(gate) * linear_beta * tanh(up / linear_beta)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          22016
+        ],
+        "dtype": "fp32",
+        "expression": "[B, S, 2 * intermediate_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, intermediate_size]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/activation_situ_and_mul.json",
+      "sha256": "efd289f8e6af283c82a7f20e6846dc1396c4e85e737cf20980afe08c0d9cf717"
+    },
+    "group_id": "situandmul",
+    "display_name": "SituAndMul",
+    "public_id": "situandmul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SparseAttentionSharedKV",
+    "key": "SparseAttentionSharedKV",
+    "name": "SparseAttentionSharedKV",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "attention_sparse_attention_shared_kv",
+    "description": "Sparse Attention with shared KV cache across attention heads",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "q",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "kv",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          128
+        ],
+        "dtype": "fp16",
+        "expression": "[B, seq_len, 1, head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "attn_out",
+        "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/attention_sparse_attention_shared_kv.json",
+      "sha256": "0a56c065e822789cf7396c8238219807aa1448287ab6095ef7c0007adb0587b8"
+    },
+    "group_id": "sparseattentionsharedkv",
+    "display_name": "SparseAttentionSharedKV",
+    "public_id": "sparseattentionsharedkv:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:AllGather",
+    "key": "AllGather",
+    "name": "AllGather",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "communication_all_gather",
+    "description": "AllGather collective communication: gather sharded tensors from all TP devices",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "logits_shard",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128256
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, vocab_size // lmhead_tp_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "logits",
+        "shape": "[B, S, vocab_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/communication_all_gather.json",
+      "sha256": "a164cd2fdb6fc4090fd7b17816e5d0de3c49b400ae61d698d202289946c3e8ec"
+    },
+    "group_id": "allgather",
+    "display_name": "AllGather",
+    "public_id": "allgather:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:AllReduce",
+    "key": "AllReduce",
+    "name": "AllReduce",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "communication_all_reduce",
+    "description": "AllReduce collective communication: reduce tensors across TP group and distribute result",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/communication_all_reduce.json",
+      "sha256": "83245c33cbd14d01f42bddc63926362efbffbf56e041487436407e53a6ece950"
+    },
+    "group_id": "allreduce",
+    "display_name": "AllReduce",
+    "public_id": "allreduce:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoECombine",
+    "key": "MoECombine",
+    "name": "MoECombine",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "communication_moe_combine",
+    "description": "MoE Expert Output Combine via AllToAll: weighted sum back to token sequence",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "expert_out",
+        "role": "input",
+        "shape": [
+          8,
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[top_k, B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "expert_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "x",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/communication_moe_combine.json",
+      "sha256": "1626208708511faa9682c861b21a87163aeb4618f80fca7df0c07f562beccb97"
+    },
+    "group_id": "moecombine",
+    "display_name": "MoECombine",
+    "public_id": "moecombine:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoEDispatch",
+    "key": "MoEDispatch",
+    "name": "MoEDispatch",
+    "domain": "infer",
+    "category": "Communication",
+    "op_type": "communication_moe_dispatch",
+    "description": "MoE Token Dispatch via AllToAll: route tokens to assigned experts",
+    "configurable": false,
+    "reason": "通信算子 · 单算子入口未提供",
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "expert_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          8
+        ],
+        "dtype": "int32",
+        "expression": "[B, S, top_k]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "dispatched_x",
+        "shape": "[top_k, B, S, hidden_size]",
+        "dtype": "int8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/communication_moe_dispatch.json",
+      "sha256": "de409261d215117a48f948320375237e56b3eb2070b4cc68e3d76eaa872b119e"
+    },
+    "group_id": "moedispatch",
+    "display_name": "MoEDispatch",
+    "public_id": "moedispatch:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Embedding",
+    "key": "Embedding",
+    "name": "Embedding",
+    "domain": "infer",
+    "category": "Embedding",
+    "op_type": "embedding_embedding",
+    "description": "Token embedding lookup: gather rows of the table by token id (aclnnEmbedding)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int64",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "indices",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int64",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/embedding_embedding.json",
+      "sha256": "80a7ce550ba867adebd7aead834200abbf6c5e9963c3c94a9810eaa0247b004b"
+    },
+    "group_id": "embedding",
+    "display_name": "Embedding",
+    "public_id": "embedding:template-2",
+    "template_label": "索引输入 · x / indices"
+  },
+  {
+    "id": "infer:EngramGate",
+    "key": "EngramGate",
+    "name": "EngramGate",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "engram_gate",
+    "description": "Engram projection and signed-square-root residual gate",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "l1_lookup_reduced",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]",
+        "unresolved_dimensions": [
+          "engram_head_dim",
+          "engram_max_ngram_size",
+          "engram_n_heads"
+        ]
+      },
+      {
+        "name": "l0_ffn_state",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wkv",
+        "role": "parameter",
+        "shape": [
+          20480,
+          null
+        ],
+        "dtype": "fp8",
+        "expression": "[(hc_mult + 1) * hidden_size, (engram_max_ngram_size - 1) * engram_n_heads * engram_head_dim]",
+        "unresolved_dimensions": [
+          "engram_head_dim",
+          "engram_max_ngram_size",
+          "engram_n_heads"
+        ]
+      },
+      {
+        "name": "q_weight",
+        "role": "parameter",
+        "shape": [
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "k_weight",
+        "role": "parameter",
+        "shape": [
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "l1_engram",
+        "shape": "[B, S, hc_mult, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/engram_gate.json",
+      "sha256": "5cb574c7913e6538665f3c0372c386fea340147cab84034252500e1800cec566"
+    },
+    "group_id": "engramgate",
+    "display_name": "EngramGate",
+    "public_id": "engramgate:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:EngramLookup",
+    "key": "EngramLookup",
+    "name": "EngramLookup",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "engram_lookup",
+    "description": "Sparse Engram row lookup with full sharded table residency",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "token_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int64",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "fp8",
+        "expression": "[engram_num_embeddings[0] + 0, engram_head_dim]",
+        "unresolved_dimensions": [
+          "engram_head_dim",
+          "engram_num_embeddings"
+        ]
+      },
+      {
+        "name": "scale",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "int8",
+        "expression": "[engram_num_embeddings[0] + 0, engram_head_dim // 32]",
+        "unresolved_dimensions": [
+          "engram_head_dim",
+          "engram_num_embeddings"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "l1_lookup",
+        "shape": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/engram_lookup.json",
+      "sha256": "0390b6669eedf89564a86faa9e36981e0160061d98d665a5ba94ebac16968ddc"
+    },
+    "group_id": "engramlookup",
+    "display_name": "EngramLookup",
+    "public_id": "engramlookup:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:END",
+    "key": "END",
+    "name": "END",
+    "domain": "infer",
+    "category": "Flow",
+    "op_type": "flow_end",
+    "description": "模型出口，标记推理终点",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "in",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128256
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, vocab_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "shape": "[B, S, vocab_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/flow_end.json",
+      "sha256": "5e654b9ac69d096be7b50b8f421599364438a4f711c7f3e167c8679a3dd4958c"
+    },
+    "group_id": "end",
+    "display_name": "END",
+    "public_id": "end:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:START",
+    "key": "START",
+    "name": "START",
+    "domain": "infer",
+    "category": "Flow",
+    "op_type": "flow_start",
+    "description": "模型入口，标记推理起点",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "out",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/flow_start.json",
+      "sha256": "43f1806ff8e48de92138a68b1e713ee536d453c0d3123431720551e5dab83708"
+    },
+    "group_id": "start",
+    "display_name": "START",
+    "public_id": "start:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GatedResidual",
+    "key": "GatedResidual",
+    "name": "GatedResidual",
+    "domain": "infer",
+    "category": "MHC",
+    "op_type": "hyper_connection_gated_residual",
+    "description": "Low-rank Hyper-Connection mix and residual injection",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "hyper_state",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_count * hidden_size]",
+        "unresolved_dimensions": [
+          "hc_count"
+        ]
+      },
+      {
+        "name": "block_output",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "norm_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_count * hidden_size]",
+        "unresolved_dimensions": [
+          "hc_count"
+        ]
+      },
+      {
+        "name": "down_inject_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_lowrank + hc_count, hc_count * hidden_size]",
+        "unresolved_dimensions": [
+          "hc_count",
+          "hc_lowrank"
+        ]
+      },
+      {
+        "name": "up_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_count * hidden_size, hc_lowrank]",
+        "unresolved_dimensions": [
+          "hc_count",
+          "hc_lowrank"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "block_input",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "hyper_state",
+        "shape": "[B, S, hc_count * hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/hyper_connection_gated_residual.json",
+      "sha256": "c43887416b7086438a7f4a61de88c0fb98fc54cb4a6ad5deb4f413aa2f10fd7e"
+    },
+    "group_id": "gatedresidual",
+    "display_name": "GatedResidual",
+    "public_id": "gatedresidual:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:ColumnParallelLinearQuant",
+    "key": "ColumnParallelLinearQuant",
+    "name": "ColumnParallelLinearQuant",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_colum_parallel_linear_quant",
+    "description": "TP Column-Parallel Linear with quantization: weight sharded along out_features, output quantized",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_shard",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[intermediate_dim, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y_shard",
+        "shape": "[B, S, intermediate_dim]",
+        "dtype": "int8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_colum_parallel_linear_quant.json",
+      "sha256": "e56622ba05210825cfb1c66b165b96e40f85e7dd8aa3a95cdde7ed5f1e6fff8b"
+    },
+    "group_id": "columnparallellinearquant",
+    "display_name": "ColumnParallelLinearQuant",
+    "public_id": "columnparallellinearquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:ColumnParallelLinear",
+    "key": "ColumnParallelLinear",
+    "name": "ColumnParallelLinear",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_column_parallel_linear",
+    "description": "TP Column-Parallel Linear: weight sharded along out_features dimension",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_shard",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[intermediate_dim, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y_shard",
+        "shape": "[B, S, intermediate_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_column_parallel_linear.json",
+      "sha256": "c2ac94302b977761d3a69c1348bfa4b8eea5b8579a95b063273cee66fb6cb73c"
+    },
+    "group_id": "columnparallellinear",
+    "display_name": "ColumnParallelLinear",
+    "public_id": "columnparallellinear:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:GroupMatMul",
+    "key": "GroupMatMul",
+    "name": "GroupMatMul",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_group_matmul",
+    "description": "Grouped Matrix Multiplication for MoE experts",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          1,
+          2816,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[expert_groups, 2 * moe_intermediate_size, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "expert_out",
+        "shape": "[B, S, 2 * moe_intermediate_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_group_matmul.json",
+      "sha256": "839251f9c9df78db5fcdada48e2228041610b379fd5525c80a37267de2068059"
+    },
+    "group_id": "groupmatmul",
+    "display_name": "GroupMatMul",
+    "public_id": "groupmatmul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Linear",
+    "key": "Linear",
+    "name": "Linear",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_linear",
+    "description": "Dense linear transformation Y = X @ W^T",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          4096,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_linear.json",
+      "sha256": "2ad5e7e6fecfb5cab5b56446afbf386ea5a88120e730487523631f34296f36b1"
+    },
+    "group_id": "linear",
+    "display_name": "Linear",
+    "public_id": "linear:template-2",
+    "template_label": "批量输入 · x / weight"
+  },
+  {
+    "id": "infer:MatMul",
+    "key": "MatMul",
+    "name": "MatMul",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_matmul",
+    "description": "Standard matrix multiplication Y = X @ W^T",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[intermediate_size, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, intermediate_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_matmul.json",
+      "sha256": "27c50f61dcd93fd7e2457063853a1963abb537135d43ff41d6dfe27e3abeebad"
+    },
+    "group_id": "matmul",
+    "display_name": "MatMul",
+    "public_id": "matmul:template-3",
+    "template_label": "权重投影 · x / weight"
+  },
+  {
+    "id": "infer:RowParallelLinear",
+    "key": "RowParallelLinear",
+    "name": "RowParallelLinear",
+    "domain": "infer",
+    "category": "Linear",
+    "op_type": "linear_row_parallel_linear",
+    "description": "TP Row-Parallel Linear: weight sharded along in_features dimension, all-reduce on output",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x_shard",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_shard",
+        "role": "parameter",
+        "shape": [
+          11008,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[intermediate_dim, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, intermediate_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/linear_row_parallel_linear.json",
+      "sha256": "7a962dc347a0c5c7e1a1751cc5665fdf5fe5f9e2d4964a7b97bf7fbb9ae4e8a5"
+    },
+    "group_id": "rowparallellinear",
+    "display_name": "RowParallelLinear",
+    "public_id": "rowparallellinear:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MHCHead",
+    "key": "MHCHead",
+    "name": "MHCHead",
+    "domain": "infer",
+    "category": "MHC",
+    "op_type": "mhc_mhc_head",
+    "description": "Multi-Head Cache Head: per-depth token prediction with shared embedding head",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "hc_head_fn",
+        "role": "parameter",
+        "shape": [
+          4,
+          16384
+        ],
+        "dtype": "fp32",
+        "expression": "[hc_mult, hc_mult * hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "logits",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mhc_mhc_head.json",
+      "sha256": "0cafa5bcd0cf7ead88a5725f16aa64ac6141635798ffa317f768fc50bf4349d8"
+    },
+    "group_id": "mhchead",
+    "display_name": "MHCHead",
+    "public_id": "mhchead:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MHCPost",
+    "key": "MHCPost",
+    "name": "MHCPost",
+    "domain": "infer",
+    "category": "MHC",
+    "op_type": "mhc_mhc_post",
+    "description": "hc_post for deepseek-v4: projects MHC output back to hidden_size",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "residual",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "post",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4
+        ],
+        "dtype": "fp32",
+        "expression": "[B, S, hc_mult]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "comb",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4,
+          4
+        ],
+        "dtype": "fp32",
+        "expression": "[B, S, hc_mult, hc_mult]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hc_mult, hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mhc_mhc_post.json",
+      "sha256": "6f2966bae11b40a033c8aefb1ccf6c6ecdb62b7b74581c653cfbe77823fa2d71"
+    },
+    "group_id": "mhcpost",
+    "display_name": "MHCPost",
+    "public_id": "mhcpost:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MHCPre",
+    "key": "MHCPre",
+    "name": "MHCPre",
+    "domain": "infer",
+    "category": "MHC",
+    "op_type": "mhc_mhc_pre",
+    "description": "hc_pre in deepseek-v4: projects hidden states for MHC computation",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_mult, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "hc_fn",
+        "role": "parameter",
+        "shape": [
+          24,
+          16384
+        ],
+        "dtype": "fp32",
+        "expression": "[(2+hc_mult)*hc_mult, hc_mult * hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "post",
+        "shape": "[B, S, hc_mult]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "comb",
+        "shape": "[B, S, hc_mult * hc_mult]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mhc_mhc_pre.json",
+      "sha256": "271fe103cf7ad7e72a481195651107c294003798b0113f80556fd32868faa7e0"
+    },
+    "group_id": "mhcpre",
+    "display_name": "MHCPre",
+    "public_id": "mhcpre:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:Compressor",
+    "key": "Compressor",
+    "name": "Compressor",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_compressor",
+    "description": "KV Cache Compressor: compresses key-value representations for reduced memory footprint",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "kv",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wkv",
+        "role": "parameter",
+        "shape": [
+          128,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[head_dim, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wgate",
+        "role": "parameter",
+        "shape": [
+          128,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[head_dim, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "ape",
+        "role": "parameter",
+        "shape": [
+          1,
+          128
+        ],
+        "dtype": "fp32",
+        "expression": "[compress_ratio, head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "kv",
+        "shape": "[B, S // compress_ratio, head_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_compressor.json",
+      "sha256": "088c47082fc209fbed05523a705a3c662a1306a5c650db913b9b2e0ada42d60f"
+    },
+    "group_id": "compressor",
+    "display_name": "Compressor",
+    "public_id": "compressor:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:IndexCompressorEpilog",
+    "key": "IndexCompressorEpilog",
+    "name": "IndexCompressorEpilog",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_index_compressor_epilog",
+    "description": "Index Compressor Epilog: reconstructs routing indices from compressed representation",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "compressed_idx",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S // compress_ratio, index_head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "indices",
+        "shape": "[B, S // compress_ratio, index_head_dim]",
+        "dtype": "fp8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_index_compressor_epilog.json",
+      "sha256": "e36924e989971c16ea7c5052a77a67c59490b31621fc5d0941de9480b81c9da3"
+    },
+    "group_id": "indexcompressorepilog",
+    "display_name": "IndexCompressorEpilog",
+    "public_id": "indexcompressorepilog:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:IndexPrologV4",
+    "key": "IndexPrologV4",
+    "name": "IndexPrologV4",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_index_prolog_v4",
+    "description": "Index Prolog DeepSeek-V4: pre-processing step that prepares hidden states for index-based expert routing",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "qr",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1536
+        ],
+        "dtype": "fp8",
+        "expression": "[B, S, q_lora_rank]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight_proj",
+        "role": "parameter",
+        "shape": [
+          32,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[index_n_heads, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "q_b",
+        "role": "parameter",
+        "shape": [
+          4096,
+          1536
+        ],
+        "dtype": "fp8",
+        "expression": "[index_n_heads * index_head_dim, q_lora_rank]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "query",
+        "shape": "[B, S, index_n_heads]",
+        "dtype": "fp16"
+      },
+      {
+        "name": "query",
+        "shape": "[B, S, index_n_heads * index_head_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_index_prolog_v4.json",
+      "sha256": "33c63415432c031d9a80ba6b87932d274af6c2ec3def7e73e71abccb80f41bd1"
+    },
+    "group_id": "indexprologv4",
+    "display_name": "IndexPrologV4",
+    "public_id": "indexprologv4:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:KVCompressorEpilog",
+    "key": "KVCompressorEpilog",
+    "name": "KVCompressorEpilog",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_kv_compressor_epilog",
+    "description": "KV Compressor Epilog: reconstructs KV cache from compressed representation",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "kv",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S // compress_ratio, head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "kv",
+        "shape": "[B, S // compress_ratio, head_dim]",
+        "dtype": "fp8"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_kv_compressor_epilog.json",
+      "sha256": "63ca57014fb9b48161e8880456f7bfd0cb1c8fd9501113c4e53c09e2348c7544"
+    },
+    "group_id": "kvcompressorepilog",
+    "display_name": "KVCompressorEpilog",
+    "public_id": "kvcompressorepilog:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MLAEpilogV4",
+    "key": "MLAEpilogV4",
+    "name": "MLAEpilogV4",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_mla_epilog_v4",
+    "description": "MLA Epilog DeepSeek-V4: projects attention output back to hidden_size after Multi-Head Latent Attention",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "attn_out",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, o_groups, num_attention_heads * head_dim // o_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wo_a",
+        "role": "parameter",
+        "shape": [
+          1536,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[o_groups * o_lora_rank // o_tp_size, num_attention_heads * head_dim // o_groups]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wo_b",
+        "role": "parameter",
+        "shape": [
+          4096,
+          1536
+        ],
+        "dtype": "fp8",
+        "expression": "[hidden_size, o_groups * o_lora_rank // o_tp_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_mla_epilog_v4.json",
+      "sha256": "a570050e6c68cc410a08cca856ca3edd83f0b2cf4ad39120a12920bfd18f04f9"
+    },
+    "group_id": "mlaepilogv4",
+    "display_name": "MLAEpilogV4",
+    "public_id": "mlaepilogv4:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MLAPrologV4",
+    "key": "MLAPrologV4",
+    "name": "MLAPrologV4",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "mla_mla_prolog_v4",
+    "description": "MLA Prolog DeepSeek-V4: projects hidden states to Q and compressed KV for Multi-Head Latent Attention",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wq_a",
+        "role": "parameter",
+        "shape": [
+          1536,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[q_lora_rank, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wq_b",
+        "role": "parameter",
+        "shape": [
+          4096,
+          1536
+        ],
+        "dtype": "int8",
+        "expression": "[num_attention_heads // tp_size * head_dim, q_lora_rank]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "wkv",
+        "role": "parameter",
+        "shape": [
+          128,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[head_dim, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "query_nope",
+        "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "dtype": "fp16"
+      },
+      {
+        "name": "key_nope",
+        "shape": "[B, S, 1, head_dim]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/mla_mla_prolog_v4.json",
+      "sha256": "6c1d32368a3193f820bd980d6132684a784327f1db2bba9a28f1977365ac10f0"
+    },
+    "group_id": "mlaprologv4",
+    "display_name": "MLAPrologV4",
+    "public_id": "mlaprologv4:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:LightningIndexer",
+    "key": "LightningIndexer",
+    "name": "LightningIndexer",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "moe_lightning_indexer",
+    "description": "Lightning Indexer: fast approximate nearest-neighbor index for MoE expert routing",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "query",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "fp8",
+        "expression": "[B, S, index_n_heads, index_head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "key",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          128
+        ],
+        "dtype": "fp8",
+        "expression": "[B, seq_len // compress_ratio, index_head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weights",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, index_n_heads]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "topk_indices",
+        "shape": "[B, S, seq_len // compress_ratio]",
+        "dtype": "int64"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_lightning_indexer.json",
+      "sha256": "2068fa14625faf3f545cdeb274da1147a4394eb6d9e8fc944955b8130650d7db"
+    },
+    "group_id": "lightningindexer",
+    "display_name": "LightningIndexer",
+    "public_id": "lightningindexer:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoEGate",
+    "key": "MoEGate",
+    "name": "MoEGate",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "moe_moe_gate",
+    "description": "MoE Gate: computes expert affinity scores from hidden states",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gate_weight",
+        "role": "parameter",
+        "shape": [
+          64,
+          4096
+        ],
+        "dtype": "fp32",
+        "expression": "[num_experts, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "scores",
+        "shape": "[B, S, num_experts]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_moe_gate.json",
+      "sha256": "0843f3a5e2156c100cd93c9c16181787f18f5d15675f69cc658054adcf72511a"
+    },
+    "group_id": "moegate",
+    "display_name": "MoEGate",
+    "public_id": "moegate:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoEGateHashTopK",
+    "key": "MoEGateHashTopK",
+    "name": "MoEGateHashTopK",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "moe_moe_gate_hash_topk",
+    "description": "MoE Gate with Hash: hash-based expert routing for load-balanced deterministic assignment",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "token_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int64",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gate_weight",
+        "role": "parameter",
+        "shape": [
+          64,
+          4096
+        ],
+        "dtype": "fp32",
+        "expression": "[num_experts, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "expert_indices",
+        "shape": "[B, S, top_k]",
+        "dtype": "int32"
+      },
+      {
+        "name": "expert_weights",
+        "shape": "[B, S, top_k]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_moe_gate_hash_topk.json",
+      "sha256": "a91417438ccf8be2027d0fadf785b9c3b952b0a8e039ef8893232352d4111d06"
+    },
+    "group_id": "moegatehashtopk",
+    "display_name": "MoEGateHashTopK",
+    "public_id": "moegatehashtopk:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoEGateTopK",
+    "key": "MoEGateTopK",
+    "name": "MoEGateTopK",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "moe_moe_gate_topk",
+    "description": "MoE Router with Top-K gating: scores = softmax(TopK(X @ W_gate))",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gate_weight",
+        "role": "parameter",
+        "shape": [
+          64,
+          4096
+        ],
+        "dtype": "fp32",
+        "expression": "[num_experts, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "topk_weights",
+        "shape": "[B, S, top_k]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "topk_indices",
+        "shape": "[B, S, top_k]",
+        "dtype": "int64"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_moe_gate_topk.json",
+      "sha256": "9b1fdaaaf12f51884e6766205ce5ff15a9c49c6a61bbf10cfcfcfaf0a6b5e6af"
+    },
+    "group_id": "moegatetopk",
+    "display_name": "MoEGateTopK",
+    "public_id": "moegatetopk:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:MoETopK",
+    "key": "MoETopK",
+    "name": "MoETopK",
+    "domain": "infer",
+    "category": "MoE",
+    "op_type": "moe_moe_topk",
+    "description": "MoE Top-K: selects top-k experts and normalizes weights via softmax",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "scores",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          64
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, num_experts]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "topk_weights",
+        "shape": "[B, S, top_k]",
+        "dtype": "fp32"
+      },
+      {
+        "name": "topk_indices",
+        "shape": "[B, S, top_k]",
+        "dtype": "int64"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/moe_moe_topk.json",
+      "sha256": "2986d6b533d5f25810856932d3ac4862dfc69518e7a7589eecbcc30826b9de9b"
+    },
+    "group_id": "moetopk",
+    "display_name": "MoETopK",
+    "public_id": "moetopk:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:AddRMSNormQuant",
+    "key": "AddRMSNormQuant",
+    "name": "AddRMSNormQuant",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "normalization_add_rms_norm_quant",
+    "description": "Residual add + normalization + quantization: y = quant(norm(x + residual))",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x1",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "x2",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "int8"
+      },
+      {
+        "name": "scale",
+        "shape": "[B, S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/normalization_add_rms_norm_quant.json",
+      "sha256": "1f9b949bdacc5a35ec367120b298488e0fd2ec816e1556e5edc6b2818c55ce24"
+    },
+    "group_id": "addrmsnormquant",
+    "display_name": "AddRMSNormQuant",
+    "public_id": "addrmsnormquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:RMSNormGated",
+    "key": "RMSNormGated",
+    "name": "RMSNormGated",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "normalization_rms_norm_gated",
+    "description": "Gated RMS Normalization: rms_norm(x) * gate where gate is a learned or computed parameter",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "gate",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "weight",
+        "role": "parameter",
+        "shape": [
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/normalization_rms_norm_gated.json",
+      "sha256": "953381445ef4e4b4969c6f4e8e9701ecdddbca28e8760d980dc6972034b881d0"
+    },
+    "group_id": "rmsnormgated",
+    "display_name": "RMSNormGated",
+    "public_id": "rmsnormgated:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:RMSNormQuant",
+    "key": "RMSNormQuant",
+    "name": "RMSNormQuant",
+    "domain": "infer",
+    "category": "Normalization",
+    "op_type": "normalization_rms_norm_quant",
+    "description": "RMS Normalization with quantization: quant(rms_norm(x))",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "int8"
+      },
+      {
+        "name": "scale",
+        "shape": "[B, S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/normalization_rms_norm_quant.json",
+      "sha256": "54c95e398b64ba27e2ea32253693ac020fad3f680c3bea3dc97a0253fe007007"
+    },
+    "group_id": "rmsnormquant",
+    "display_name": "RMSNormQuant",
+    "public_id": "rmsnormquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:PLELayer",
+    "key": "PLELayer",
+    "name": "PLELayer",
+    "domain": "infer",
+    "category": "Embedding",
+    "op_type": "ple_layer",
+    "description": "N-gram embedding, gated injection and short convolution",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "input_ids",
+        "role": "input",
+        "shape": [
+          1,
+          2048
+        ],
+        "dtype": "int32",
+        "expression": "[B, S]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "hyper_state",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_count * hidden_size]",
+        "unresolved_dimensions": [
+          "hc_count"
+        ]
+      },
+      {
+        "name": "ngram_embedding",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[ngram_vocab_size_base * (ngram_size - 1) * heads_per_ngram, ple_embed_dim // ((ngram_size - 1) * heads_per_ngram)]",
+        "unresolved_dimensions": [
+          "heads_per_ngram",
+          "ngram_size",
+          "ngram_vocab_size_base",
+          "ple_embed_dim"
+        ]
+      },
+      {
+        "name": "key_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hc_count * hidden_size, ple_embed_dim]",
+        "unresolved_dimensions": [
+          "hc_count",
+          "ple_embed_dim"
+        ]
+      },
+      {
+        "name": "value_weight",
+        "role": "parameter",
+        "shape": [
+          4096,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[hidden_size, ple_embed_dim]",
+        "unresolved_dimensions": [
+          "ple_embed_dim"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ple_out",
+        "shape": "[B, S, hc_count * hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/ple_layer.json",
+      "sha256": "7f0f4b613926e5d1631219d8a7595128a739680c15de8da684765862b21e1aab"
+    },
+    "group_id": "plelayer",
+    "display_name": "PLELayer",
+    "public_id": "plelayer:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:RopeComplex",
+    "key": "RopeComplex",
+    "name": "RopeComplex",
+    "domain": "infer",
+    "category": "Position",
+    "op_type": "position_rope_complex",
+    "description": "Complex-number Rotary Position Embedding: applies RoPE in complex domain for better precision",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/position_rope_complex.json",
+      "sha256": "ba9c94dac10af16691bd6c279d97f40a787660f525c9c0055792fbf865867843"
+    },
+    "group_id": "ropecomplex",
+    "display_name": "RopeComplex",
+    "public_id": "ropecomplex:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:RopeInterLeave",
+    "key": "RopeInterLeave",
+    "name": "RopeInterLeave",
+    "domain": "infer",
+    "category": "Position",
+    "op_type": "position_rope_inter_leave",
+    "description": "Interleaved Rotary Position Embedding: applies RoPE with alternating interleaved frequency bands",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "q",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "k",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          32,
+          128
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "q_out",
+        "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "dtype": "bf16"
+      },
+      {
+        "name": "k_out",
+        "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/position_rope_inter_leave.json",
+      "sha256": "540141e341b784c2f636644cd6497de4f23c134a103e70c528bc7d9e04394c48"
+    },
+    "group_id": "ropeinterleave",
+    "display_name": "RopeInterLeave",
+    "public_id": "ropeinterleave:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:QSAIndexer",
+    "key": "QSAIndexer",
+    "name": "QSAIndexer",
+    "domain": "infer",
+    "category": "Attention",
+    "op_type": "qsa_indexer",
+    "description": "Compressed-key sparse-attention projection, scoring and top-k selection",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "index_qk_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[(indexer_n_heads + indexer_kv_heads) * indexer_head_dim, hidden_size]",
+        "unresolved_dimensions": [
+          "indexer_head_dim",
+          "indexer_kv_heads",
+          "indexer_n_heads"
+        ]
+      },
+      {
+        "name": "q_norm_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[indexer_head_dim]",
+        "unresolved_dimensions": [
+          "indexer_head_dim"
+        ]
+      },
+      {
+        "name": "k_norm_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[indexer_head_dim]",
+        "unresolved_dimensions": [
+          "indexer_head_dim"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "selected_indices",
+        "shape": "[B, S, min(indexer_budget + indexer_compress_ratio - 1, kv_len)]",
+        "dtype": "int32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/qsa_indexer.json",
+      "sha256": "8ebb7308f2597856f8c610cbf3152865ee5938fc6b8d27bfb66d754998ca9dcb"
+    },
+    "group_id": "qsaindexer",
+    "display_name": "QSAIndexer",
+    "public_id": "qsaindexer:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:DynamicQuant",
+    "key": "DynamicQuant",
+    "name": "DynamicQuant",
+    "domain": "infer",
+    "category": "Quantization",
+    "op_type": "quant_quant",
+    "description": "Dynamic quantization",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "int8"
+      },
+      {
+        "name": "scale",
+        "shape": "[B, S]",
+        "dtype": "fp32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/quant_quant.json",
+      "sha256": "d0c9fdb5386c930931702e66e1caecc49ea7a9bf263a25e23d78baa0ad3c6c72"
+    },
+    "group_id": "dynamicquant",
+    "display_name": "DynamicQuant",
+    "public_id": "dynamicquant:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:SparseIndexSelect",
+    "key": "SparseIndexSelect",
+    "name": "SparseIndexSelect",
+    "domain": "infer",
+    "category": "MLA",
+    "op_type": "sparse_index_select",
+    "description": "Sparse score top-k selection after index score reduction",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "l2_scores_reduced",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          1024
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, seq_len // 2]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "topk_2",
+        "shape": "[B, S, index_topk]",
+        "dtype": "int32"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/sparse_index_select.json",
+      "sha256": "aac5f42f9911fef2995733f8e9c2c420169f56c7511b3f777870534f832380fc"
+    },
+    "group_id": "sparseindexselect",
+    "display_name": "SparseIndexSelect",
+    "public_id": "sparseindexselect:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchAdd",
+    "key": "TorchAdd",
+    "name": "TorchAdd",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_add",
+    "description": "Element-wise tensor addition: y = a + b",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "a",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "b",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_add.json",
+      "sha256": "c56a91825d290e2c3e7f8f7207dccaa646213f75a1c4f3ba016d8e26cb40ed26"
+    },
+    "group_id": "torchadd",
+    "display_name": "TorchAdd",
+    "public_id": "torchadd:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchCos",
+    "key": "TorchCos",
+    "name": "TorchCos",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_cos",
+    "description": "Element-wise cosine: y = cos(x)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_cos.json",
+      "sha256": "37909b3aa2eebc755a0a6fef9fa7573bb493b84d7e0783f4c993c928c4017df2"
+    },
+    "group_id": "torchcos",
+    "display_name": "TorchCos",
+    "public_id": "torchcos:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchCumsum",
+    "key": "TorchCumsum",
+    "name": "TorchCumsum",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_cumsum",
+    "description": "Cumulative sum along a dimension: y[i] = sum(x[0..i])",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_cumsum.json",
+      "sha256": "005c9afd1e6927132480dc67f70bc3014a0bcbf3628fffa56d3b809bd515f09e"
+    },
+    "group_id": "torchcumsum",
+    "display_name": "TorchCumsum",
+    "public_id": "torchcumsum:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchMm",
+    "key": "TorchMm",
+    "name": "TorchMm",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_mm",
+    "description": "Matrix multiplication: y = a @ b",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "a",
+        "role": "input",
+        "shape": [
+          1024,
+          512
+        ],
+        "dtype": "fp16",
+        "expression": "[M, K]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "b",
+        "role": "input",
+        "shape": [
+          512,
+          256
+        ],
+        "dtype": "fp16",
+        "expression": "[K, N]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[M, N]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_mm.json",
+      "sha256": "2002ca0f11a3e38753386755e79ac1809f4a5e8347deceefba777543b5cf78a5"
+    },
+    "group_id": "torchmm",
+    "display_name": "TorchMm",
+    "public_id": "torchmm:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchMul",
+    "key": "TorchMul",
+    "name": "TorchMul",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_mul",
+    "description": "Element-wise tensor multiplication: y = a * b",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "a",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      },
+      {
+        "name": "b",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_mul.json",
+      "sha256": "4ba9ae01d1cbf623f72c55d44f9d31b9be95e424c3838abfe2ee2e530ce4e360"
+    },
+    "group_id": "torchmul",
+    "display_name": "TorchMul",
+    "public_id": "torchmul:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchSin",
+    "key": "TorchSin",
+    "name": "TorchSin",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_sin",
+    "description": "Element-wise sine: y = sin(x)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_sin.json",
+      "sha256": "e42b464acc408365a3a537a53fd329f9ef602f9d63459b8d919256913bb22fbd"
+    },
+    "group_id": "torchsin",
+    "display_name": "TorchSin",
+    "public_id": "torchsin:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchSoftmax",
+    "key": "TorchSoftmax",
+    "name": "TorchSoftmax",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_softmax",
+    "description": "Softmax along the last dimension: y = exp(x) / sum(exp(x))",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_softmax.json",
+      "sha256": "978811f867e6f85b442b1cbee367b00cfccd9a9c36236b1bad332923128e26b7"
+    },
+    "group_id": "torchsoftmax",
+    "display_name": "TorchSoftmax",
+    "public_id": "torchsoftmax:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchSort",
+    "key": "TorchSort",
+    "name": "TorchSort",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_sort",
+    "description": "Sort tensor along a dimension: values, indices = sort(x, dim=d)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "values",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "fp16"
+      },
+      {
+        "name": "indices",
+        "shape": "[B, S, hidden_size]",
+        "dtype": "int64"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_sort.json",
+      "sha256": "6d0e3120dfc62403830f94c1637c3b1c36da79aeb80eb9ac6a00d3573685879d"
+    },
+    "group_id": "torchsort",
+    "display_name": "TorchSort",
+    "public_id": "torchsort:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:TorchSum",
+    "key": "TorchSum",
+    "name": "TorchSum",
+    "domain": "infer",
+    "category": "Torch",
+    "op_type": "torch_torch_sum",
+    "description": "Sum reduction: y = sum(x, dim=d)",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "x",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          4096
+        ],
+        "dtype": "fp16",
+        "expression": "[B, S, hidden_size]",
+        "unresolved_dimensions": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "y",
+        "shape": "[B, hidden_size]",
+        "dtype": "fp16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/torch_torch_sum.json",
+      "sha256": "b4baa55b36c3cc071871669f3ad422cfa549b8fb62218092e2084addadd395b0"
+    },
+    "group_id": "torchsum",
+    "display_name": "TorchSum",
+    "public_id": "torchsum:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:vision_encoder_block",
+    "key": "vision_encoder_block",
+    "name": "VisionEncoderBlock",
+    "domain": "infer",
+    "category": "vision",
+    "op_type": "vision_encoder_block",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "vision_hidden",
+        "role": "input",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_patch_tokens, vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_patch_tokens"
+        ]
+      },
+      {
+        "name": "norm1_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size"
+        ]
+      },
+      {
+        "name": "qkv_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[3 * vision_hidden_size, vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size"
+        ]
+      },
+      {
+        "name": "o_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size, vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size"
+        ]
+      },
+      {
+        "name": "norm2_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size"
+        ]
+      },
+      {
+        "name": "fc1_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_intermediate_size, vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_intermediate_size"
+        ]
+      },
+      {
+        "name": "fc2_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size, vision_intermediate_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_intermediate_size"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "vision_hidden",
+        "shape": "[vision_patch_tokens, vision_hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/vision_encoder_block.json",
+      "sha256": "be1845df54459fdf5f50ef057a97210ce0cd9ebb6a4eb3274334b08fd6517707"
+    },
+    "group_id": "visionencoderblock",
+    "display_name": "VisionEncoderBlock",
+    "public_id": "visionencoderblock:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:vision_patch_embed",
+    "key": "vision_patch_embed",
+    "name": "VisionPatchEmbed",
+    "domain": "infer",
+    "category": "vision",
+    "op_type": "vision_patch_embed",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "pixel_values",
+        "role": "input",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_patch_tokens, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]",
+        "unresolved_dimensions": [
+          "vision_in_channels",
+          "vision_patch_size",
+          "vision_patch_tokens",
+          "vision_temporal_patch_size"
+        ]
+      },
+      {
+        "name": "projection_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_in_channels",
+          "vision_patch_size",
+          "vision_temporal_patch_size"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "vision_hidden",
+        "shape": "[vision_patch_tokens, vision_hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/vision_patch_embed.json",
+      "sha256": "7b25faefa30022da4b204d88608818bebec81972d8ce08860c91fd345700ff65"
+    },
+    "group_id": "visionpatchembed",
+    "display_name": "VisionPatchEmbed",
+    "public_id": "visionpatchembed:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:vision_patch_merger",
+    "key": "vision_patch_merger",
+    "name": "VisionPatchMerger",
+    "domain": "infer",
+    "category": "vision",
+    "op_type": "vision_patch_merger",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "vision_hidden",
+        "role": "input",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_patch_tokens, vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_patch_tokens"
+        ]
+      },
+      {
+        "name": "norm_scale",
+        "role": "parameter",
+        "shape": [
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size"
+        ]
+      },
+      {
+        "name": "fc1_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_spatial_merge_size"
+        ]
+      },
+      {
+        "name": "fc2_weight",
+        "role": "parameter",
+        "shape": [
+          null,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_out_hidden_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]",
+        "unresolved_dimensions": [
+          "vision_hidden_size",
+          "vision_out_hidden_size",
+          "vision_spatial_merge_size"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "visual_embeddings",
+        "shape": "[vision_merged_tokens, vision_out_hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/vision_patch_merger.json",
+      "sha256": "7929a1b1826504e9631bcf30bd3b92ff14e2883c8dc2d6f8d511a312428639e6"
+    },
+    "group_id": "visionpatchmerger",
+    "display_name": "VisionPatchMerger",
+    "public_id": "visionpatchmerger:template-1",
+    "template_label": "默认输入"
+  },
+  {
+    "id": "infer:vision_text_embedding_merge",
+    "key": "vision_text_embedding_merge",
+    "name": "VisionTextEmbeddingMerge",
+    "domain": "infer",
+    "category": "vision",
+    "op_type": "vision_text_embedding_merge",
+    "description": "",
+    "configurable": true,
+    "reason": null,
+    "inputs": [
+      {
+        "name": "text_embeddings",
+        "role": "input",
+        "shape": [
+          1,
+          2048,
+          null
+        ],
+        "dtype": "bf16",
+        "expression": "[B, S, hc_count * hidden_size]",
+        "unresolved_dimensions": [
+          "hc_count"
+        ]
+      },
+      {
+        "name": "visual_embeddings",
+        "role": "input",
+        "shape": [
+          null,
+          4096
+        ],
+        "dtype": "bf16",
+        "expression": "[vision_merged_tokens, hidden_size]",
+        "unresolved_dimensions": [
+          "vision_merged_tokens"
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "hyper_state",
+        "shape": "[B, S, hc_count * hidden_size]",
+        "dtype": "bf16"
+      }
+    ],
+    "source": {
+      "path": "backend/inference/data/operators/vision_text_embedding_merge.json",
+      "sha256": "20bb1ec85697534ecc2114af4b588ac63fae8c5236eb5a2e46a2eacaf0e990ad"
+    },
+    "group_id": "visiontextembeddingmerge",
+    "display_name": "VisionTextEmbeddingMerge",
+    "public_id": "visiontextembeddingmerge:template-1",
+    "template_label": "默认输入"
+  }
+]

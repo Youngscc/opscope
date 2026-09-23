@@ -28,6 +28,11 @@ OPERATOR_KINDS = {
     'train:embedding': 'gather', 'infer:Cast': 'cast',
     'infer:DynamicQuant': 'dynamic_quant', 'infer:MoeGatingTopK': 'moe_topk',
     'infer:TransposeBatchMatMul': 'transpose_bmm',
+    'infer:MatMul': 'linear', 'infer:Linear': 'linear',
+    'infer:ColumnParallelLinear': 'linear', 'infer:RowParallelLinear': 'linear',
+    'infer:TorchSum': 'reduce_sum', 'infer:Transpose': 'transpose',
+    'infer:TorchCumsum': 'cumsum', 'infer:Cumsum': 'cumsum',
+    'infer:GatherV2': 'gather',
 }
 
 
@@ -46,9 +51,22 @@ def unsupported(config, hardware):
     if kind is None:
         return missing_contract_reason(config)
     inputs = config['inputs']
+    attributes = config.get('attributes', {})
+    if kind in {'cumsum', 'gather'} and config['operator_id'] in {'infer:Cumsum', 'infer:GatherV2'} and attributes.get('axis') is None:
+        return '需要填写 axis 的实际值'
+    if kind in {'cumsum', 'transpose', 'reduce_sum'} and len(inputs[0]['shape']) != 3:
+        return '当前 TileSim 适配只验证三维输入'
+    if kind == 'transpose' and (len(inputs) != 2 or inputs[1]['shape'] != [3] or inputs[1]['dtype'] != 'int64'):
+        return 'Transpose 的 perm 张量需保持三个 INT64 元素'
+    if config['operator_id'] in {'infer:Cumsum', 'infer:GatherV2'} and (inputs[-1]['shape'] != [1] or inputs[-1]['dtype'] != 'int64'):
+        return 'axis 张量需保持单个 INT64 元素'
+    if kind == 'gather' and len(inputs[0]['shape']) != 2:
+        return 'GatherV2 需要二维权重表'
     dtypes = {t['dtype'] for t in inputs}
     if model not in {'910B1', '910B4'} and 'bf16' in dtypes:
         return f'TileSim 的 {model} 配置缺少 BF16 计算/向量参数；未改用 FP16'
+    if model in {'GB200', 'R200'} and kind in {'bmm', 'transpose_bmm', 'cast', 'sigmoid', 'swiglu', 'reduce_sum'}:
+        return f'TileSim 的 {model} 带宽表缺少此算子需要的 GM→L1 或 L0C→L2 参数'
     if kind in {'flash_attention', 'flash_attention_score'}:
         if len(inputs) != 3 or any(len(t['shape']) != 4 or t['shape'] != inputs[0]['shape'] for t in inputs):
             return 'FlashAttention 需要相同 BNSD 形状的 Q / K / V'
@@ -67,6 +85,14 @@ def unsupported(config, hardware):
         return 'TileSim 输入规模超过本地模型上限'
     if kind in {'matmul', 'linear'}:
         return matrix_reason(config, model)
+    if kind in {'cumsum', 'transpose', 'reduce_sum'}:
+        if kind == 'cumsum' and config['operator_id'] == 'infer:Cumsum':
+            return 'TileSim Cumsum 工程模型只处理最后一轴，当前模板的轴必须与之相同' if attributes.get('axis') != len(inputs[0]['shape']) - 1 else None
+        if kind == 'cumsum' and inputs[0]['dtype'] not in {'fp16', 'fp32'}:
+            return 'TileSim Cumsum 工程模型未验证 INT64 输入'
+        if kind == 'transpose' and attributes.get('permutation') != [0, 2, 1]:
+            return '当前 Transpose 资产只支持 [0,2,1] 输出顺序'
+        return None
     if kind == 'bmm':
         a, b = inputs[:2]
         if len(a['shape']) != 3 or len(b['shape']) != 3 or a['shape'][0] != b['shape'][0] or a['shape'][2] != b['shape'][1]:
@@ -94,17 +120,17 @@ def matrix_reason(config, model):
     kind = OPERATOR_KINDS[config['operator_id']]
     a, b = config['inputs'][:2]
     a_shape, b_shape = a['shape'], b['shape']
-    if len(a_shape) != 2 or len(b_shape) != 2:
-        return 'TileSim MatMul / Linear 当前需要二维输入'
+    if (kind == 'linear' and len(a_shape) not in {2, 3}) or len(b_shape) != 2 or (kind != 'linear' and len(a_shape) != 2):
+        return 'TileSim MatMul / Linear 需要二维矩阵或可展平的三维线性输入'
     k_b = b_shape[-1] if kind == 'linear' else b_shape[0]
     n = b_shape[0] if kind == 'linear' else b_shape[1]
-    if a_shape[1] != k_b:
+    if a_shape[-1] != k_b:
         return 'TileSim MatMul / Linear 的 K 维必须匹配'
     if a['dtype'] != b['dtype'] or a['dtype'] not in {'fp16', 'bf16'}:
         return 'TileSim MatMul / Linear 支持一致的 FP16 / BF16 输入'
     if model in {'GB200', 'R200'}:
         return f'TileSim 的 {model} 配置缺少理论模式需要的 L0C → L2 带宽参数'
-    m, k = a_shape
+    m, k = math.prod(a_shape[:-1]), a_shape[-1]
     if any(d < 128 or d % 128 for d in (m, n, k)):
         return 'TileSim 当前已验证维度为128的倍数；尾块暂未开放'
     estimate = math.ceil(m / 128) * math.ceil(n / 256) * (math.ceil(k / 512) * 14 + 1)

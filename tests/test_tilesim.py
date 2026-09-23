@@ -61,11 +61,15 @@ class TileSimTest(unittest.TestCase):
         for operator_id in OPERATOR_KINDS:
             op = next(item for item in catalog['operators'] if item['id'] == operator_id)
             config = {'operator_id': operator_id, 'key': op['key'],
+                      'attributes': {field['name']: field['default'] for field in op.get('parameters', [])},
                       'inputs': [{key: tensor[key] for key in ('name', 'role', 'shape', 'dtype')}
                                  for tensor in op['inputs']]}
             if any(None in tensor['shape'] for tensor in config['inputs']):
                 self.assertEqual(operator_id, 'infer:FlashAttentionScore')
                 self.assertIn('BNSD', unsupported(config, 'tilesim:910B1'))
+                continue
+            if operator_id in {'infer:Cumsum', 'infer:GatherV2'}:
+                self.assertIn('axis', unsupported(config, 'tilesim:910B1'))
                 continue
             self.assertIsNone(unsupported(config, 'tilesim:910B1'), operator_id)
             work = logical_work(config)

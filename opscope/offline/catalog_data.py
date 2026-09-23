@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from .fixtures import HARDWARE, METHODS
+from opscope.evaluation.operator_parameters import PARAMETERS, defaults
 
 
 TEMPLATE_LABELS = {
@@ -46,6 +47,8 @@ def catalog_payload():
                         'unresolved_dimensions': []} for name in ('A', 'B')],
             'outputs': [], 'source': {'path': 'fixtures.py', 'sha256': None}}
     catalog['operators'].insert(0, demo)
+    for op in catalog['operators']:
+        op['parameters'] = PARAMETERS.get(op['id'], [])
     catalog['groups'] = operator_groups(catalog['operators'])
     catalog['dtypes'] = sorted({'bf16', 'fp16', 'fp32', 'fp8', 'int8', 'int32', 'int64'} |
                                {t['dtype'] for op in catalog['operators'] for t in op['inputs']})
@@ -55,6 +58,7 @@ def catalog_payload():
                                     for tensor in demo['inputs']],
         'options': {'layout': 'row-major', 'accumulator_dtype': 'fp32',
                     'transpose_a': False, 'transpose_b': False},
+        'attributes': defaults(demo['id']),
         'source': demo['source'], 'boundary': 'device kernel only'}
     return catalog
 

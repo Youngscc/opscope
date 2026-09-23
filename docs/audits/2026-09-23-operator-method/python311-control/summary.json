@@ -1,0 +1,37 @@
+{
+  "created_at": "2026-09-23T01:43:13.665967+00:00",
+  "templates": 100,
+  "visible_operators": 94,
+  "hardware": 19,
+  "cases": 9500,
+  "actual_executions": 413,
+  "by_method": {
+    "profile": {
+      "not_connected": 1444,
+      "blocked_input": 342,
+      "catalog_excluded": 114
+    },
+    "roofline": {
+      "succeeded": 204,
+      "unsupported": 1240,
+      "blocked_input": 342,
+      "catalog_excluded": 114
+    },
+    "tilesim": {
+      "succeeded": 209,
+      "unsupported": 1235,
+      "blocked_input": 342,
+      "catalog_excluded": 114
+    },
+    "method3": {
+      "not_connected": 1444,
+      "blocked_input": 342,
+      "catalog_excluded": 114
+    },
+    "method4": {
+      "not_connected": 1444,
+      "blocked_input": 342,
+      "catalog_excluded": 114
+    }
+  }
+}

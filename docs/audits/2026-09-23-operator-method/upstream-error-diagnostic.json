@@ -1,0 +1,6 @@
+{
+  "operator_id": "infer:MoeGatingTopK",
+  "step": "Direct node call to expose the exception swallowed by GraphExecutor._run_operator",
+  "reason": "not enough values to unpack (expected 3, got 2)",
+  "traceback": "Traceback (most recent call last):\n  File \"<stdin>\", line 11, in <module>\n  File \"/Users/YokeLove/huawei/modeling/backend/inference/kepler/engine/layers/op_base.py\", line 180, in __call__\n    self.calc_compute_flops()\n  File \"/Users/YokeLove/huawei/modeling/backend/inference/kepler/engine/layers/moe.py\", line 104, in calc_compute_flops\n    B, S, D = self.inputs[0].shape\n    ^^^^^^^\nValueError: not enough values to unpack (expected 3, got 2)\n"
+}

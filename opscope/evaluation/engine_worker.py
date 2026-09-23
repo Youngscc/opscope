@@ -13,14 +13,18 @@ if not __package__:
 if __package__:
     from .evaluation_contract import digest, hardware_key
     from .bundled_roofline import DATA, simulate
+    from .catalog_roofline import simulate as simulate_catalog, unsupported as catalog_unsupported, DATA as CATALOG_DATA
 else:
     from evaluation_contract import digest, hardware_key
     from bundled_roofline import DATA, simulate
+    from opscope.evaluation.catalog_roofline import simulate as simulate_catalog, unsupported as catalog_unsupported, DATA as CATALOG_DATA
 
 
 def engine_identity(_root=None):
     files = {'roofline': Path(__file__).with_name('bundled_roofline.py'),
-             'hardware_spec': DATA, 'operator_contract': Path(__file__).with_name('evaluation_contract.py')}
+             'catalog_roofline': Path(__file__).with_name('catalog_roofline.py'),
+             'operator_specs': CATALOG_DATA, 'hardware_spec': DATA,
+             'operator_contract': Path(__file__).with_name('evaluation_contract.py')}
     hardware = json.loads(DATA.read_text())
     return {'name': 'roofline', 'revision': hardware['upstream_revision'], 'bundled': True,
             'files': {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in files.items()}}
@@ -33,13 +37,15 @@ def capabilities():
 
 def roofline(config, hardware, identity):
     started = time.monotonic()
-    values = simulate(config, hardware)
+    catalog_mode = config['operator_id'].startswith('infer:')
+    values = simulate_catalog(config, hardware) if catalog_mode else simulate(config, hardware)
     if values['backend'] != 'roofline' or not math.isfinite(values['latency_us']) or values['latency_us'] < 0:
         raise ValueError('invalid backend result')
     values.pop('upstream_revision', None)
     spec = values['hardware_spec']
     return {**values, 'hardware_hash': digest(spec),
-            'engine': {**identity, 'calibration_hash': None},
+            'engine': {**identity, 'mode': 'catalog-analytic' if catalog_mode else 'bundled-basic',
+                       'calibration_hash': None},
             'wall_time_ms': (time.monotonic() - started) * 1000}
 
 
@@ -75,6 +81,8 @@ def unavailable_reason(request, method, key, caps):
         return '尚未配置评估组件'
     if method == 'tilesim':
         return caps['tilesim_reason']
+    if method == 'roofline' and request['configuration']['operator_id'].startswith('infer:'):
+        return catalog_unsupported(request['configuration'], key) if key else '当前方法未配置此硬件'
     if not request['supported']:
         return '当前输入形式暂未适配评估'
     if key is None:

@@ -1,0 +1,18 @@
+{
+  "python": "3.11.5 (main, Sep 11 2023, 08:31:25) [Clang 14.0.6 ]",
+  "executable": "/Users/YokeLove/huawei/opscope/.venv/bin/python",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "dependencies": {
+    "msopmodeling": "1.0.9",
+    "scipy": "1.15.3",
+    "numpy": "2.0.1",
+    "sympy": "1.14.0",
+    "pandas": "2.3.3"
+  },
+  "source_sha256": {
+    "data/modeling-catalog.json": "5193a9a3f93b94afae71abd2eefae97656b0a921e80d1f5942a74e06433c1374",
+    "opscope/evaluation/tilesim_contract.py": "ffde87a03ceb08e1a830e0278ae8795f99fcfc838272886b0fc581b49b7c4c63",
+    "opscope/evaluation/tilesim_adapters.py": "a7f8777f27ea30cb234e7b87e4be4a4a1b610d4cbf9632e7948b3d22edbe5116",
+    "opscope/evaluation/bundled_roofline.py": "5ae388b9267c88d4e4df43f379f698b803339c684a79e25945fc629f70e7a8f0"
+  }
+}

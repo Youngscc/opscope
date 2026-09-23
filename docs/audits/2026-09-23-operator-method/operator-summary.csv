@@ -1,0 +1,101 @@
+operator_id,roofline_success,tilesim_current_success,tilesim_control_success,upstream_status,tilesim_note
+demo:matmul,17,14,14,not_probed,
+train:matmul,17,5,5,not_probed,
+train:linear,17,5,5,not_probed,
+train:bmm,17,0,5,not_probed,
+train:flash_attention,17,5,5,not_probed,
+train:layernorm,17,0,5,not_probed,
+train:rms_norm,17,0,5,not_probed,
+train:swiglu,17,0,0,not_probed,融合三矩阵 MLP；仅有同名 SwiGLU 激活，需组合模型/融合成本，不能直接替代。
+train:embedding,17,0,5,not_probed,
+train:silu,17,0,5,not_probed,
+train:gelu,17,0,5,not_probed,
+train:softmax,17,0,5,not_probed,
+infer:ChunkGatedDeltaRule,0,0,0,blocked_input,
+infer:FlashAttentionScore,0,0,0,blocked_input,已接 DSL；缺 qk_head_dim/qk_nope_head_dim；补 128 后默认规模仍超 8 万事件限制。
+infer:FusedInferAttentionScore,0,0,0,blocked_input,同名工程模型已有；缺 head_dim/cache/block/prefix/rope 维度及对应参数适配。
+infer:KvQuantSparseFlashAttention,0,0,0,blocked_input,SparseFlashAttention 有 FP8 分支候选；补稀疏/量化上下文，尚未验证等价。
+infer:SparseFlashAttention,0,0,0,blocked_input,工程 SparseFlashAttention 已有；补 index_topk、索引/布局并适配。
+infer:MatMulV3,0,5,5,succeeded,
+infer:QuantBatchMatmulV3,0,0,0,succeeded,工程模型存在；补量化 scale/offset 等完整输入、精度与布局适配。
+infer:TransposeBatchMatMul,0,0,5,succeeded,
+infer:AddRmsNorm,0,0,5,succeeded,
+infer:AddRmsNormBias,0,0,0,succeeded,有 RmsNorm/AddRmsNorm 部件；额外 bias/gate/quant 融合边界未建适配，未发现可直接替代的同边界注册模型。
+infer:Cast,0,5,5,succeeded,
+infer:CausalConv1d,0,0,0,blocked_input,
+infer:Cumsum,0,0,0,succeeded,已有 工程 Cumsum；当前配置无 axis 实际值，需要补语义和适配。
+infer:DynamicMxQuant,0,0,0,succeeded,
+infer:DynamicQuantV2,0,0,0,succeeded,只有 DynamicQuant 候选；核对 V2 多输入/输出和量化选项，不能仅改名。
+infer:FusedGdnGating,0,0,0,blocked_input,
+infer:GatherV2,0,0,0,succeeded,已有 工程 Gather；当前配置无 axis 实际值，需要补语义和适配。
+infer:GemmaRmsNorm,0,0,5,succeeded,
+infer:LayerNormV4,0,0,19,succeeded,
+infer:Mul,0,0,5,succeeded,
+infer:RmsNorm,0,0,5,succeeded,
+infer:ScatterNdUpdate,0,0,0,succeeded,理论 ScatterNdUpdate 已有；当前资产为 FP8+索引，需精度/索引布局校验，不能把 FP8 当 INT8。
+infer:Sigmoid,0,5,5,succeeded,
+infer:SwiGlu,0,5,5,succeeded,
+infer:SwiGluQuant,0,0,0,succeeded,有 DequantSwigluQuant 部件候选；反量化/分组/量化输入和输出边界不同，未验证完整等价。
+infer:SwigluGroupQuant,0,0,0,blocked_input,有 DequantSwigluQuant 部件候选；反量化/分组/量化输入和输出边界不同，未验证完整等价。
+infer:Transpose,0,0,0,succeeded,已有 理论 Transpose；缺 axis/perm 实际值和适配。Transpose 理论模型只按元素量估搬运，不能验证置换差异。
+infer:GroupedMatmul,0,0,0,succeeded,GroupedMatmul 工程模型存在；缺 group_list 实际分组值和布局适配。
+infer:GroupedMatmulSwigluQuantV2,0,0,0,succeeded,融合分组 GEMM+激活+量化；仅有 GroupedMatmul/DequantSwigluQuant 部件，完整边界未适配。
+infer:MlaPrologV3,0,0,0,blocked_input,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:QuantLightningIndexer,0,0,0,failed,有 LightningIndexer 候选，量化版需核对；上游单算子输出还缺 sparse_count。
+infer:MoeGatingTopK,0,0,5,failed,
+infer:MoeDistributeCombineV3,0,0,0,not_probed,
+infer:MoeDistributeDispatchV3,0,0,0,not_probed,
+infer:SituAndMul,0,0,0,succeeded,可考虑 Swiglu/Swish+Mul；先核对门控拆分、双输入和融合输出边界。
+infer:SparseAttentionSharedKV,0,0,0,succeeded,工程 SparseAttnSharedkv 已有；需要 layout/tail_dim、KV窗口、稀疏索引等契约。
+infer:AllGather,0,0,0,not_probed,
+infer:AllReduce,0,0,0,not_probed,
+infer:MoECombine,0,0,0,not_probed,
+infer:MoEDispatch,0,0,0,not_probed,
+infer:Embedding,0,0,0,succeeded,Gather 候选存在，但该资产只有整数 x/indices，没有浮点权重表；需修正模板，不可直接复用 train:embedding。
+infer:EngramGate,0,0,0,blocked_input,
+infer:EngramLookup,0,0,0,blocked_input,
+infer:END,0,0,0,succeeded,流程标记，不是需要性能评估的计算算子；应从可评估目录中剔除。
+infer:START,0,0,0,succeeded,流程标记，不是需要性能评估的计算算子；应从可评估目录中剔除。
+infer:GatedResidual,0,0,0,blocked_input,
+infer:ColumnParallelLinearQuant,0,0,0,succeeded,量化线性，需 scale/offset、布局与分片口径；不是普通 Linear 改名。
+infer:ColumnParallelLinear,0,0,0,succeeded,已有 MatMul/Linear 基础模型；需按实际权重方向、3D batch 展平和分片边界接入，属于我们未适配。
+infer:GroupMatMul,0,0,0,succeeded,候选 GroupedMatmul；需 batch/expert 与 group_list 的明确转换，不能只按名字合并。
+infer:Linear,0,0,0,succeeded,已有 MatMul/Linear 基础模型；需按实际权重方向、3D batch 展平和分片边界接入，属于我们未适配。
+infer:MatMul,0,0,0,succeeded,已有 MatMul/Linear 基础模型；需按实际权重方向、3D batch 展平和分片边界接入，属于我们未适配。
+infer:RowParallelLinear,0,0,0,succeeded,已有 MatMul/Linear 基础模型；需按实际权重方向、3D batch 展平和分片边界接入，属于我们未适配。
+infer:MHCHead,0,0,0,succeeded,有 HcPre/HcPostTriton/HcPreSinkhorn 等候选；需核对完整融合边界和参数，尚未证明可直接替代。
+infer:MHCPost,0,0,0,succeeded,有 HcPre/HcPostTriton/HcPreSinkhorn 等候选；需核对完整融合边界和参数，尚未证明可直接替代。
+infer:MHCPre,0,0,0,succeeded,有 HcPre/HcPostTriton/HcPreSinkhorn 等候选；需核对完整融合边界和参数，尚未证明可直接替代。
+infer:Compressor,0,0,0,succeeded,理论 Compressor 已有；需转置权重、补 eps/weight、compress_ratio/coff/rope_dim/cur_seq_len，并核对融合范围。
+infer:IndexCompressorEpilog,0,0,0,succeeded,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:IndexPrologV4,0,0,0,succeeded,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:KVCompressorEpilog,0,0,0,succeeded,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:MLAEpilogV4,0,0,0,succeeded,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:MLAPrologV4,0,0,0,succeeded,有 MLA/Compressor 部件候选；Prolog/Epilog 的完整输入、阶段/量化和融合边界尚未适配，不能用整个 MLA 代替。
+infer:LightningIndexer,0,0,0,succeeded,工程 LightningIndexer 已有；输入布局和扩展参数未接。
+infer:MoEGate,0,0,0,succeeded,有 GEMM、MoeGatingTopK/TopKV2 部件；是否含门控投影/hash/分组不同，需要完整契约或组合模型。
+infer:MoEGateHashTopK,0,0,0,succeeded,有 GEMM、MoeGatingTopK/TopKV2 部件；是否含门控投影/hash/分组不同，需要完整契约或组合模型。
+infer:MoEGateTopK,0,0,0,succeeded,有 GEMM、MoeGatingTopK/TopKV2 部件；是否含门控投影/hash/分组不同，需要完整契约或组合模型。
+infer:MoETopK,0,0,0,succeeded,有 GEMM、MoeGatingTopK/TopKV2 部件；是否含门控投影/hash/分组不同，需要完整契约或组合模型。
+infer:AddRMSNormQuant,0,0,0,succeeded,有 RmsNorm/AddRmsNorm 部件；额外 bias/gate/quant 融合边界未建适配，未发现可直接替代的同边界注册模型。
+infer:RMSNormGated,0,0,0,succeeded,有 RmsNorm/AddRmsNorm 部件；额外 bias/gate/quant 融合边界未建适配，未发现可直接替代的同边界注册模型。
+infer:RMSNormQuant,0,0,0,succeeded,有 RmsNorm/AddRmsNorm 部件；额外 bias/gate/quant 融合边界未建适配，未发现可直接替代的同边界注册模型。
+infer:PLELayer,0,0,0,blocked_input,
+infer:RopeComplex,0,0,0,succeeded,理论 RotaryPositionEmbedding 候选需 x/sin/cos 三输入；当前模板没有完整 sin/cos 表，布局语义待核对。
+infer:RopeInterLeave,0,0,0,succeeded,同上，另需确认 interleave 规则和 Q/K 两路输出。
+infer:QSAIndexer,0,0,0,blocked_input,
+infer:DynamicQuant,0,0,5,succeeded,
+infer:SparseIndexSelect,0,0,0,failed,没有已验证同边界模型；上游输出形状也缺 index_topk。
+infer:TorchAdd,0,0,19,succeeded,
+infer:TorchCos,0,0,0,succeeded,
+infer:TorchCumsum,0,0,0,succeeded,已有 工程 Cumsum；当前配置无 axis 实际值，需要补语义和适配。
+infer:TorchMm,0,14,14,succeeded,
+infer:TorchMul,0,0,19,succeeded,
+infer:TorchSin,0,0,0,succeeded,
+infer:TorchSoftmax,0,0,19,succeeded,
+infer:TorchSort,0,0,0,succeeded,
+infer:TorchSum,0,0,0,succeeded,理论 ReduceSum 已有；资产输出指向沿 S 维归约，需显式 reduce_axis/keepdim 和输出适配。
+infer:vision_encoder_block,0,0,0,blocked_input,
+infer:vision_patch_embed,0,0,0,blocked_input,
+infer:vision_patch_merger,0,0,0,blocked_input,
+infer:vision_text_embedding_merge,0,0,0,blocked_input,

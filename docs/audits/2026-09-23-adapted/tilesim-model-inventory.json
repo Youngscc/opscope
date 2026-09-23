@@ -1,0 +1,251 @@
+{
+  "HcPostTriton": [
+    "ops/custom_op/hc_post_triton.py"
+  ],
+  "HcPre": [
+    "ops/custom_op/hc_pre.py"
+  ],
+  "HcPreTriton": [
+    "ops/custom_op/hc_pre_triton.py"
+  ],
+  "MatMulMrope": [
+    "ops/custom_op/matmul_split_mrope.py"
+  ],
+  "HcTilelang": [
+    "ops/custom_op/mhc_tilelang.py"
+  ],
+  "HcUnfused": [
+    "ops/custom_op/mhc_unfused.py"
+  ],
+  "MropeGolden": [
+    "ops/custom_op/mrope_split.py"
+  ],
+  "MatMul": [
+    "ops/engineering_model/cube_op/matmul_l0.py",
+    "ops/theoretical_model/cube_op/matmul.py",
+    "engineering:Matmul"
+  ],
+  "FlashAttention": [
+    "ops/engineering_model/cv_fused_op/flash_attention_single_task.py",
+    "ops/theoretical_model/cv_fused_op/flash_attention.py",
+    "engineering:FlashAttentionInner"
+  ],
+  "HIVM": [
+    "ops/engineering_model/hivm_op/hivm_op.py"
+  ],
+  "TritonOp": [
+    "ops/engineering_model/ttir_op/triton_op.py",
+    "ops/theoretical_model/ttir_op/triton_op.py"
+  ],
+  "Abs": [
+    "ops/theoretical_model/basic_vec_op/abs.py",
+    "engineering:ABSModel"
+  ],
+  "Add": [
+    "ops/theoretical_model/basic_vec_op/add.py",
+    "engineering:AddModel"
+  ],
+  "Cast": [
+    "ops/theoretical_model/basic_vec_op/cast.py"
+  ],
+  "Div": [
+    "ops/theoretical_model/basic_vec_op/div.py",
+    "engineering:DivModel"
+  ],
+  "Max": [
+    "ops/theoretical_model/basic_vec_op/max.py"
+  ],
+  "Min": [
+    "ops/theoretical_model/basic_vec_op/min.py"
+  ],
+  "Mul": [
+    "ops/theoretical_model/basic_vec_op/mul.py",
+    "engineering:MulModel"
+  ],
+  "Muls": [
+    "ops/theoretical_model/basic_vec_op/mul.py"
+  ],
+  "Relu": [
+    "ops/theoretical_model/basic_vec_op/relu.py"
+  ],
+  "Sqrt": [
+    "ops/theoretical_model/basic_vec_op/sqrt.py"
+  ],
+  "BatchMatMul": [
+    "ops/theoretical_model/cube_op/batch_matmul.py",
+    "engineering:BatchMatmul"
+  ],
+  "AddMM": [
+    "ops/theoretical_model/cube_op/matmul.py",
+    "ops/theoretical_model/cv_fused_op/addmm.py"
+  ],
+  "Compressor": [
+    "ops/theoretical_model/cv_fused_op/compressor.py"
+  ],
+  "FlashAttentionGrad": [
+    "ops/theoretical_model/cv_fused_op/flash_attention_grad_v2.py"
+  ],
+  "HstuDenseForwardFuxi": [
+    "ops/theoretical_model/cv_fused_op/hstu.py",
+    "engineering:HstuDenseForward"
+  ],
+  "AddRmsNorm": [
+    "ops/theoretical_model/vector_fused_op/addrmsnorm.py",
+    "engineering:AddRmsNormModel"
+  ],
+  "ClipByValueV2": [
+    "ops/theoretical_model/vector_fused_op/clip_by_value.py",
+    "engineering:ClipByValueV2Model"
+  ],
+  "ConcatD": [
+    "ops/theoretical_model/vector_fused_op/concat_d.py",
+    "engineering:ConcatDModel"
+  ],
+  "DequantSwigluQuant": [
+    "ops/theoretical_model/vector_fused_op/dequant_swiglu_quant.py"
+  ],
+  "Equal": [
+    "ops/theoretical_model/vector_fused_op/equal.py",
+    "engineering:EqualModel"
+  ],
+  "FloorDiv": [
+    "ops/theoretical_model/vector_fused_op/floor_div.py"
+  ],
+  "Gelu": [
+    "ops/theoretical_model/vector_fused_op/gelu.py",
+    "engineering:GeluModel"
+  ],
+  "GreaterEqual": [
+    "ops/theoretical_model/vector_fused_op/greater_equal.py",
+    "engineering:GreaterEqualModel"
+  ],
+  "HcPreInvRms": [
+    "ops/theoretical_model/vector_fused_op/hc_pre_invrms.py"
+  ],
+  "HcPreSinkhorn": [
+    "ops/theoretical_model/vector_fused_op/hc_pre_sinkhorn.py"
+  ],
+  "Index": [
+    "ops/theoretical_model/vector_fused_op/index.py"
+  ],
+  "LayerNorm": [
+    "ops/theoretical_model/vector_fused_op/layer_norm.py",
+    "engineering:LayerNormV3Model"
+  ],
+  "PadV3": [
+    "ops/theoretical_model/vector_fused_op/pad_v3.py"
+  ],
+  "ReduceMax": [
+    "ops/theoretical_model/vector_fused_op/reduce_max.py"
+  ],
+  "ReduceMin": [
+    "ops/theoretical_model/vector_fused_op/reduce_min.py"
+  ],
+  "ReduceSum": [
+    "ops/theoretical_model/vector_fused_op/reduce_sum.py"
+  ],
+  "RmsNorm": [
+    "ops/theoretical_model/vector_fused_op/rms_norm.py",
+    "engineering:RmsNormModel"
+  ],
+  "RotaryPositionEmbedding": [
+    "ops/theoretical_model/vector_fused_op/rotary_position_embedding.py"
+  ],
+  "ScatterElements": [
+    "ops/theoretical_model/vector_fused_op/scatter_elements.py"
+  ],
+  "ScatterNdUpdate": [
+    "ops/theoretical_model/vector_fused_op/scatter_nd_update.py"
+  ],
+  "SelectV2": [
+    "ops/theoretical_model/vector_fused_op/selectv2.py"
+  ],
+  "Sigmoid": [
+    "ops/theoretical_model/vector_fused_op/sigmoid.py"
+  ],
+  "Softmax": [
+    "ops/theoretical_model/vector_fused_op/softmax.py",
+    "engineering:SoftmaxFlashV2Model"
+  ],
+  "SparseAttnSharedkvMetadata": [
+    "ops/theoretical_model/vector_fused_op/sparse_attn_sharedkv_metadata.py"
+  ],
+  "Swiglu": [
+    "ops/theoretical_model/vector_fused_op/swiglu.py"
+  ],
+  "Transpose": [
+    "ops/theoretical_model/vector_fused_op/transpose.py"
+  ],
+  "Triu": [
+    "ops/theoretical_model/vector_fused_op/triu.py"
+  ],
+  "ViewCopy": [
+    "ops/theoretical_model/vector_fused_op/view_copy.py"
+  ],
+  "Log": [
+    "engineering:LogModel"
+  ],
+  "Swish": [
+    "engineering:SwishModel"
+  ],
+  "QuantBatchMatmulV3": [
+    "engineering:QuantBatchMatmulV3"
+  ],
+  "AscendQuantV2": [
+    "engineering:AscendQuantV2"
+  ],
+  "DynamicQuant": [
+    "engineering:DynamicQuant"
+  ],
+  "Cumsum": [
+    "engineering:CumSumModel"
+  ],
+  "FusedInferAttentionScore": [
+    "engineering:FusedInferAttentionV4"
+  ],
+  "UnpadFlashAttentionMlaBF16NdKernel": [
+    "engineering:FlashAttentionInner"
+  ],
+  "MoeDistributeDispatchV2": [
+    "engineering:MoeDispatchDispatch"
+  ],
+  "MoeDistributeCombineV2": [
+    "engineering:MoeDistributeCombine"
+  ],
+  "TopKV2": [
+    "engineering:TopKV2Model"
+  ],
+  "MultiHeadLatentAttention": [
+    "engineering:MultiLatentAttention"
+  ],
+  "RINGMLAPrefillBF16Kernel": [
+    "engineering:RINGMLAPrefillBF16Kernel"
+  ],
+  "GroupedMatmul": [
+    "engineering:GroupedMatmul"
+  ],
+  "Slice": [
+    "engineering:SliceV2"
+  ],
+  "Gather": [
+    "engineering:GatherV2Model"
+  ],
+  "PageAttention": [
+    "engineering:PagedAttention"
+  ],
+  "MoeGatingTopK": [
+    "engineering:MoeGatingTopK"
+  ],
+  "LightningIndexer": [
+    "engineering:LightningIndexer"
+  ],
+  "SparseFlashAttention": [
+    "engineering:SparseFlashAttention"
+  ],
+  "SparseAttnSharedkv": [
+    "engineering:SparseAttnSharedkv"
+  ],
+  "TransposeBatchMatMul": [
+    "engineering:TransposeBatchMatMul"
+  ]
+}

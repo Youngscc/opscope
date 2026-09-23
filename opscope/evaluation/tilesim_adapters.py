@@ -12,8 +12,9 @@ CLASSIC_NAMES = {'bmm': 'BatchMatMulV2', 'layernorm': 'LayerNormV3',
                  'swish': 'Swish', 'gelu': 'Gelu', 'softmax': 'Softmax',
                  'mul': 'Mul', 'add': 'Add', 'gather': 'GatherV2',
                  'dynamic_quant': 'DynamicQuant', 'moe_topk': 'MoeGatingTopK',
-                 'transpose_bmm': 'TransposeBatchMatMul'}
-THEORETICAL_NAMES = {'sigmoid': 'Sigmoid', 'swiglu': 'Swiglu', 'cast': 'Cast'}
+                 'transpose_bmm': 'TransposeBatchMatMul', 'cumsum': 'Cumsum'}
+THEORETICAL_NAMES = {'sigmoid': 'Sigmoid', 'swiglu': 'Swiglu', 'cast': 'Cast',
+                     'reduce_sum': 'ReduceSum', 'transpose': 'Transpose'}
 DTYPE_BYTES = {'bool': 1, 'int8': 1, 'uint8': 1, 'fp8': 1, 'fp16': 2,
                'bf16': 2, 'int32': 4, 'fp32': 4, 'int64': 8, 'uint64': 8}
 ENG_DTYPES = {'bf16': 'DT_BF16', 'fp16': 'FLOAT16', 'fp32': 'FLOAT',
@@ -47,7 +48,9 @@ def matmul_shapes(config):
 def output_tensors(config):
     kind = operator_kind(config); ts = config['inputs']; dtype = ts[0]['dtype']; shapes = [t['shape'] for t in ts]
     if kind in {'matmul', 'linear'}:
-        a, b = matmul_shapes(config); return [tensor('output', [a[0], b[1]], dtype)]
+        a, b = matmul_shapes(config)
+        result = [*shapes[0][:-1], b[1]] if kind == 'linear' else [a[0], b[1]]
+        return [tensor('output', result, dtype)]
     if kind == 'bmm':
         a, b = shapes[:2]; return [tensor('output', [a[0], a[1], b[2]], dtype)]
     if kind == 'flash_attention': return [tensor('output', shapes[0], dtype)]
@@ -66,7 +69,12 @@ def output_tensors(config):
     if kind == 'swiglu':
         x = shapes[0]; return [tensor('output', [*x[:-1], x[-1] // 2], dtype)]
     if kind == 'gather':
-        weight, indices = shapes; return [tensor('output', [*indices, weight[-1]], dtype)]
+        weight, indices = shapes[:2]; return [tensor('output', [*indices, weight[-1]], dtype)]
+    if kind == 'reduce_sum':
+        x = shapes[0]; return [tensor('output', [x[0], x[2]], dtype)]
+    if kind == 'transpose':
+        x = shapes[0]; return [tensor('output', [x[0], x[2], x[1]], dtype)]
+    if kind == 'cumsum': return [tensor('output', shapes[0], dtype)]
     if kind == 'cast': return [tensor('output', shapes[0], 'fp32')]
     if kind == 'dynamic_quant':
         x = shapes[0]; return [tensor('output', x, 'int8'), tensor('scale', x[:-1], 'fp32')]
@@ -83,7 +91,7 @@ def model_shapes(config):
     kind = operator_kind(config); shapes = [list(t['shape']) for t in config['inputs']]
     outputs = [o['shape'] for o in output_tensors(config)]
     if kind in {'matmul', 'linear'}:
-        a, b = matmul_shapes(config); return [a, b], [outputs[0]]
+        a, b = matmul_shapes(config); return [a, b], [[a[0], b[1]]]
     if kind in {'layernorm', 'layernorm_v4'}:
         x = flatten(shapes[0]); return [x, [x[-1]], [x[-1]]], [x, [x[0], 1], [x[0], 1]]
     if kind in {'rmsnorm', 'gemma_rmsnorm'}:
@@ -96,6 +104,9 @@ def model_shapes(config):
         return [flatten(s) for s in shapes], [flatten(outputs[0])]
     if kind == 'gather':
         return [shapes[0], [math.prod(shapes[1])]], [[math.prod(shapes[1]), shapes[0][-1]]]
+    if kind == 'reduce_sum': return [shapes[0]], [outputs[0]]
+    if kind == 'transpose': return [shapes[0]], [outputs[0]]
+    if kind == 'cumsum': return [shapes[0]], [outputs[0]]
     if kind in {'dynamic_quant', 'moe_topk', 'transpose_bmm'}:
         return shapes, outputs
     return shapes, outputs
@@ -104,6 +115,8 @@ def model_shapes(config):
 def tile_dtypes(config, theoretical=False):
     kind = operator_kind(config); table = THEO_DTYPES if theoretical else ENG_DTYPES
     dtypes = [t['dtype'] for t in config['inputs']]
+    if kind in {'transpose', 'cumsum', 'gather'}:
+        dtypes = dtypes[:1] if kind in {'transpose', 'cumsum'} else dtypes[:2]
     if kind in {'layernorm', 'layernorm_v4'}: dtypes = [dtypes[0]] * 3
     output = [o['dtype'] for o in output_tensors(config)]
     return [table[d] for d in dtypes], [table[d] for d in output]
@@ -117,6 +130,8 @@ def api_request(config, path, theoretical=False):
                'output_shapes': outputs, 'input_precision': input_dtypes,
                'output_precision': output_dtypes}
     if theoretical: request['backend_type'] = 'theo'
+    if kind == 'reduce_sum': request['extra_param'] = {'reduce_axis': [config.get('attributes', {}).get('axis', 1)]}
+    if kind == 'gather': request['extra_param'] = {'axis': config.get('attributes', {}).get('axis', 0)}
     return request
 
 
@@ -145,6 +160,12 @@ def logical_work(config):
         b, n, s, d = shapes[0]; flops, formula = b * n * s * s * (4 * d + 4), 'B × N × S² × (4D + 4)'
     elif kind == 'transpose_bmm':
         a, b = shapes[:2]; flops, formula = 2 * a[0] * a[1] * a[2] * b[2], '2 × B × M × N × K'
+    elif kind == 'reduce_sum':
+        flops, formula = shapes[0][0] * shapes[0][2] * (shapes[0][1] - 1), 'B × H × (S − 1)'
+    elif kind == 'cumsum':
+        flops, formula = elements - math.prod(shapes[0][:-1]), '元素数 − 最后一轴前的行数'
+    elif kind == 'transpose':
+        flops, formula = 0, '数据搬运模型'
     else:
         factor = {'layernorm': 5, 'layernorm_v4': 5, 'rmsnorm': 4, 'gemma_rmsnorm': 5,
                   'add_rmsnorm': 5, 'swish': 4, 'gelu': 8, 'softmax': 5, 'mul': 1,
@@ -165,6 +186,9 @@ def model_note(config):
     if kind == 'layernorm_v4': return '当前模板未提供 gamma/beta 数值；适配器按单位 gamma、零 beta 的完整 LayerNorm 数据路径估算。'
     if kind == 'gemma_rmsnorm': return 'TileSim 使用普通 RMSNorm 成本模型；Gemma 的 gamma+1 额外逐元素加法计入逻辑工作量，未单独进入模型流水。'
     if kind == 'gather': return '训练 Embedding 按 axis=0 的 GatherV2 建模；索引展平不改变查表元素数。'
+    if kind == 'reduce_sum': return '沿序列轴归约；理论模型输出无核级流水。'
+    if kind == 'transpose': return '理论模型仅按元素量估算搬运，未区分具体置换的访存模式。'
+    if kind == 'cumsum': return '工程模型按最后一轴估算；扫描的数据依赖由引擎内置。'
     return None
 
 

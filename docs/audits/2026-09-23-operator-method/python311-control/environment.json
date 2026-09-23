@@ -1,0 +1,18 @@
+{
+  "python": "3.11.16 (main, Aug 12 2026, 23:03:19) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "executable": "/Users/YokeLove/huawei/modeling/tilesim-runtime/.venv/bin/python",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "dependencies": {
+    "msopmodeling": "1.0.9",
+    "scipy": "1.15.3",
+    "numpy": "2.0.1",
+    "sympy": "1.14.0",
+    "pandas": "2.3.3"
+  },
+  "source_sha256": {
+    "data/modeling-catalog.json": "5193a9a3f93b94afae71abd2eefae97656b0a921e80d1f5942a74e06433c1374",
+    "opscope/evaluation/tilesim_contract.py": "edcc93a98c253851fb4128c93df252b1d76d8ecc53edc1113dbd4f6b527f6e6e",
+    "opscope/evaluation/tilesim_adapters.py": "f012d587fc81b9df767b0bb26689a852c527a93aa635e429661e9f3686ada2a6",
+    "opscope/evaluation/bundled_roofline.py": "5ae388b9267c88d4e4df43f379f698b803339c684a79e25945fc629f70e7a8f0"
+  }
+}

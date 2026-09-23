@@ -51,3 +51,13 @@
 LayerNorm缺少beta时补零beta；LayerNormV4缺少affine张量时按单位gamma、零beta建模，并在详情中显示假设。GemmaRmsNorm使用普通RMSNorm成本模型，额外加法只进入逻辑工作量。以上是模型接口验证，不是真机精度认证。
 
 项目虚拟环境59项Python测试、3项前端状态测试、JavaScript语法、Vue类型检查/构建、离线生成和差异格式检查通过。
+
+## 2026-09-23 增量适配
+
+推理目录新增 `MatMul`、`Linear`、`ColumnParallelLinear`、`RowParallelLinear` 四种三维线性输入：仿真请求仅将前导 batch/序列维展平，结果中的逻辑输出仍保留 `[B,S,N]`。这不推断分布式通信、切分成本或多卡延迟。`TorchSum` 使用理论 ReduceSum，明确沿轴 1 归约；`Transpose` 使用理论数据搬运模型，输入固定为 `[0,2,1]`；`TorchCumsum` 使用工程 Cumsum 模型，固定沿最后一轴。以上七个模板的默认输入可以直接运行。
+
+`Cumsum` 和 `GatherV2` 资产没有给出实际 axis，界面现在要求用户填写；当前分别仅接受最后一轴和 axis=0。未填写时返回输入缺项，不使用猜测值。理论模型不提供核级流水，工程成本模型也不应冒充 DSL 事件。
+
+归约、置换与扫描仅验证三维数据；Transpose 的 perm 张量须保持三个 INT64 元素，Cumsum/GatherV2 的 axis 张量须保持单个 INT64 元素，GatherV2 的权重表须为二维。用户改成其他形状时在调用引擎前返回具体限制，避免把适配器的索引错误当作模型故障。
+
+GPU BF16 计算参数和 GB200/R200 部分带宽项仍由随仓库提供的 TileSim 配置决定。现在会在执行前拦截这些已知缺项，包括 GB200/R200 上 ReduceSum 所需的 L0C→L2 带宽。硬件映射中的借用型号依旧只是模型近似，不能解释为该 SKU 已单独校准。

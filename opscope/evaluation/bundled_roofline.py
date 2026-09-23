@@ -115,7 +115,7 @@ def efficiency(value, thresholds):
 
 
 def peak(spec, unit, dtype):
-    suffix = 'tops' if dtype.startswith('int') else 'tflops'
+    suffix = 'tops' if dtype.startswith('int') or dtype in {'fp8', 'fp4'} else 'tflops'
     key = f'{dtype}_{suffix}'
     return float(spec['compute'][unit].get(key, 0)) * 1e12
 

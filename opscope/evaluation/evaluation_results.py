@@ -18,6 +18,9 @@ def number(value, unit=''):
 
 def detail_fields(row):
     r, work, hw = row['raw_result'], row['workload'], row['hardware_snapshot']
+    catalog_mode = r['engine'].get('mode') == 'catalog-analytic'
+    model_label = 'Roofline · 目录公式解析' if catalog_mode else 'Roofline · 内置基础模型'
+    calibration_label = '此模式未进行校准' if catalog_mode else (r['calibration_source'] or '未命中校准')
     time = lambda key: number(r.get(key), ' μs')
     rate = row['summary']['throughput']
     rate = rate + ' TFLOP/s' if rate != '—' else rate
@@ -49,8 +52,9 @@ def detail_fields(row):
                            ('显存', number(hw['memory']['capacity_gb'], ' GB')),
                            ('HBM峰值带宽', number(hw['memory']['hbm_bandwidth_gbps'], ' GB/s')),
                            ('硬件规格摘要', row['provenance']['hardware_hash'])]),
-        'evidence': facts([('实际方法', 'Roofline'), ('方法回退', '无'),
-                           ('校准来源', r['calibration_source'] or '未命中校准'),
+        'evidence': facts([('实际方法', model_label), ('方法回退', '无'),
+                           ('校准来源', calibration_label),
+                           ('模型假设', r.get('model_note') or '—'),
                            ('引擎版本', r['engine']['revision']), ('配置摘要', row['provenance']['configuration_hash']),
                            ('评估程序墙钟耗时', number(r['wall_time_ms'], ' ms'))]) + '<p class="note">程序墙钟耗时与预测的算子耗时是两个指标。</p>',
     }
@@ -66,9 +70,10 @@ def completed_row(row, raw, request, job_id):
     latency = r['latency_us']
     throughput = r['flops'] / latency / 1e6 if latency > 0 else None
     calibration = r['calibration_source']
+    catalog_mode = r['engine'].get('mode') == 'catalog-analytic'
     row.update(available=True, reason=None, latency_us=latency, latency=f'{latency:.3f}',
                deviation_percent=None, deviation='—', bound=r['bound'],
-               source_label='已校准' if calibration else '通用估算',
+               source_label='目录公式' if catalog_mode else ('已校准' if calibration else '通用估算'),
                source_class='estimate-status calibrated' if calibration else 'estimate-status generic',
                workload=work, hardware_snapshot=r['hardware_spec'], raw_result=r,
                compute=number(r['compute_us'], ' μs'), memory=number(r['memory_us'], ' μs'),
@@ -76,7 +81,7 @@ def completed_row(row, raw, request, job_id):
                provenance={'contract': 'opscope-evaluation-v1', 'configuration_hash': request['configuration_hash'],
                            'hardware_hash': r['hardware_hash'], 'engine': r['engine']},
                execution={'kind': 'analytic', 'synthetic': False, 'measurement': False,
-                          'source': 'Roofline 模型预测', 'latency_us': latency,
+                          'source': 'Roofline 目录公式预测' if catalog_mode else 'Roofline 模型预测', 'latency_us': latency,
                           'compute_us': r['compute_us'], 'memory_us': r['memory_us'],
                           'bound': r['bound'], 'events': [], 'instances': []})
     row['task'].update(actual_backend='roofline', finished_at=raw.get('finished_at') or stamp(), wall_time_ms=r['wall_time_ms'])

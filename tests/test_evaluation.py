@@ -88,11 +88,11 @@ class EvaluationTest(unittest.TestCase):
         # Catalog presence is not formula certification.
         body = request_body()
         catalog = build_payload()['catalog']
-        op = next(x for x in catalog['operators'] if x['id'] == 'infer:MatMul')
+        op = next(x for x in catalog['operators'] if x['id'] == 'infer:MoeGatingTopK')
         body['configuration'] = {'operator_id': op['id'], 'inputs': [{**t, 'shape': [d or 1 for d in t['shape']]} for t in op['inputs']]}
         request = normalize_request(body)
         self.assertFalse(request['supported'])
-        self.assertIn('暂未适配', unavailable_reason(request, 'roofline', 'H200_Server', {}))
+        self.assertIn('没有可验证', unavailable_reason(request, 'roofline', 'H200_Server', {}))
 
     def test_tilesim_never_falls_back(self):
         # Missing simulator and absent measurements stay absent, not roofline/zero.

@@ -1,0 +1,3574 @@
+{
+  "upstream_revision": "b1e5bdcabd5f5470335f925310feba7023a946ad",
+  "defaults": {
+    "B": 1,
+    "S": 2048,
+    "M": 1024,
+    "K": 512,
+    "N": 256,
+    "seq_len": 2048,
+    "kv_len": 2048,
+    "hidden_size": 4096,
+    "intermediate_size": 11008,
+    "intermediate_dim": 11008,
+    "moe_intermediate_size": 1408,
+    "num_attention_heads": 32,
+    "num_key_value_heads": 8,
+    "head_dim": 128,
+    "v_head_dim": 128,
+    "index_head_dim": 128,
+    "index_n_heads": 32,
+    "q_lora_rank": 1536,
+    "o_lora_rank": 1536,
+    "o_groups": 1,
+    "num_experts": 64,
+    "expert_groups": 1,
+    "top_k": 8,
+    "vocab_size": 128256,
+    "hc_mult": 4,
+    "compress_ratio": 1,
+    "tp_size": 1,
+    "embed_tp_size": 1,
+    "lmhead_tp_size": 1,
+    "o_tp_size": 1,
+    "num_blocks": 8,
+    "linear_head_dim": 128,
+    "linear_num_heads": 96,
+    "short_conv_kernel_size": 4
+  },
+  "operators": {
+    "infer:ChunkGatedDeltaRule": {
+      "spec": {
+        "name": "ChunkGatedDeltaRule",
+        "description": "Chunked Gated Delta Rule（chunk 版门控 Delta 规则，线性注意力的 prefill 形态）：按 chunk 切块并行地递推状态 S_t = α_t·S_{t-1} + β_t·(v_t − α_t·S_{t-1}k_t)k_t^T，并输出 o_t = S_t·(q_t·scale)。真机 op_def：ops-transformer/attention/chunk_gated_delta_rule/op_host/chunk_gated_delta_rule_def.cpp（query/key/value/beta/initial_state/actual_seq_lengths 全 REQUIRED，g 是 OPTIONAL 输入、scale_value 是 OPTIONAL 属性，按仓规落实现类不进资产）。张量名序与 op_def 声明序逐位一致（query key value beta initial_state actual_seq_lengths → out final_state；OPTIONAL 的 g 声明在 actual_seq_lengths 之后，被跳过不影响必填位逐位对齐）。真机内核 KERNEL_TYPE_MIX_AIC_1_2（cube 打 3 组 V×K 矩阵乘、vector/SFU 做 g 的累积与状态逐元素缩放），故 compute_unit 取 mix。形状按真机 aclnn 表取：query/key (T, Nk, Dk)、value (T, Nv, Dv)、beta (T, Nv)、initial_state (B, Nv, Dv, Dk)、actual_seq_lengths (B,)，输出 out (T, Nv, Dv)、final_state (B, Nv, Dv, Dk)。T 是打包后的扁平 token 轴（无 batch 分维），建模侧写 B * S。compute_flops 取每 token 每 value head 的 3 组 Dv×Dk 矩阵乘（v−α·Sk、⊗k 外积更新、S·q），与同算法的建模层算子 GatedDeltaNet 同口径（其表达式为 6 * B * S * linear_num_value_heads * linear_key_head_dim * linear_value_head_dim）；chunk 内的 q·k^T 与 attn·v 两组块内矩阵乘不计入，两侧一致。",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B * S, num_key_heads, key_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key",
+            "shape": "[B * S, num_key_heads, key_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value",
+            "shape": "[B * S, num_value_heads, value_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "beta",
+            "shape": "[B * S, num_value_heads]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "initial_state",
+            "shape": "[B, num_value_heads, value_head_dim, key_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "actual_seq_lengths",
+            "shape": "[B]",
+            "dtype": "int32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "out",
+            "shape": "[B * S, num_value_heads, value_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "final_state",
+            "shape": "[B, num_value_heads, value_head_dim, key_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "6 * B * S * num_value_heads * key_head_dim * value_head_dim"
+        },
+        "compute_unit": "mix",
+        "module": "attn.linear_attn",
+        "category": "LinearAttention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention/ChunkGatedDeltaRule.json",
+        "sha256": "6a219c82a0fa4851a90241ac17c2e0a0e3c1476f171f7364a9e657b1b4d5fc81"
+      }
+    },
+    "infer:FlashAttentionScore": {
+      "spec": {
+        "name": "FlashAttentionScore",
+        "description": "FlashAttention score computation: softmax(QK^T * scale + mask) @ V with on-line softmax, BNSD layout; real_shift, drop_mask, padding_mask, atten_mask and the actual-seq/scale/rope inputs are all optional and live in the implementation class (aclnnFlashAttentionScore)",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, num_attention_heads // tp_size, S, qk_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key",
+            "shape": "[B, num_attention_heads // tp_size, seq_len, qk_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value",
+            "shape": "[B, num_attention_heads // tp_size, seq_len, qk_nope_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "softmax_max",
+            "shape": "[B, num_attention_heads // tp_size, S, 8]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "softmax_sum",
+            "shape": "[B, num_attention_heads // tp_size, S, 8]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "softmax_out",
+            "shape": "[0, 0, 0, 0]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "attention_out",
+            "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * num_attention_heads // tp_size * S * seq_len * qk_head_dim + 2 * B * num_attention_heads // tp_size * S * seq_len * qk_nope_head_dim"
+        },
+        "compute_unit": "mix",
+        "module": "attn.core",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention/FlashAttentionScore.json",
+        "sha256": "189f1c02153dbb2dcc60cf05a61b2e5d729f173b4f3ea3fcf9641fcb33f727a2"
+      }
+    },
+    "infer:FusedInferAttentionScore": {
+      "spec": {
+        "name": "FusedInferAttentionScore",
+        "description": "Fused inference attention (aclnnFusedInferAttentionScore V4): softmax(QK^T * scale) @ V, BNSD layout. The 31 inputs are declared in op_def order; key/value/several scale inputs are DYNAMIC rather than OPTIONAL, so the naming rule requires every one of them to be registered here. Attributes: num_heads=1, scale=1.0, pre_tokens/next_tokens=2147483647, input_layout=\"BSH\", num_key_value_heads=0, sparse_mode=0, inner_precise=1, block_size=0, antiquant_mode=0, softmax_lse_flag=false, out_dtype=0 (ops-transformer/attention/fused_infer_attention_score/op_host/fused_infer_attention_score_def.cpp)",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, num_attention_heads // tp_size, S, qk_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "pse_shift",
+            "shape": "[B, num_attention_heads // tp_size, S, kv_len]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "atten_mask",
+            "shape": "[2048, 2048]",
+            "dtype": "bool"
+          },
+          {
+            "name": "actual_seq_lengths",
+            "shape": "[B]",
+            "dtype": "int64"
+          },
+          {
+            "name": "actual_seq_lengths_kv",
+            "shape": "[B]",
+            "dtype": "int64"
+          },
+          {
+            "name": "dequant_scale1",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "quant_scale1",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "dequant_scale2",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "quant_scale2",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "quant_offset2",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "antiquant_scale",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "antiquant_offset",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "block_table",
+            "shape": "[B, max_num_blocks]",
+            "dtype": "int32"
+          },
+          {
+            "name": "query_padding_size",
+            "shape": "[B]",
+            "dtype": "int64"
+          },
+          {
+            "name": "kv_padding_size",
+            "shape": "[B]",
+            "dtype": "int64"
+          },
+          {
+            "name": "key_antiquant_scale",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key_antiquant_offset",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value_antiquant_scale",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value_antiquant_offset",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key_shared_prefix",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value_shared_prefix",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "actual_shared_prefix_len",
+            "shape": "[B]",
+            "dtype": "int64"
+          },
+          {
+            "name": "query_rope",
+            "shape": "[B, num_attention_heads // tp_size, S, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key_rope",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key_rope_antiquant_scale",
+            "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "dequant_scale_query",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "learnable_sink",
+            "shape": "[num_attention_heads // tp_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "q_start_idx",
+            "shape": "[1]",
+            "dtype": "int64"
+          },
+          {
+            "name": "kv_start_idx",
+            "shape": "[1]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "attention_out",
+            "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "softmax_lse",
+            "shape": "[B, num_attention_heads // tp_size, S, 1]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * num_attention_heads // tp_size * S * kv_len * qk_head_dim + 2 * B * num_attention_heads // tp_size * S * kv_len * qk_nope_head_dim"
+        },
+        "compute_unit": "mix",
+        "module": "attn.fia",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention/FusedInferAttentionScore.json",
+        "sha256": "add415435f34ada501dfb15608f208cc9806e96569c28261355c248a174575ef"
+      }
+    },
+    "infer:KvQuantSparseFlashAttention": {
+      "spec": {
+        "name": "KvQuantSparseFlashAttention",
+        "description": "Sparse FlashAttention with FP8-quantized paged K/V (aclnnKvQuantSparseFlashAttention); the dequant scales, block table and sequence-length tensors are OPTIONAL and not modeled",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank + qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key",
+            "shape": "[B, seq_len, 1, kv_lora_rank + qk_rope_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "value",
+            "shape": "[B, seq_len, 1, kv_lora_rank]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "sparse_indices",
+            "shape": "[B, S, index_topk]",
+            "dtype": "int32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "attention_out",
+            "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]",
+            "dtype": "fp8"
+          }
+        ],
+        "compute_flops": {
+          "fp8": "2 * B * S * num_attention_heads // tp_size * index_topk * (2 * kv_lora_rank + qk_rope_head_dim)"
+        },
+        "compute_unit": "mix",
+        "module": "attn.sparse_full",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention/KvQuantSparseFlashAttention.json",
+        "sha256": "9606ebd2b54d0d5d27b4c6af44ae2883afc3c295757da0d70226fdf609e1af17"
+      }
+    },
+    "infer:SparseFlashAttention": {
+      "spec": {
+        "name": "SparseFlashAttention",
+        "description": "Sparse flash attention: fused attention over index-selected KV positions (aclnnSparseFlashAttention)",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, num_attention_heads, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key",
+            "shape": "[B, seq_len, 1, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value",
+            "shape": "[B, seq_len, 1, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "sparse_indices",
+            "shape": "[B, S, index_topk]",
+            "dtype": "int32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "attention_out",
+            "shape": "[B, S, num_attention_heads, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "softmax_max",
+            "shape": "[B, num_attention_heads, S]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "softmax_sum",
+            "shape": "[B, num_attention_heads, S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "4 * B * S * num_attention_heads * head_dim * seq_len"
+        },
+        "compute_unit": "mix",
+        "module": "attn.fia",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention/SparseFlashAttention.json",
+        "sha256": "3aa6ac5e750f2e5013f65f6ffb5a4e3aa8528d697755dbf67cf93341012935b8"
+      }
+    },
+    "infer:MatMulV3": {
+      "spec": {
+        "name": "MatMulV3",
+        "description": "Dense GEMM Y = X @ W^T (aclnnMatmul)",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "x2",
+            "shape": "[intermediate_size, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * intermediate_size"
+        },
+        "module": "mlp.gate_up_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/gemm/MatMulV3.json",
+        "sha256": "7ef1658a79aedefbe3fb75d59d605c52d9a179308d1b232d3199a4b6a6bc90a2"
+      }
+    },
+    "infer:QuantBatchMatmulV3": {
+      "spec": {
+        "name": "QuantBatchMatmulV3",
+        "description": "Quantized batch matmul Y = X @ W^T with per-tensor dequant scale (aclnnQuantMatmulV3)",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "fp8"
+          }
+        ],
+        "params": [
+          {
+            "name": "x2",
+            "shape": "[intermediate_size, hidden_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "scale",
+            "shape": "[1]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp8": "2 * B * S * hidden_size * intermediate_size"
+        },
+        "compute_unit": "cube",
+        "module": "mlp.gate_up_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/bmm/QuantBatchMatmulV3.json",
+        "sha256": "8c49edcc9f1b352ae8ac396ff8aa78cda7da49a610c0c2ec9722a4f13fd70206"
+      }
+    },
+    "infer:TransposeBatchMatMul": {
+      "spec": {
+        "name": "TransposeBatchMatMul",
+        "description": "Transpose fused batch matmul C[m,b,n] = A[b,m,k] @ B[b,k,n], the A transpose being selected by perm_x1 (aclnnTransposeBatchMatMul); bias and scale are optional and live in the implementation class",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "x2",
+            "shape": "[B, hidden_size, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * intermediate_size"
+        },
+        "compute_unit": "cube",
+        "module": "attn.w_vc_proj",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/bmm/TransposeBatchMatMul.json",
+        "sha256": "4bb4a97f8cce8002f8663965d751dfbeaf9c4dd294073a9fddabf200ccbb17d8"
+      }
+    },
+    "infer:AddRmsNorm": {
+      "spec": {
+        "name": "AddRmsNorm",
+        "description": "Residual add fused with RMS normalization: y = rmsnorm(x1 + x2), rstd is the reciprocal standard deviation and the pre-norm residual (aclnnAddRmsNorm)",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "x2",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gamma",
+            "shape": "[hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rstd",
+            "shape": "[B * S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "5 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "input_layernorm",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/AddRmsNorm.json",
+        "sha256": "bf7a7128e84f829c48a61527a55da4ef97be0da6a26ed4fc9bd9ba3e8fa9b658"
+      }
+    },
+    "infer:AddRmsNormBias": {
+      "spec": {
+        "name": "AddRmsNormBias",
+        "description": "Residual add fused with biased RMS normalization: y = rmsnorm(x1 + x2, gamma, beta), rstd is the reciprocal standard deviation and x the pre-norm residual sum (aclnnAddRmsNormBias)",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "x2",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gamma",
+            "shape": "[hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "beta",
+            "shape": "[hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rstd",
+            "shape": "[B * S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "5 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "norm.add_rms_norm_bias",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/AddRmsNormBias.json",
+        "sha256": "b6af0a6201a36d521c37f39174618e4a99af03122b82cfb0e9b68d2877ce878e"
+      }
+    },
+    "infer:Cast": {
+      "spec": {
+        "name": "Cast",
+        "description": "Element-wise dtype conversion; the output dtype is chosen by the required dst_type attribute, so the asset models the bf16 -> fp32 path (aclnnCast)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "quantization",
+        "category": "Quantization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/Cast.json",
+        "sha256": "f6021604a138fa6291cb377a1f619786e1b8ba476cd5b30a0d830c299ea63312"
+      }
+    },
+    "infer:CausalConv1d": {
+      "spec": {
+        "name": "CausalConv1d",
+        "description": "Causal depthwise 1-D convolution over the sequence axis with in-place conv-state update: y takes x's shape, conv_states output takes conv_states input's shape (same name declared as both input and output in the op_def). attrs: activation_mode default \"silu\", null_block_id default 0 (ops-transformer/mamba/causal_conv1d/op_host/causal_conv1d_def.cpp)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight",
+            "shape": "[K, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "conv_states",
+            "shape": "[num_cache_lines, state_len, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "conv_states",
+            "shape": "[num_cache_lines, state_len, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "(2 * K + 3) * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "attn.causal_conv1d",
+        "category": "LinearAttention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/CausalConv1d.json",
+        "sha256": "828f8fb64fac6a96a8e2ba0e8935c7fa69b69430b31cf4f1fb49df2ad5a6d42f"
+      }
+    },
+    "infer:Cumsum": {
+      "spec": {
+        "name": "Cumsum",
+        "description": "Prefix sum over the token axis for low-latency MoE routing metadata (aclnnCumsum)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, top_k]",
+            "dtype": "int64"
+          },
+          {
+            "name": "axis",
+            "shape": "[1]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, top_k]",
+            "dtype": "int64"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "B * S * max(top_k - 1, 0)"
+        },
+        "compute_unit": "vector",
+        "module": "moe.routing_prefix_sum",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/Cumsum.json",
+        "sha256": "5f24e0426fd308490d5a8ffca41281766a5d3d5d8f26657b30f597236bbf9448"
+      }
+    },
+    "infer:DynamicMxQuant": {
+      "spec": {
+        "name": "DynamicMxQuant",
+        "description": "Dynamic block-MX quantization of activations: per-64-element E8M0 scale and FP8 result (aclnnDynamicMxQuant)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "mxscale",
+            "shape": "[B * S, (hidden_size + 63) // 64, 2]",
+            "dtype": "fp8"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "4 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "quantization",
+        "category": "Quantization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/DynamicMxQuant.json",
+        "sha256": "04e4db80be968f345027bbfb06b531c2ac1528f4b1a4e14a40f44f04ca5c27a9"
+      }
+    },
+    "infer:DynamicQuantV2": {
+      "spec": {
+        "name": "DynamicQuantV2",
+        "description": "Dynamic per-token quantization to INT8 with a smoothing factor (aclnnDynamicQuantV2); smooth_scales and group_index are optional and live in the implementation class",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "int8"
+          },
+          {
+            "name": "scale",
+            "shape": "[B, S]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "offset",
+            "shape": "[B, S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "3 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "quantization",
+        "category": "Quantization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/DynamicQuantV2.json",
+        "sha256": "6a547873002e466d615eea82464266852c08b67e2d2c569ef9a0be534d3204aa"
+      }
+    },
+    "infer:FusedGdnGating": {
+      "spec": {
+        "name": "FusedGdnGating",
+        "description": "GDN (Gated Delta Network) 融合门控：一次 kernel 出两路——g = -exp(a_log) * softplus(a + dt_bias)，beta_output = sigmoid(b)。softplus 取 (1/beta)*ln(1+exp(beta*(a+dt_bias)))，当 beta*(a+dt_bias) > threshold 时退线性近似防溢出。真机 op_def：ops-transformer/experimental/attention/fused_gdn_gating/op_host/fused_gdn_gating_def.cpp（a_log/a/b/dt_bias 全 REQUIRED，g/beta_output 全 REQUIRED，beta/threshold 是 OPTIONAL 属性、落实现类）。张量名序与 op_def 声明序逐位一致（校验器按序比，错了直接判违规）；校准侧要的 numel 是主数据路 a 的逐元素数，而族级 elementwise 取形固定读 inputs[0]、这里却是常量 a_log，故由算子类用 `calibration_semantics` 显式指到 a（见 `layers/elementwise/fused_gdn_gating.py`）。族目录按语义域取 elementwise（纯向量，无 cube 通道），与真机 op_def 所在的 attention 目录是两回事。profiling 实测：input '48;8192,48;8192,48;48'（a/b 各 48 个长 8192 的 run，a_log/dt_bias 各 48 个标量），output '1,8192,48;1,8192,48'，故主数据路为扁平 [B * S, num_heads] 且 a/b 与 a_log/dt_bias 数量相等（每 head 一项）。g 真机固定 FLOAT32，beta_output 与 b 同 dtype。",
+        "inputs": [
+          {
+            "name": "a_log",
+            "shape": "[num_heads]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "a",
+            "shape": "[B * S, num_heads]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "b",
+            "shape": "[B * S, num_heads]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "dt_bias",
+            "shape": "[num_heads]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "g",
+            "shape": "[1, B * S, num_heads]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "beta_output",
+            "shape": "[1, B * S, num_heads]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "9 * B * S * num_heads"
+        },
+        "compute_unit": "vector",
+        "module": "attn.fused_gdn_gating",
+        "category": "LinearAttention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/FusedGdnGating.json",
+        "sha256": "aa7ab17ae9090c5036f27e13bfce2b573b5b7d1b2d67d41ac301774496556a29"
+      }
+    },
+    "infer:GatherV2": {
+      "spec": {
+        "name": "GatherV2",
+        "description": "Indexed row gather from a table; the real-machine kernel behind token embedding lookup (aclnnGatherV2)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[vocab_size, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "indices",
+            "shape": "[B, S]",
+            "dtype": "int64"
+          },
+          {
+            "name": "axis",
+            "shape": "[1]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {},
+        "compute_unit": "vector",
+        "module": "embed",
+        "category": "Embedding"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/GatherV2.json",
+        "sha256": "4a7f042bb4665a21544f38f33f7a59b70393a2d5178132d028f4de0200022352"
+      }
+    },
+    "infer:GemmaRmsNorm": {
+      "spec": {
+        "name": "GemmaRmsNorm",
+        "description": "Gemma-style RMS normalization with offset scale y = x * rstd * (1 + gamma); same kernel as RmsNorm (gemma_rms_norm_apt.cpp includes rms_norm/arch35/rms_norm_regbase_perf.h with IS_GEMMA=true), whose only extra work is one Adds(gamma, 1.0f) per element -> 7 vector ops and no SFU; profiled at [8192, 5120] + [5120] -> [8192, 5120] + [8192, 1]",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gamma",
+            "shape": "[hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rstd",
+            "shape": "[B * S, 1]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "7 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "norm.gemma_rms",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/GemmaRmsNorm.json",
+        "sha256": "6e7cdacd935b93dc410cc62b660ae6594c41c60a6e4dea4f351390e2002c352e"
+      }
+    },
+    "infer:LayerNormV4": {
+      "spec": {
+        "name": "LayerNormV4",
+        "description": "LayerNorm with mean/variance reductions, optional scale and bias (aclnnLayerNormV4)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, index_head_dim]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "normalized_shape",
+            "shape": "[1]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, index_head_dim]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "mean",
+            "shape": "[B, S, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "rstd",
+            "shape": "[B, S, 1]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "7 * B * S * index_head_dim"
+        },
+        "compute_unit": "vector",
+        "module": "attn.dsa_indexer.norm",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/LayerNormV4.json",
+        "sha256": "738819d8dd9fbd893c92a437c5bfc70b93146501bee10d170aab07a2eb50c57c"
+      }
+    },
+    "infer:Mul": {
+      "spec": {
+        "name": "Mul",
+        "description": "Element-wise multiply y = x1 * x2 with numpy-style broadcasting; no attributes (ops-math/math/mul/op_host/mul_def.cpp)",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "x2",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "mlp.act_fn",
+        "category": "Elementwise"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/Mul.json",
+        "sha256": "8e1c900f3ec045346808d9a75a2b175c3dcb72633d9fbce41c4f40aeee2b4691"
+      }
+    },
+    "infer:RmsNorm": {
+      "spec": {
+        "name": "RmsNorm",
+        "description": "Root mean square normalization with per-channel gamma (aclnnRmsNorm); rstd is a required output. A5 regbase kernel counts 6 vector ops per element and no SFU (arch35: Mul square, fold/head Add tree, Mul(rstd), Mul(gamma); rstd comes from Adds(eps)/Div/Sqrt/Newton-Raphson, all inside __VEC_SCOPE__)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gamma",
+            "shape": "[hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rstd",
+            "shape": "[B * S, 1]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "6 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "norm",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/RmsNorm.json",
+        "sha256": "65e927c6e84f2de1e9a140d321b4f34f596131dec6df7ff7516351688220fde0"
+      }
+    },
+    "infer:ScatterNdUpdate": {
+      "spec": {
+        "name": "ScatterNdUpdate",
+        "description": "In-place indexed write into the DSA index cache (aclnnScatterNdUpdate)",
+        "inputs": [
+          {
+            "name": "var",
+            "shape": "[B, seq_len, index_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "indices",
+            "shape": "[B, S]",
+            "dtype": "int32"
+          },
+          {
+            "name": "updates",
+            "shape": "[B, S, index_head_dim]",
+            "dtype": "fp8"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "var",
+            "shape": "[B, seq_len, index_head_dim]",
+            "dtype": "fp8"
+          }
+        ],
+        "compute_flops": {},
+        "compute_unit": "vector",
+        "module": "attn.dsa_indexer.cache_update",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/ScatterNdUpdate.json",
+        "sha256": "3bc10bfd033a97d15e22767c07f2a18be58902aea380613ea8cfa5fbcf015436"
+      }
+    },
+    "infer:Sigmoid": {
+      "spec": {
+        "name": "Sigmoid",
+        "description": "Sigmoid activation y = 1 / (1 + exp(-x)); no attributes (ops-nn/experimental/activation/sigmoid/op_host/sigmoid_def.cpp)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size"
+        },
+        "compute_unit": "vector",
+        "module": "activation",
+        "category": "Activation"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/Sigmoid.json",
+        "sha256": "22eb9321bd18932852e02f08827451ee0b8e08f57d3b4c702175902248b9d7e5"
+      }
+    },
+    "infer:SwiGlu": {
+      "spec": {
+        "name": "SwiGlu",
+        "description": "SwiGLU activation y = silu(gate) * up, the last-dim input half split being the GLU axis (aclnnSwiGlu)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, 2 * intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "6 * B * S * intermediate_size"
+        },
+        "compute_unit": "vector",
+        "module": "mlp.act_fn",
+        "category": "Activation"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/SwiGlu.json",
+        "sha256": "0f6ec30a0a47f83b5c92a8005568224dc40f8878173b51b1fdc1d8e97c27c9eb"
+      }
+    },
+    "infer:SwiGluQuant": {
+      "spec": {
+        "name": "SwiGluQuant",
+        "description": "SwiGLU activation with dynamic per-token FP8 quantization (aclnnSwiGluQuant)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, 2 * intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, intermediate_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "scale",
+            "shape": "[B * S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "14 * B * S * intermediate_size"
+        },
+        "compute_unit": "vector",
+        "module": "mlp.act_fn",
+        "category": "Activation"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/SwiGluQuant.json",
+        "sha256": "72227828a52fbc59724423e043e68d33009a5a7619f63f0af485e9b30e32dab4"
+      }
+    },
+    "infer:SwigluGroupQuant": {
+      "spec": {
+        "name": "SwigluGroupQuant",
+        "description": "Grouped SwiGLU activation with dynamic per-token quantization (aclnnSwigluGroupQuant)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[routed_tokens_per_rank, 2 * moe_intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[routed_tokens_per_rank, moe_intermediate_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "y_scale",
+            "shape": "[routed_tokens_per_rank]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "y_origin",
+            "shape": "[routed_tokens_per_rank, moe_intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "14 * routed_tokens_per_rank * moe_intermediate_size"
+        },
+        "compute_unit": "vector",
+        "module": "moe.grouped_swiglu_quant",
+        "category": "Activation"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/SwigluGroupQuant.json",
+        "sha256": "c97df04f7c7de6f30592a14ebbd4f3ec31e52fee8ffb880e271a1cb5b6cab27e"
+      }
+    },
+    "infer:Transpose": {
+      "spec": {
+        "name": "Transpose",
+        "description": "Permute the axes of x into y; the permutation is a tensor input (perm) rather than an attribute, so the asset models the 3D [B, S, D] <-> [B, D, S] case (aclnnTranspose)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "perm",
+            "shape": "[3]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, hidden_size, S]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "0"
+        },
+        "compute_unit": "vector",
+        "module": "quantization",
+        "category": "Quantization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/elementwise/Transpose.json",
+        "sha256": "d9f3e301998348f4ee6c71a8862200311cd718af5d24301a42d9bf2dabcf30f8"
+      }
+    },
+    "infer:GroupedMatmul": {
+      "spec": {
+        "name": "GroupedMatmul",
+        "description": "Grouped matrix multiplication for MoE experts; every tensor except group_list and per_token_scale is declared DYNAMIC (tensor-list), the length of which is itself the group count (aclnnGroupedMatmul)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight",
+            "shape": "[expert_groups, hidden_size, moe_intermediate_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "bias",
+            "shape": "[expert_groups, moe_intermediate_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "scale",
+            "shape": "[expert_groups]",
+            "dtype": "uint64"
+          },
+          {
+            "name": "offset",
+            "shape": "[expert_groups]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "antiquant_scale",
+            "shape": "[expert_groups, moe_intermediate_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "antiquant_offset",
+            "shape": "[expert_groups, moe_intermediate_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "group_list",
+            "shape": "[expert_groups]",
+            "dtype": "int64"
+          },
+          {
+            "name": "per_token_scale",
+            "shape": "[B * S]",
+            "dtype": "fp32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, moe_intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * moe_intermediate_size"
+        },
+        "compute_unit": "cube",
+        "module": "moe.routed_expert.down_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/grouped_matmul/GroupedMatmul.json",
+        "sha256": "c8bc0d632917dfc7090034940d293a47f33d4aac4fe9bd37029c3899ba61d732"
+      }
+    },
+    "infer:GroupedMatmulSwigluQuantV2": {
+      "spec": {
+        "name": "GroupedMatmulSwigluQuantV2",
+        "description": "MoE grouped gate-up GEMM fused with dequant, SwiGLU and block-MX quantization (aclnnGroupedMatmulSwigluQuantV2)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, hidden_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "x_scale",
+            "shape": "[B * S, (hidden_size + 63) // 64, 2]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "group_list",
+            "shape": "[expert_groups]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[expert_groups, 2 * moe_intermediate_size, hidden_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "weight_scale",
+            "shape": "[expert_groups, 2 * moe_intermediate_size, (hidden_size + 63) // 64, 2]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "weight_assist_matrix",
+            "shape": "[expert_groups, 2 * moe_intermediate_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, moe_intermediate_size]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "y_scale",
+            "shape": "[B * S, (moe_intermediate_size + 63) // 64, 2]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp8": "2 * B * S * hidden_size * 2 * moe_intermediate_size"
+        },
+        "compute_unit": "mix",
+        "module": "moe.routed_expert.gate_up_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mix_aic/GroupedMatmulSwigluQuantV2.json",
+        "sha256": "1db2d4809aa4be6c5ac4a5353c4efbe14104be797034fff261ff3a8621ec6981"
+      }
+    },
+    "infer:MlaPrologV3": {
+      "spec": {
+        "name": "MlaPrologV3",
+        "description": "MLA prefill prolog: Q/KV down- and up-projections, the Cq/Ckv RMS norms, RoPE and the paged KV-cache write, all in one kernel (aclnnMlaPrologV3); cache_index, the dequant/quant scales, actual_seq_len and k_nope_clip_alpha are optional and live in the implementation class",
+        "inputs": [
+          {
+            "name": "token_x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight_dq",
+            "shape": "[hidden_size, q_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight_uq_qr",
+            "shape": "[q_lora_rank, num_attention_heads // tp_size * (kv_lora_rank + qk_rope_head_dim)]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight_uk",
+            "shape": "[num_attention_heads // tp_size, qk_nope_head_dim, kv_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "weight_dkv_kr",
+            "shape": "[hidden_size, kv_lora_rank + qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rmsnorm_gamma_cq",
+            "shape": "[q_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rmsnorm_gamma_ckv",
+            "shape": "[kv_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rope_sin",
+            "shape": "[B, S, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "rope_cos",
+            "shape": "[B, S, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "kv_cache",
+            "shape": "[B, 1, seq_len, kv_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "kr_cache",
+            "shape": "[B, 1, seq_len, qk_rope_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "query_rope",
+            "shape": "[B, S, num_attention_heads // tp_size, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "kv_cache",
+            "shape": "[B, 1, seq_len, kv_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "kr_cache",
+            "shape": "[B, 1, seq_len, qk_rope_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "dequant_scale_q_nope",
+            "shape": "[B * S, num_attention_heads // tp_size, 1]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "query_norm",
+            "shape": "[B, S, q_lora_rank]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "dequant_scale_q_norm",
+            "shape": "[B * S, 1]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * q_lora_rank + 2 * B * S * q_lora_rank * num_attention_heads // tp_size * (kv_lora_rank + qk_rope_head_dim) + 2 * B * S * hidden_size * (kv_lora_rank + qk_rope_head_dim) + 2 * B * S * num_attention_heads // tp_size * qk_nope_head_dim * kv_lora_rank"
+        },
+        "compute_unit": "mix",
+        "module": "attn.x_proj",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mix_aic/MlaPrologV3.json",
+        "sha256": "8450efdcd0191e2fe262a8f60784d1f7cc365a8bce41a2ade1d8c2aa8eb12df2"
+      }
+    },
+    "infer:QuantLightningIndexer": {
+      "spec": {
+        "name": "QuantLightningIndexer",
+        "description": "Quantized DSA lightning indexer: INT8 Q@K score, dequant by scaleQ*scaleK, ReLU and weighted head reduction, then top-k selection; BSND layout, key head count is 1 (aclnnQuantLightningIndexer)",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, num_attention_heads, head_dim]",
+            "dtype": "int8"
+          },
+          {
+            "name": "key",
+            "shape": "[B, S, 1, head_dim]",
+            "dtype": "int8"
+          },
+          {
+            "name": "weights",
+            "shape": "[B, S, num_attention_heads]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "query_dequant_scale",
+            "shape": "[B, S, num_attention_heads]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "key_dequant_scale",
+            "shape": "[B, S, 1]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "sparse_indices",
+            "shape": "[B, S, 1, sparse_count]",
+            "dtype": "int32"
+          }
+        ],
+        "compute_flops": {
+          "int8": "2 * B * S * num_attention_heads * head_dim",
+          "fp16": "3 * B * S * num_attention_heads"
+        },
+        "compute_unit": "mix",
+        "module": "attn.dsa_indexer",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mix_aic/QuantLightningIndexer.json",
+        "sha256": "27f3e728491d7ee445e79581c5595c690ebe780496383118cdb485c6eb6c8cb2"
+      }
+    },
+    "infer:MoeGatingTopK": {
+      "spec": {
+        "name": "MoeGatingTopK",
+        "description": "Fused MoE gating: score, optional bias, group-limited top-k selection and renorm in one kernel; the token axis is flattened, x is strictly 2D (aclnnMoeGatingTopK)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B * S, num_experts]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B * S, top_k]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "expert_idx",
+            "shape": "[B * S, top_k]",
+            "dtype": "int32"
+          },
+          {
+            "name": "out",
+            "shape": "[B * S, num_experts]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "6 * B * S * num_experts"
+        },
+        "compute_unit": "vector",
+        "module": "moe.gate_topk",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_gating_top_k/MoeGatingTopK.json",
+        "sha256": "f499768eac72abd9c90dda65f93684e1485b6a4ff7dcd5a6f8f6ddba53134023"
+      }
+    },
+    "infer:SituAndMul": {
+      "spec": {
+        "name": "SituAndMul",
+        "description": "SituAndMul activation: y = beta * tanh(gate / beta) * sigmoid(gate) * linear_beta * tanh(up / linear_beta)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, 2 * intermediate_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, intermediate_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "11 * B * S * intermediate_size"
+        },
+        "module": "mlp.act_fn",
+        "category": "Activation"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/activation_situ_and_mul.json",
+        "sha256": "efd289f8e6af283c82a7f20e6846dc1396c4e85e737cf20980afe08c0d9cf717"
+      }
+    },
+    "infer:SparseAttentionSharedKV": {
+      "spec": {
+        "name": "SparseAttentionSharedKV",
+        "description": "Sparse Attention with shared KV cache across attention heads",
+        "inputs": [
+          {
+            "name": "q",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "kv",
+            "shape": "[B, seq_len, 1, head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "attn_out",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "4 * B * S * num_attention_heads // tp_size * head_dim * seq_len"
+        },
+        "module": "attn.fia",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/attention_sparse_attention_shared_kv.json",
+        "sha256": "0a56c065e822789cf7396c8238219807aa1448287ab6095ef7c0007adb0587b8"
+      }
+    },
+    "infer:Embedding": {
+      "spec": {
+        "name": "Embedding",
+        "description": "Token embedding lookup: gather rows of the table by token id (aclnnEmbedding)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S]",
+            "dtype": "int64"
+          },
+          {
+            "name": "indices",
+            "shape": "[B, S]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {},
+        "compute_unit": "vector",
+        "module": "embed",
+        "category": "Embedding"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/embedding_embedding.json",
+        "sha256": "80a7ce550ba867adebd7aead834200abbf6c5e9963c3c94a9810eaa0247b004b"
+      }
+    },
+    "infer:EngramGate": {
+      "spec": {
+        "name": "EngramGate",
+        "description": "Engram projection and signed-square-root residual gate",
+        "inputs": [
+          {
+            "name": "l1_lookup_reduced",
+            "shape": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "l0_ffn_state",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "wkv",
+            "shape": "[(hc_mult + 1) * hidden_size, (engram_max_ngram_size - 1) * engram_n_heads * engram_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "q_weight",
+            "shape": "[hc_mult, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "k_weight",
+            "shape": "[hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "l1_engram",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp8": "2 * B * S * (engram_max_ngram_size - 1) * engram_n_heads * engram_head_dim * (hc_mult + 1) * hidden_size"
+        },
+        "module": "engram.wkv",
+        "category": "MLA",
+        "compute_unit": "mix"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/engram_gate.json",
+        "sha256": "5cb574c7913e6538665f3c0372c386fea340147cab84034252500e1800cec566"
+      }
+    },
+    "infer:EngramLookup": {
+      "spec": {
+        "name": "EngramLookup",
+        "description": "Sparse Engram row lookup with full sharded table residency",
+        "inputs": [
+          {
+            "name": "token_ids",
+            "shape": "[B, S]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[engram_num_embeddings[0] + 0, engram_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "scale",
+            "shape": "[engram_num_embeddings[0] + 0, engram_head_dim // 32]",
+            "dtype": "int8"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "l1_lookup",
+            "shape": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {},
+        "module": "engram.lookup",
+        "category": "MLA",
+        "compute_unit": "vector"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/engram_lookup.json",
+        "sha256": "0390b6669eedf89564a86faa9e36981e0160061d98d665a5ba94ebac16968ddc"
+      }
+    },
+    "infer:END": {
+      "spec": {
+        "name": "END",
+        "description": "模型出口，标记推理终点",
+        "inputs": [
+          {
+            "name": "in",
+            "shape": "[B, S, vocab_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "out",
+            "shape": "[B, S, vocab_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {},
+        "module": "END",
+        "category": "Flow"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/flow_end.json",
+        "sha256": "5e654b9ac69d096be7b50b8f421599364438a4f711c7f3e167c8679a3dd4958c"
+      }
+    },
+    "infer:START": {
+      "spec": {
+        "name": "START",
+        "description": "模型入口，标记推理起点",
+        "inputs": [
+          {
+            "name": "out",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "out",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {},
+        "module": "START",
+        "category": "Flow"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/flow_start.json",
+        "sha256": "43f1806ff8e48de92138a68b1e713ee536d453c0d3123431720551e5dab83708"
+      }
+    },
+    "infer:GatedResidual": {
+      "spec": {
+        "name": "GatedResidual",
+        "description": "Low-rank Hyper-Connection mix and residual injection",
+        "inputs": [
+          {
+            "name": "hyper_state",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "block_output",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "norm_scale",
+            "shape": "[hc_count * hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "down_inject_weight",
+            "shape": "[hc_lowrank + hc_count, hc_count * hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "up_weight",
+            "shape": "[hc_count * hidden_size, hc_lowrank]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "block_input",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "hyper_state",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hc_count * hidden_size * (2 * hc_lowrank + hc_count)"
+        },
+        "module": "hyper_connection",
+        "category": "MHC"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/hyper_connection_gated_residual.json",
+        "sha256": "c43887416b7086438a7f4a61de88c0fb98fc54cb4a6ad5deb4f413aa2f10fd7e"
+      }
+    },
+    "infer:ColumnParallelLinearQuant": {
+      "spec": {
+        "name": "ColumnParallelLinearQuant",
+        "description": "TP Column-Parallel Linear with quantization: weight sharded along out_features, output quantized",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight_shard",
+            "shape": "[intermediate_dim, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y_shard",
+            "shape": "[B, S, intermediate_dim]",
+            "dtype": "int8"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * hidden_size * intermediate_dim"
+        },
+        "module": "linear.column_parallel_quant",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_colum_parallel_linear_quant.json",
+        "sha256": "e56622ba05210825cfb1c66b165b96e40f85e7dd8aa3a95cdde7ed5f1e6fff8b"
+      }
+    },
+    "infer:ColumnParallelLinear": {
+      "spec": {
+        "name": "ColumnParallelLinear",
+        "description": "TP Column-Parallel Linear: weight sharded along out_features dimension",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight_shard",
+            "shape": "[intermediate_dim, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y_shard",
+            "shape": "[B, S, intermediate_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * hidden_size * intermediate_dim"
+        },
+        "module": "attn.x_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_column_parallel_linear.json",
+        "sha256": "c2ac94302b977761d3a69c1348bfa4b8eea5b8579a95b063273cee66fb6cb73c"
+      }
+    },
+    "infer:GroupMatMul": {
+      "spec": {
+        "name": "GroupMatMul",
+        "description": "Grouped Matrix Multiplication for MoE experts",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[expert_groups, 2 * moe_intermediate_size, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "expert_out",
+            "shape": "[B, S, 2 * moe_intermediate_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * expert_groups * hidden_size * 2 * moe_intermediate_size"
+        },
+        "module": "moe.routed_expert.gate_up_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_group_matmul.json",
+        "sha256": "839251f9c9df78db5fcdada48e2228041610b379fd5525c80a37267de2068059"
+      }
+    },
+    "infer:Linear": {
+      "spec": {
+        "name": "Linear",
+        "description": "Dense linear transformation Y = X @ W^T",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[hidden_size, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * hidden_size"
+        },
+        "module": "attn.x_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_linear.json",
+        "sha256": "2ad5e7e6fecfb5cab5b56446afbf386ea5a88120e730487523631f34296f36b1"
+      }
+    },
+    "infer:MatMul": {
+      "spec": {
+        "name": "MatMul",
+        "description": "Standard matrix multiplication Y = X @ W^T",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[intermediate_size, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * intermediate_size"
+        },
+        "module": "mlp.gate_up_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_matmul.json",
+        "sha256": "27c50f61dcd93fd7e2457063853a1963abb537135d43ff41d6dfe27e3abeebad"
+      }
+    },
+    "infer:RowParallelLinear": {
+      "spec": {
+        "name": "RowParallelLinear",
+        "description": "TP Row-Parallel Linear: weight sharded along in_features dimension, all-reduce on output",
+        "inputs": [
+          {
+            "name": "x_shard",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight_shard",
+            "shape": "[intermediate_dim, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, intermediate_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * hidden_size * intermediate_dim"
+        },
+        "module": "attn.o_proj",
+        "category": "Linear"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/linear_row_parallel_linear.json",
+        "sha256": "7a962dc347a0c5c7e1a1751cc5665fdf5fe5f9e2d4964a7b97bf7fbb9ae4e8a5"
+      }
+    },
+    "infer:MHCHead": {
+      "spec": {
+        "name": "MHCHead",
+        "description": "Multi-Head Cache Head: per-depth token prediction with shared embedding head",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "hc_head_fn",
+            "shape": "[hc_mult, hc_mult * hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "logits",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "6 * B * S * hc_mult * hidden_size + 2 * B * S * hc_mult * hidden_size * hc_mult + 11 * B * S * hc_mult"
+        },
+        "module": "mhc_head",
+        "category": "MHC"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mhc_mhc_head.json",
+        "sha256": "0cafa5bcd0cf7ead88a5725f16aa64ac6141635798ffa317f768fc50bf4349d8"
+      }
+    },
+    "infer:MHCPost": {
+      "spec": {
+        "name": "MHCPost",
+        "description": "hc_post for deepseek-v4: projects MHC output back to hidden_size",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "residual",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "post",
+            "shape": "[B, S, hc_mult]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "comb",
+            "shape": "[B, S, hc_mult, hc_mult]",
+            "dtype": "fp32"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "2 * B * S * hc_mult * hidden_size + B * S * hc_mult * (hc_mult + hc_mult - 1) * hidden_size"
+        },
+        "module": "mhc_post",
+        "category": "MHC"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mhc_mhc_post.json",
+        "sha256": "6f2966bae11b40a033c8aefb1ccf6c6ecdb62b7b74581c653cfbe77823fa2d71"
+      }
+    },
+    "infer:MHCPre": {
+      "spec": {
+        "name": "MHCPre",
+        "description": "hc_pre in deepseek-v4: projects hidden states for MHC computation",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hc_mult, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "hc_fn",
+            "shape": "[(2+hc_mult)*hc_mult, hc_mult * hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "post",
+            "shape": "[B, S, hc_mult]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "comb",
+            "shape": "[B, S, hc_mult * hc_mult]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "6 * B * S * hc_mult * hidden_size + 2 * B * S * hc_mult * hidden_size * (2 + hc_mult) * hc_mult"
+        },
+        "module": "mhc_pre",
+        "category": "MHC"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mhc_mhc_pre.json",
+        "sha256": "271fe103cf7ad7e72a481195651107c294003798b0113f80556fd32868faa7e0"
+      }
+    },
+    "infer:Compressor": {
+      "spec": {
+        "name": "Compressor",
+        "description": "KV Cache Compressor: compresses key-value representations for reduced memory footprint",
+        "inputs": [
+          {
+            "name": "kv",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "wkv",
+            "shape": "[head_dim, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "wgate",
+            "shape": "[head_dim, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "ape",
+            "shape": "[compress_ratio, head_dim]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "kv",
+            "shape": "[B, S // compress_ratio, head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "4 * B * S * hidden_size * head_dim"
+        },
+        "module": "attn.compressor",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_compressor.json",
+        "sha256": "088c47082fc209fbed05523a705a3c662a1306a5c650db913b9b2e0ada42d60f"
+      }
+    },
+    "infer:IndexCompressorEpilog": {
+      "spec": {
+        "name": "IndexCompressorEpilog",
+        "description": "Index Compressor Epilog: reconstructs routing indices from compressed representation",
+        "inputs": [
+          {
+            "name": "compressed_idx",
+            "shape": "[B, S // compress_ratio, index_head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "indices",
+            "shape": "[B, S // compress_ratio, index_head_dim]",
+            "dtype": "fp8"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "factor * 2 * B * S // compress_ratio * index_head_dim"
+        },
+        "module": "attn.compressor",
+        "category": "MLA",
+        "red_tips": "factor=1(prefill), 0.25(decode, compress_ratio=4), 0.008(decode, compress_ratio=128)"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_index_compressor_epilog.json",
+        "sha256": "e36924e989971c16ea7c5052a77a67c59490b31621fc5d0941de9480b81c9da3"
+      }
+    },
+    "infer:IndexPrologV4": {
+      "spec": {
+        "name": "IndexPrologV4",
+        "description": "Index Prolog DeepSeek-V4: pre-processing step that prepares hidden states for index-based expert routing",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "qr",
+            "shape": "[B, S, q_lora_rank]",
+            "dtype": "fp8"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight_proj",
+            "shape": "[index_n_heads, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "q_b",
+            "shape": "[index_n_heads * index_head_dim, q_lora_rank]",
+            "dtype": "fp8"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, index_n_heads]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "query",
+            "shape": "[B, S, index_n_heads * index_head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * index_n_heads",
+          "fp8": "2 * B * S * q_lora_rank * index_n_heads * index_head_dim"
+        },
+        "module": "attn.indexer_proj",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_index_prolog_v4.json",
+        "sha256": "33c63415432c031d9a80ba6b87932d274af6c2ec3def7e73e71abccb80f41bd1"
+      }
+    },
+    "infer:KVCompressorEpilog": {
+      "spec": {
+        "name": "KVCompressorEpilog",
+        "description": "KV Compressor Epilog: reconstructs KV cache from compressed representation",
+        "inputs": [
+          {
+            "name": "kv",
+            "shape": "[B, S // compress_ratio, head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "kv",
+            "shape": "[B, S // compress_ratio, head_dim]",
+            "dtype": "fp8"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "factor * 2 * B * S // compress_ratio * head_dim"
+        },
+        "module": "attn.compressor",
+        "category": "MLA",
+        "tips": "factor=1(prefill) 0.25(decode, compress_ratio=4), 0.008(decode, compress_ratio=128)"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_kv_compressor_epilog.json",
+        "sha256": "63ca57014fb9b48161e8880456f7bfd0cb1c8fd9501113c4e53c09e2348c7544"
+      }
+    },
+    "infer:MLAEpilogV4": {
+      "spec": {
+        "name": "MLAEpilogV4",
+        "description": "MLA Epilog DeepSeek-V4: projects attention output back to hidden_size after Multi-Head Latent Attention",
+        "inputs": [
+          {
+            "name": "attn_out",
+            "shape": "[B, S, o_groups, num_attention_heads * head_dim // o_groups]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "wo_a",
+            "shape": "[o_groups * o_lora_rank // o_tp_size, num_attention_heads * head_dim // o_groups]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "wo_b",
+            "shape": "[hidden_size, o_groups * o_lora_rank // o_tp_size]",
+            "dtype": "fp8"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * o_groups * o_lora_rank // o_tp_size * num_attention_heads * head_dim // o_groups",
+          "fp8": "2 * B * S * o_groups * o_lora_rank // o_tp_size * hidden_size"
+        },
+        "module": "attn.o_proj",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_mla_epilog_v4.json",
+        "sha256": "a570050e6c68cc410a08cca856ca3edd83f0b2cf4ad39120a12920bfd18f04f9"
+      }
+    },
+    "infer:MLAPrologV4": {
+      "spec": {
+        "name": "MLAPrologV4",
+        "description": "MLA Prolog DeepSeek-V4: projects hidden states to Q and compressed KV for Multi-Head Latent Attention",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "wq_a",
+            "shape": "[q_lora_rank, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "wq_b",
+            "shape": "[num_attention_heads // tp_size * head_dim, q_lora_rank]",
+            "dtype": "int8"
+          },
+          {
+            "name": "wkv",
+            "shape": "[head_dim, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "query_nope",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "key_nope",
+            "shape": "[B, S, 1, head_dim]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * hidden_size * q_lora_rank + 2 * B * S * hidden_size * head_dim",
+          "int8": "2 * B * S * q_lora_rank * num_attention_heads // tp_size * head_dim",
+          "fp32": "4 * B * S * (q_lora_rank + num_attention_heads // tp_size * head_dim + head_dim)"
+        },
+        "module": "attn.x_proj",
+        "category": "MLA"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/mla_mla_prolog_v4.json",
+        "sha256": "6c1d32368a3193f820bd980d6132684a784327f1db2bba9a28f1977365ac10f0"
+      }
+    },
+    "infer:LightningIndexer": {
+      "spec": {
+        "name": "LightningIndexer",
+        "description": "Lightning Indexer: fast approximate nearest-neighbor index for MoE expert routing",
+        "inputs": [
+          {
+            "name": "query",
+            "shape": "[B, S, index_n_heads, index_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "key",
+            "shape": "[B, seq_len // compress_ratio, index_head_dim]",
+            "dtype": "fp8"
+          },
+          {
+            "name": "weights",
+            "shape": "[B, S, index_n_heads]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "topk_indices",
+            "shape": "[B, S, seq_len // compress_ratio]",
+            "dtype": "int64"
+          }
+        ],
+        "compute_flops": {
+          "fp8": "2 * B * S * index_n_heads * index_head_dim * seq_len // compress_ratio",
+          "fp16": "5 * B * S * index_n_heads * seq_len // compress_ratio"
+        },
+        "module": "attn.indexer",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_lightning_indexer.json",
+        "sha256": "2068fa14625faf3f545cdeb274da1147a4394eb6d9e8fc944955b8130650d7db"
+      }
+    },
+    "infer:MoEGate": {
+      "spec": {
+        "name": "MoEGate",
+        "description": "MoE Gate: computes expert affinity scores from hidden states",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gate_weight",
+            "shape": "[num_experts, hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "scores",
+            "shape": "[B, S, num_experts]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "2 * B * S * hidden_size * num_experts + 5 * B * S * num_experts"
+        },
+        "module": "moe.gate",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_moe_gate.json",
+        "sha256": "0843f3a5e2156c100cd93c9c16181787f18f5d15675f69cc658054adcf72511a"
+      }
+    },
+    "infer:MoEGateHashTopK": {
+      "spec": {
+        "name": "MoEGateHashTopK",
+        "description": "MoE Gate with Hash: hash-based expert routing for load-balanced deterministic assignment",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "token_ids",
+            "shape": "[B, S]",
+            "dtype": "int64"
+          }
+        ],
+        "params": [
+          {
+            "name": "gate_weight",
+            "shape": "[num_experts, hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "expert_indices",
+            "shape": "[B, S, top_k]",
+            "dtype": "int32"
+          },
+          {
+            "name": "expert_weights",
+            "shape": "[B, S, top_k]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "2 * B * S * hidden_size * num_experts + 7 * B * S * num_experts"
+        },
+        "module": "moe.gate_topk",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_moe_gate_hash_topk.json",
+        "sha256": "a91417438ccf8be2027d0fadf785b9c3b952b0a8e039ef8893232352d4111d06"
+      }
+    },
+    "infer:MoEGateTopK": {
+      "spec": {
+        "name": "MoEGateTopK",
+        "description": "MoE Router with Top-K gating: scores = softmax(TopK(X @ W_gate))",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "gate_weight",
+            "shape": "[num_experts, hidden_size]",
+            "dtype": "fp32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "topk_weights",
+            "shape": "[B, S, top_k]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "topk_indices",
+            "shape": "[B, S, top_k]",
+            "dtype": "int64"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "2 * B * S * hidden_size * num_experts + 7 * B * S * num_experts"
+        },
+        "module": "moe.gate_topk",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_moe_gate_topk.json",
+        "sha256": "9b1fdaaaf12f51884e6766205ce5ff15a9c49c6a61bbf10cfcfcfaf0a6b5e6af"
+      }
+    },
+    "infer:MoETopK": {
+      "spec": {
+        "name": "MoETopK",
+        "description": "MoE Top-K: selects top-k experts and normalizes weights via softmax",
+        "inputs": [
+          {
+            "name": "scores",
+            "shape": "[B, S, num_experts]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "topk_weights",
+            "shape": "[B, S, top_k]",
+            "dtype": "fp32"
+          },
+          {
+            "name": "topk_indices",
+            "shape": "[B, S, top_k]",
+            "dtype": "int64"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "2 * B * S * num_experts + 3 * B * S * top_k"
+        },
+        "module": "moe.topk",
+        "category": "MoE"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/moe_moe_topk.json",
+        "sha256": "2986d6b533d5f25810856932d3ac4862dfc69518e7a7589eecbcc30826b9de9b"
+      }
+    },
+    "infer:AddRMSNormQuant": {
+      "spec": {
+        "name": "AddRMSNormQuant",
+        "description": "Residual add + normalization + quantization: y = quant(norm(x + residual))",
+        "inputs": [
+          {
+            "name": "x1",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "x2",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "int8"
+          },
+          {
+            "name": "scale",
+            "shape": "[B, S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "4 * B * S * hidden_size",
+          "fp16": "3 * B * S * hidden_size"
+        },
+        "module": "norm",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/normalization_add_rms_norm_quant.json",
+        "sha256": "1f9b949bdacc5a35ec367120b298488e0fd2ec816e1556e5edc6b2818c55ce24"
+      }
+    },
+    "infer:RMSNormGated": {
+      "spec": {
+        "name": "RMSNormGated",
+        "description": "Gated RMS Normalization: rms_norm(x) * gate where gate is a learned or computed parameter",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "gate",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [
+          {
+            "name": "weight",
+            "shape": "[hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "5 * B * S * hidden_size"
+        },
+        "module": "norm.rms_gated",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/normalization_rms_norm_gated.json",
+        "sha256": "953381445ef4e4b4969c6f4e8e9701ecdddbca28e8760d980dc6972034b881d0"
+      }
+    },
+    "infer:RMSNormQuant": {
+      "spec": {
+        "name": "RMSNormQuant",
+        "description": "RMS Normalization with quantization: quant(rms_norm(x))",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "int8"
+          },
+          {
+            "name": "scale",
+            "shape": "[B, S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "fp32": "4 * B * S * hidden_size",
+          "fp16": "2 * B * S * hidden_size"
+        },
+        "module": "norm",
+        "category": "Normalization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/normalization_rms_norm_quant.json",
+        "sha256": "54c95e398b64ba27e2ea32253693ac020fad3f680c3bea3dc97a0253fe007007"
+      }
+    },
+    "infer:PLELayer": {
+      "spec": {
+        "name": "PLELayer",
+        "description": "N-gram embedding, gated injection and short convolution",
+        "inputs": [
+          {
+            "name": "input_ids",
+            "shape": "[B, S]",
+            "dtype": "int32"
+          },
+          {
+            "name": "hyper_state",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "ngram_embedding",
+            "shape": "[ngram_vocab_size_base * (ngram_size - 1) * heads_per_ngram, ple_embed_dim // ((ngram_size - 1) * heads_per_ngram)]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "key_weight",
+            "shape": "[hc_count * hidden_size, ple_embed_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "value_weight",
+            "shape": "[hidden_size, ple_embed_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "ple_out",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * ple_embed_dim * (hc_count * hidden_size + hidden_size)"
+        },
+        "module": "ple",
+        "category": "Embedding"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/ple_layer.json",
+        "sha256": "7f0f4b613926e5d1631219d8a7595128a739680c15de8da684765862b21e1aab"
+      }
+    },
+    "infer:RopeComplex": {
+      "spec": {
+        "name": "RopeComplex",
+        "description": "Complex-number Rotary Position Embedding: applies RoPE in complex domain for better precision",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "3 * B * S * num_attention_heads // tp_size * head_dim"
+        },
+        "module": "attn",
+        "category": "Position"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/position_rope_complex.json",
+        "sha256": "ba9c94dac10af16691bd6c279d97f40a787660f525c9c0055792fbf865867843"
+      }
+    },
+    "infer:RopeInterLeave": {
+      "spec": {
+        "name": "RopeInterLeave",
+        "description": "Interleaved Rotary Position Embedding: applies RoPE with alternating interleaved frequency bands",
+        "inputs": [
+          {
+            "name": "q",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "k",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "q_out",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "k_out",
+            "shape": "[B, S, num_attention_heads // tp_size, head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "6 * B * S * num_attention_heads // tp_size * head_dim"
+        },
+        "module": "pos.rope_interleave",
+        "category": "Position"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/position_rope_inter_leave.json",
+        "sha256": "540141e341b784c2f636644cd6497de4f23c134a103e70c528bc7d9e04394c48"
+      }
+    },
+    "infer:QSAIndexer": {
+      "spec": {
+        "name": "QSAIndexer",
+        "description": "Compressed-key sparse-attention projection, scoring and top-k selection",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "index_qk_weight",
+            "shape": "[(indexer_n_heads + indexer_kv_heads) * indexer_head_dim, hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "q_norm_scale",
+            "shape": "[indexer_head_dim]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "k_norm_scale",
+            "shape": "[indexer_head_dim]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "selected_indices",
+            "shape": "[B, S, min(indexer_budget + indexer_compress_ratio - 1, kv_len)]",
+            "dtype": "int32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * B * S * hidden_size * (indexer_n_heads + indexer_kv_heads) * indexer_head_dim + 2 * B * S * indexer_n_heads * indexer_head_dim * ((kv_len + indexer_compress_ratio - 1) // indexer_compress_ratio)"
+        },
+        "module": "attn.qsa_indexer",
+        "category": "Attention"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/qsa_indexer.json",
+        "sha256": "8ebb7308f2597856f8c610cbf3152865ee5938fc6b8d27bfb66d754998ca9dcb"
+      }
+    },
+    "infer:DynamicQuant": {
+      "spec": {
+        "name": "DynamicQuant",
+        "description": "Dynamic quantization",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "out",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "int8"
+          },
+          {
+            "name": "scale",
+            "shape": "[B, S]",
+            "dtype": "fp32"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "3 * B * S * hidden_size"
+        },
+        "module": "quantization",
+        "category": "Quantization"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/quant_quant.json",
+        "sha256": "d0c9fdb5386c930931702e66e1caecc49ea7a9bf263a25e23d78baa0ad3c6c72"
+      }
+    },
+    "infer:SparseIndexSelect": {
+      "spec": {
+        "name": "SparseIndexSelect",
+        "description": "Sparse score top-k selection after index score reduction",
+        "inputs": [
+          {
+            "name": "l2_scores_reduced",
+            "shape": "[B, S, seq_len // 2]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "topk_2",
+            "shape": "[B, S, index_topk]",
+            "dtype": "int32"
+          }
+        ],
+        "compute_flops": {},
+        "module": "attn.indexer.select",
+        "category": "MLA",
+        "compute_unit": "vector"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/sparse_index_select.json",
+        "sha256": "aac5f42f9911fef2995733f8e9c2c420169f56c7511b3f777870534f832380fc"
+      }
+    },
+    "infer:TorchAdd": {
+      "spec": {
+        "name": "TorchAdd",
+        "description": "Element-wise tensor addition: y = a + b",
+        "inputs": [
+          {
+            "name": "a",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "b",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "B * S * hidden_size"
+        },
+        "module": "torch.add",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_add.json",
+        "sha256": "c56a91825d290e2c3e7f8f7207dccaa646213f75a1c4f3ba016d8e26cb40ed26"
+      }
+    },
+    "infer:TorchCos": {
+      "spec": {
+        "name": "TorchCos",
+        "description": "Element-wise cosine: y = cos(x)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {},
+        "module": "attn",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_cos.json",
+        "sha256": "37909b3aa2eebc755a0a6fef9fa7573bb493b84d7e0783f4c993c928c4017df2"
+      }
+    },
+    "infer:TorchCumsum": {
+      "spec": {
+        "name": "TorchCumsum",
+        "description": "Cumulative sum along a dimension: y[i] = sum(x[0..i])",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "B * S * hidden_size"
+        },
+        "module": "torch.cumsum",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_cumsum.json",
+        "sha256": "005c9afd1e6927132480dc67f70bc3014a0bcbf3628fffa56d3b809bd515f09e"
+      }
+    },
+    "infer:TorchMm": {
+      "spec": {
+        "name": "TorchMm",
+        "description": "Matrix multiplication: y = a @ b",
+        "inputs": [
+          {
+            "name": "a",
+            "shape": "[M, K]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "b",
+            "shape": "[K, N]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[M, N]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * M * K * N"
+        },
+        "module": "torch.mm",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_mm.json",
+        "sha256": "2002ca0f11a3e38753386755e79ac1809f4a5e8347deceefba777543b5cf78a5"
+      }
+    },
+    "infer:TorchMul": {
+      "spec": {
+        "name": "TorchMul",
+        "description": "Element-wise tensor multiplication: y = a * b",
+        "inputs": [
+          {
+            "name": "a",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "b",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "B * S * hidden_size"
+        },
+        "module": "torch.mul",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_mul.json",
+        "sha256": "4ba9ae01d1cbf623f72c55d44f9d31b9be95e424c3838abfe2ee2e530ce4e360"
+      }
+    },
+    "infer:TorchSin": {
+      "spec": {
+        "name": "TorchSin",
+        "description": "Element-wise sine: y = sin(x)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {},
+        "module": "attn",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_sin.json",
+        "sha256": "e42b464acc408365a3a537a53fd329f9ef602f9d63459b8d919256913bb22fbd"
+      }
+    },
+    "infer:TorchSoftmax": {
+      "spec": {
+        "name": "TorchSoftmax",
+        "description": "Softmax along the last dimension: y = exp(x) / sum(exp(x))",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "2 * B * S * hidden_size"
+        },
+        "module": "attn",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_softmax.json",
+        "sha256": "978811f867e6f85b442b1cbee367b00cfccd9a9c36236b1bad332923128e26b7"
+      }
+    },
+    "infer:TorchSort": {
+      "spec": {
+        "name": "TorchSort",
+        "description": "Sort tensor along a dimension: values, indices = sort(x, dim=d)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "values",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          },
+          {
+            "name": "indices",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "int64"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "B * S * hidden_size * 14"
+        },
+        "module": "torch.sort",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_sort.json",
+        "sha256": "6d0e3120dfc62403830f94c1637c3b1c36da79aeb80eb9ac6a00d3573685879d"
+      }
+    },
+    "infer:TorchSum": {
+      "spec": {
+        "name": "TorchSum",
+        "description": "Sum reduction: y = sum(x, dim=d)",
+        "inputs": [
+          {
+            "name": "x",
+            "shape": "[B, S, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "y",
+            "shape": "[B, hidden_size]",
+            "dtype": "fp16"
+          }
+        ],
+        "compute_flops": {
+          "fp16": "B * S * hidden_size - 1"
+        },
+        "module": "torch.sum",
+        "category": "Torch"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/torch_torch_sum.json",
+        "sha256": "b4baa55b36c3cc071871669f3ad422cfa549b8fb62218092e2084addadd395b0"
+      }
+    },
+    "infer:vision_encoder_block": {
+      "spec": {
+        "op_name": "VisionEncoderBlock",
+        "op_module": "vision.encoder",
+        "inputs": [
+          {
+            "name": "vision_hidden",
+            "shape": "[vision_patch_tokens, vision_hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "norm1_scale",
+            "shape": "[vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "qkv_weight",
+            "shape": "[3 * vision_hidden_size, vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "o_weight",
+            "shape": "[vision_hidden_size, vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "norm2_scale",
+            "shape": "[vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "fc1_weight",
+            "shape": "[vision_intermediate_size, vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "fc2_weight",
+            "shape": "[vision_hidden_size, vision_intermediate_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "vision_hidden",
+            "shape": "[vision_patch_tokens, vision_hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "8 * vision_patch_tokens * vision_hidden_size * vision_hidden_size + 4 * vision_patch_tokens * vision_hidden_size * vision_intermediate_size + 4 * vision_num_heads * vision_attention_token_pairs * (vision_hidden_size // vision_num_heads)"
+        },
+        "compute_unit": "mix"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/vision_encoder_block.json",
+        "sha256": "be1845df54459fdf5f50ef057a97210ce0cd9ebb6a4eb3274334b08fd6517707"
+      }
+    },
+    "infer:vision_patch_embed": {
+      "spec": {
+        "op_name": "VisionPatchEmbed",
+        "op_module": "vision.patch_embed",
+        "inputs": [
+          {
+            "name": "pixel_values",
+            "shape": "[vision_patch_tokens, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "projection_weight",
+            "shape": "[vision_hidden_size, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "vision_hidden",
+            "shape": "[vision_patch_tokens, vision_hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * vision_patch_tokens * vision_hidden_size * vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size"
+        },
+        "compute_unit": "mix"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/vision_patch_embed.json",
+        "sha256": "7b25faefa30022da4b204d88608818bebec81972d8ce08860c91fd345700ff65"
+      }
+    },
+    "infer:vision_patch_merger": {
+      "spec": {
+        "op_name": "VisionPatchMerger",
+        "op_module": "vision.merger",
+        "inputs": [
+          {
+            "name": "vision_hidden",
+            "shape": "[vision_patch_tokens, vision_hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [
+          {
+            "name": "norm_scale",
+            "shape": "[vision_hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "fc1_weight",
+            "shape": "[vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "fc2_weight",
+            "shape": "[vision_out_hidden_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "visual_embeddings",
+            "shape": "[vision_merged_tokens, vision_out_hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {
+          "bf16": "2 * vision_merged_tokens * (vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size) * (vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size + vision_out_hidden_size)"
+        },
+        "compute_unit": "mix"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/vision_patch_merger.json",
+        "sha256": "7929a1b1826504e9631bcf30bd3b92ff14e2883c8dc2d6f8d511a312428639e6"
+      }
+    },
+    "infer:vision_text_embedding_merge": {
+      "spec": {
+        "op_name": "VisionTextEmbeddingMerge",
+        "op_module": "multimodal.embedding_merge",
+        "inputs": [
+          {
+            "name": "text_embeddings",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          },
+          {
+            "name": "visual_embeddings",
+            "shape": "[vision_merged_tokens, hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "params": [],
+        "outputs": [
+          {
+            "name": "hyper_state",
+            "shape": "[B, S, hc_count * hidden_size]",
+            "dtype": "bf16"
+          }
+        ],
+        "compute_flops": {},
+        "compute_unit": "mix"
+      },
+      "source": {
+        "path": "backend/inference/data/operators/vision_text_embedding_merge.json",
+        "sha256": "20bb1ec85697534ecc2114af4b588ac63fae8c5236eb5a2e46a2eacaf0e990ad"
+      }
+    }
+  }
+}

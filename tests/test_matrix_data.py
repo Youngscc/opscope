@@ -73,6 +73,8 @@ class MatrixDataTest(unittest.TestCase):
         costs = sections['overview'][1]['extra']
         self.assertIn('回归仅提供总耗时', costs)
         self.assertNotIn('<dl', costs)
+        self.assertIn('仅演示结果', sections['overview'][0]['extra'])
+        self.assertNotIn('task-metrics', sections['overview'][0]['extra'])
         facts = parsed_facts('<dl><dt>zero</dt><dd>0</dd><dt>unknown</dt><dd>—</dd></dl>')
         self.assertTrue(facts[0]['known'])
         self.assertFalse(facts[1]['known'])

@@ -62,7 +62,8 @@ def detail_sections(result):
             facts = parsed_facts(body)
             metadata = facts[4:] if key == 'overview' else []
             if key == 'overview':
-                facts, extra = facts[:4], ''
+                facts = facts[:4]
+                extra = re.sub(r'<div class="task-metrics">\s*</div>', '', extra)
             elif key == 'latency':
                 facts = [item for item in facts if item['label'] not in {'总时延', '偏差'}]
             sections[tab].append({'title': title, 'key': key, 'metadata_facts': metadata,

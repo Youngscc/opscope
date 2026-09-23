@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 from threading import Lock
 import uuid
@@ -17,15 +18,27 @@ ROOT = Path(__file__).resolve().parent
 
 
 class EvaluationRuntime:
-    def __init__(self, engine_root, python, timeout=60, tilesim_python=None):
-        self.engine_root, self.python = Path(engine_root).resolve(), str(Path(python).absolute())
-        self.tilesim_python = str(Path(tilesim_python).absolute()) if tilesim_python else None
+    def __init__(self, engine_root=None, python=None, timeout=60, tilesim_python=None):
+        self.engine_root = Path(engine_root).resolve() if engine_root else ROOT.parents[1]
+        self.python = str(Path(python or sys.executable).absolute())
+        self.tilesim_python = self._tilesim_python(tilesim_python)
         self.timeout, self.jobs, self.lock = timeout, {}, Lock()
         self.pool = ThreadPoolExecutor(max_workers=2)
         try:
             self.capabilities = {'ready': True, **self.invoke({'probe': True})}
         except (OSError, ValueError, subprocess.SubprocessError):
             self.capabilities = {'ready': False, 'reason': '评估环境不可用，请核对启动参数与依赖。'}
+
+    def _tilesim_python(self, override):
+        if override:
+            return str(Path(override).absolute())
+        try:
+            import importlib.metadata
+            if importlib.metadata.version('msopmodeling') == '1.0.9':
+                return self.python
+        except importlib.metadata.PackageNotFoundError:
+            pass
+        return None
 
     def invoke_roofline(self, request):
         env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}

@@ -1,4 +1,7 @@
 """Contract and failure tests run without the optional external engine."""
+import json
+import math
+from pathlib import Path
 import shutil
 import subprocess
 import unittest
@@ -6,6 +9,7 @@ from unittest.mock import patch
 
 from opscope.offline.build import build_payload, render_page
 from opscope.evaluation.engine_worker import unavailable_reason
+from opscope.evaluation.bundled_roofline import simulate
 from opscope.evaluation.evaluation_contract import digest, hardware_key, normalize_request
 from opscope.evaluation.evaluation_results import evaluation_payload
 from opscope.evaluation.evaluation_runtime import EvaluationRuntime
@@ -28,6 +32,21 @@ def raw_result(latency=200):
 
 
 class EvaluationTest(unittest.TestCase):
+    def test_bundled_roofline_matches_upstream_reference(self):
+        # The checked-in minimal engine must preserve every supported formula and NPU calibration.
+        path = Path(__file__).with_name('data') / 'roofline_upstream_reference.json'
+        reference = json.loads(path.read_text())
+        self.assertEqual(reference['upstream_revision'], 'b1e5bdcabd5f5470335f925310feba7023a946ad')
+        for name, expected in reference['rows'].items():
+            key, hardware = name.split('|')
+            actual = simulate(reference['configs'][key], hardware)
+            for field, value in expected.items():
+                if isinstance(value, float):
+                    self.assertTrue(math.isclose(actual[field], value, rel_tol=1e-12, abs_tol=1e-12),
+                                    f'{name} {field}: {actual[field]} != {value}')
+                else:
+                    self.assertEqual(actual[field], value, f'{name} {field}')
+
     def test_canonical_input_ignores_client_identity(self):
         # Names, backend identities and formulas come from trusted catalog, never POST text.
         body = request_body()

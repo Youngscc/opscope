@@ -1,0 +1,600 @@
+{
+  "schema": "opscope-roofline-hardware-v1",
+  "upstream_revision": "b1e5bdcabd5f5470335f925310feba7023a946ad",
+  "hardware": {
+    "Adevice03_POD": {
+      "name": "Adevice03_POD",
+      "vendor": "huawei",
+      "device_type": "npu",
+      "chip_name": "Adevice03",
+      "soc_version": "Ascend910_9382",
+      "borrowed_from": "Adevice03_Server",
+      "compute": {
+        "cube": {
+          "fp16_tflops": 376.0,
+          "bf16_tflops": 376.0,
+          "fp32_tflops": 188.0,
+          "int8_tops": 752.0,
+          "int4_tops": 1504.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 24.0,
+          "bf16_tflops": 24.0,
+          "fp32_tflops": 12.0,
+          "int8_tops": 48.0,
+          "int4_tops": 96.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 192.0,
+        "ep_overlap_waves": 0,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 64.0,
+        "hbm_bandwidth_gbps": 1600.0,
+        "l2_cache_mb": 96.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 5500.0,
+            "capacity_mb": 96.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 1600.0,
+            "capacity_mb": 65536.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "Adevice03_Server": {
+      "name": "Adevice03_Server",
+      "vendor": "huawei",
+      "device_type": "npu",
+      "chip_name": "Adevice03",
+      "soc_version": "Ascend910_9382",
+      "borrowed_from": "Adevice03_Server",
+      "compute": {
+        "cube": {
+          "fp16_tflops": 376.0,
+          "bf16_tflops": 376.0,
+          "fp32_tflops": 188.0,
+          "int8_tops": 752.0,
+          "int4_tops": 1504.0,
+          "fp8_tops": 752.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 24.0,
+          "bf16_tflops": 24.0,
+          "fp32_tflops": 12.0,
+          "int8_tops": 48.0,
+          "int4_tops": 96.0,
+          "fp8_tops": 48.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 192.0,
+        "ep_overlap_waves": 0,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 64.0,
+        "hbm_bandwidth_gbps": 1600.0,
+        "l2_cache_mb": 96.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 5500.0,
+            "capacity_mb": 96.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 1600.0,
+            "capacity_mb": 65536.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "H100_POD": {
+      "name": "H100_POD",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "H100",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 989.0,
+          "bf16_tflops": 989.0,
+          "fp32_tflops": 989.0,
+          "int8_tops": 1979.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 1979.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 67.0,
+          "bf16_tflops": 67.0,
+          "fp32_tflops": 67.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 228.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 80.0,
+        "hbm_bandwidth_gbps": 3350.0,
+        "l2_cache_mb": 50.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 12288.0,
+            "capacity_mb": 50.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 3350.0,
+            "capacity_mb": 81920.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "H100_Server": {
+      "name": "H100_Server",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "H100",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 989.0,
+          "bf16_tflops": 989.0,
+          "fp32_tflops": 989.0,
+          "int8_tops": 1979.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 1979.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 67.0,
+          "bf16_tflops": 67.0,
+          "fp32_tflops": 67.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 228.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 80.0,
+        "hbm_bandwidth_gbps": 3350.0,
+        "l2_cache_mb": 50.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 12288.0,
+            "capacity_mb": 50.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 3350.0,
+            "capacity_mb": 81920.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "H200_POD": {
+      "name": "H200_POD",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "H200",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 989.0,
+          "bf16_tflops": 989.0,
+          "fp32_tflops": 989.0,
+          "int8_tops": 1979.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 1979.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 67.0,
+          "bf16_tflops": 67.0,
+          "fp32_tflops": 67.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 228.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 141.0,
+        "hbm_bandwidth_gbps": 4800.0,
+        "l2_cache_mb": 50.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 12288.0,
+            "capacity_mb": 50.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 4800.0,
+            "capacity_mb": 144384.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "H200_Server": {
+      "name": "H200_Server",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "H200",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 989.0,
+          "bf16_tflops": 989.0,
+          "fp32_tflops": 989.0,
+          "int8_tops": 1979.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 1979.0,
+          "fp4_tops": 0.0
+        },
+        "vector": {
+          "fp16_tflops": 67.0,
+          "bf16_tflops": 67.0,
+          "fp32_tflops": 67.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 228.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 141.0,
+        "hbm_bandwidth_gbps": 4800.0,
+        "l2_cache_mb": 50.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 12288.0,
+            "capacity_mb": 50.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 4800.0,
+            "capacity_mb": 144384.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "B200_POD": {
+      "name": "B200_POD",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "B200",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 2250.0,
+          "bf16_tflops": 2250.0,
+          "fp32_tflops": 2250.0,
+          "int8_tops": 4500.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 4500.0,
+          "fp4_tops": 9000.0
+        },
+        "vector": {
+          "fp16_tflops": 150.0,
+          "bf16_tflops": 150.0,
+          "fp32_tflops": 150.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 256.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 192.0,
+        "hbm_bandwidth_gbps": 8000.0,
+        "l2_cache_mb": 100.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 16000.0,
+            "capacity_mb": 100.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 8000.0,
+            "capacity_mb": 196608.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "B200_Server": {
+      "name": "B200_Server",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "B200",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 2250.0,
+          "bf16_tflops": 2250.0,
+          "fp32_tflops": 2250.0,
+          "int8_tops": 4500.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 4500.0,
+          "fp4_tops": 9000.0
+        },
+        "vector": {
+          "fp16_tflops": 150.0,
+          "bf16_tflops": 150.0,
+          "fp32_tflops": 150.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 256.0,
+        "ep_overlap_waves": 4,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 192.0,
+        "hbm_bandwidth_gbps": 8000.0,
+        "l2_cache_mb": 100.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 16000.0,
+            "capacity_mb": 100.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 8000.0,
+            "capacity_mb": 196608.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "B300_POD": {
+      "name": "B300_POD",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "B300",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 2250.0,
+          "bf16_tflops": 2250.0,
+          "fp32_tflops": 2250.0,
+          "int8_tops": 4500.0,
+          "int4_tops": 9000.0,
+          "fp8_tops": 4500.0,
+          "fp4_tops": 13500.0
+        },
+        "vector": {
+          "fp16_tflops": 75.0,
+          "bf16_tflops": 75.0,
+          "fp32_tflops": 75.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 256.0,
+        "ep_overlap_waves": 0,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 288.0,
+        "hbm_bandwidth_gbps": 8000.0,
+        "l2_cache_mb": 64.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 16384.0,
+            "capacity_mb": 64.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 8000.0,
+            "capacity_mb": 294912.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "B300_Server": {
+      "name": "B300_Server",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "B300",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 2250.0,
+          "bf16_tflops": 2250.0,
+          "fp32_tflops": 2250.0,
+          "int8_tops": 4500.0,
+          "int4_tops": 9000.0,
+          "fp8_tops": 4500.0,
+          "fp4_tops": 13500.0
+        },
+        "vector": {
+          "fp16_tflops": 75.0,
+          "bf16_tflops": 75.0,
+          "fp32_tflops": 75.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 256.0,
+        "ep_overlap_waves": 0,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 288.0,
+        "hbm_bandwidth_gbps": 8000.0,
+        "l2_cache_mb": 64.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 16384.0,
+            "capacity_mb": 64.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 8000.0,
+            "capacity_mb": 294912.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    },
+    "R200_Server": {
+      "name": "R200_Server",
+      "vendor": "nvidia",
+      "device_type": "gpu",
+      "chip_name": "R200",
+      "soc_version": "",
+      "borrowed_from": null,
+      "compute": {
+        "cube": {
+          "fp16_tflops": 4000.0,
+          "bf16_tflops": 4000.0,
+          "fp32_tflops": 2000.0,
+          "int8_tops": 250.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 17500.0,
+          "fp4_tops": 35000.0
+        },
+        "vector": {
+          "fp16_tflops": 130.0,
+          "bf16_tflops": 130.0,
+          "fp32_tflops": 130.0,
+          "int8_tops": 0.0,
+          "int4_tops": 0.0,
+          "fp8_tops": 0.0,
+          "fp4_tops": 0.0
+        },
+        "overlap_ratio": {
+          "attn_core": 0.6
+        },
+        "sram_kb_per_sm": 256.0,
+        "ep_overlap_waves": 0,
+        "compute_ratio": null,
+        "flash_attention_fwd_coefficient": 1.0,
+        "flash_attention_bwd_coefficient": 1.0
+      },
+      "memory": {
+        "capacity_gb": 288.0,
+        "hbm_bandwidth_gbps": 22000.0,
+        "l2_cache_mb": 50.0,
+        "tiers": [
+          {
+            "name": "L2",
+            "bandwidth_gbps": 44000.0,
+            "capacity_mb": 50.0
+          },
+          {
+            "name": "HBM",
+            "bandwidth_gbps": 22000.0,
+            "capacity_mb": 294912.0
+          }
+        ],
+        "bw_gmem_ratio": null
+      }
+    }
+  }
+}

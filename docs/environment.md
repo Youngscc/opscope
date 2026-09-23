@@ -112,9 +112,11 @@ npm --prefix frontend run build
 
 `npm ci` 严格按 `frontend/package-lock.json` 安装，适合首次创建环境和 CI。
 
-### 2.6 可选：配置真实评估引擎
+### 2.6 评估引擎
 
-只浏览示例数据时无需创建 `.env`。需要调用本机 Roofline 或 TileSim 时执行：
+Roofline 最小后端与 `msopmodeling 1.0.9` wheel 已包含在仓库中，执行 `uv sync` 或 `setup.sh` 后会安装到 `.venv`，无需外部 modeling 仓库。
+
+只有验证其他解释器版本时才需要创建 `.env`：
 
 ```bash
 cp .env.example .env
@@ -245,4 +247,4 @@ uv sync --locked --all-groups --check
 - `.venv` 中没有 pip：这是 uv 环境的正常情况；使用 `uv sync` 或 `uv pip install --python .venv/bin/python ...`。
 - `npm ci` 报 lock 不一致：先确认 `frontend/package.json` 与 `frontend/package-lock.json` 来自同一个提交。
 - `./start.sh` 提示环境未就绪：先执行第 3 节的首次配置命令，或执行 `./setup.sh`。
-- Roofline 或 TileSim 不可用：Web 环境与模型运行时相互隔离；检查 `.env` 中的外部解释器路径，不能把模型包直接装进 OpScope 的 `.venv` 代替配置。
+- Roofline 不可用：执行 `./setup.sh` 后重启服务，并查看 `/api/opscope/capabilities`。TileSim 不可用时确认仓库 wheel 存在且 `uv sync --locked --all-groups --check` 通过；`.env` 中的旧外部路径会覆盖内置解释器，可先移除。

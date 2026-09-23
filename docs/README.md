@@ -6,6 +6,7 @@
 - [uv 环境配置](environment.md)：从零创建 `.venv`、requirements 文件、依赖更新、启动与验证命令
 - [框架对齐](framework-alignment.md)：Vue/FastAPI 端口服务和宿主接入边界
 - [本地评估设计](live-evaluation-plan.md)：Roofline 与 TileSim 的本地调用方式
+- [内置引擎迁移](bundled-engines.md)：脱离外部 modeling 仓库的公式、规格、wheel 与验证边界
 - [CI 说明](ci.md)：GitHub Actions 检查范围
 - [打包说明](PACKAGING.md)：独立目录和发布边界
 - [Python 目录整理](python-layout.md)：业务分包、稳定入口和测试位置

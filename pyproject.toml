@@ -7,8 +7,12 @@ description = "OpScope · 算子性能观察台的 Web 运行环境"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi==0.141.1",
+    "msopmodeling==1.0.9",
     "uvicorn==0.52.4",
 ]
+
+[tool.uv.sources]
+msopmodeling = { path = "vendor/msopmodeling/msopmodeling-1.0.9-py3-none-any.whl" }
 
 [dependency-groups]
 dev = [

@@ -15,10 +15,10 @@ def create_app(settings=None, runtime=None):
 
     @asynccontextmanager
     async def lifespan(app):
-        owned = runtime is None and settings.engine_root and settings.engine_python
+        owned = runtime is None
         if owned:
             app.state.opscope_runtime = await run_in_threadpool(
-                EvaluationRuntime, settings.engine_root, settings.engine_python,
+                EvaluationRuntime, settings.engine_root or None, settings.engine_python or None,
                 tilesim_python=settings.tilesim_python or None)
         try:
             yield

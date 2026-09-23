@@ -8,7 +8,7 @@
 
 ## 当前形态
 
-主要入口已改为 Vue 3 / TypeScript / Vite / Pinia / Vue Router + FastAPI / Uvicorn。`start.sh` 构建前端并在单端口提供页面/API；开发模式由 Vite 代理API。无任务数据库依赖。Web环境与外部计算解释器隔离，原单文件离线生成链路保留。
+主要入口已改为 Vue 3 / TypeScript / Vite / Pinia / Vue Router + FastAPI / Uvicorn。`start.sh` 构建前端并在单端口提供页面/API；开发模式由 Vite 代理API。无任务数据库依赖。Roofline 最小后端和 TileSim wheel 随仓库提供，默认共用 OpScope `.venv`；worker 仍使用独立子进程和临时目录隔离执行。原单文件离线生成链路保留。
 
 ```text
 Vue页面/组件 → Pinia状态 → /api/opscope APIRouter
@@ -80,9 +80,9 @@ opscope/offline/fixtures.py → execution_data.py
 
 ## 可选的本地评估运行时（2026-09-22）
 
-静态构建与示例仍不依赖外部仓库。`serve.py` 是服务兼容入口，可选连接通过启动参数指定的建模源码和Python环境。`opscope/evaluation/evaluation_contract.py`根据内置模板规范化请求并校验基础算子形状/精度；客户端不能指定代码、硬件文件路径或公式。同目录`evaluation_runtime.py`维护有界内存任务，以独立子进程调用`engine_worker.py`，避免Web系统、任务数据库及共享Hub缓存。
+静态构建与示例不依赖外部仓库。`serve.py` 是服务兼容入口，默认使用仓库内置引擎；启动参数只用于高级解释器覆盖。`opscope/evaluation/evaluation_contract.py`根据内置模板规范化请求并校验基础算子形状/精度；客户端不能指定代码、硬件文件路径或公式。同目录`evaluation_runtime.py`维护有界内存任务，以独立子进程调用`engine_worker.py`，避免Web系统、任务数据库及共享Hub缓存。
 
-worker为每个组合创建独立OpNode/Roofline实例，读取单设备硬件规格，返回原始数值、规格摘要、源码/校准身份；该worker仅处理Roofline，测量/方法3/4明确不支持，不做回退。`evaluation_results.py`生成`opscope-evaluation-v1`的工作负载、任务、来源和安全转义详情，由已有matrix_data生成全批图表尺度及比较数据。预测结果synthetic=false且measurement=false；空缺为null，不沿用fixture计数器或参考误差。
+worker 使用 `bundled_roofline.py` 中迁移的 11 类公式与 `data/roofline_hardware.json` 硬件快照，返回原始数值、规格摘要和上游版本身份；不包含任务系统、查表或校准库。该worker仅处理Roofline，测量/方法3/4明确不支持，不做回退。`evaluation_results.py`生成`opscope-evaluation-v1`的工作负载、任务、来源和安全转义详情，由已有matrix_data生成全批图表尺度及比较数据。预测结果synthetic=false且measurement=false；空缺为null，不沿用fixture计数器或参考误差。
 
 TileSim worker由`tilesim_contract.py`维护显式算子/硬件支持矩阵，`tilesim_adapters.py`按算子生成输入输出、dtype、工作量和模型假设。MatMul/FA使用有流水的DSL工程路径，已验证的归一化、激活、逐元素、BMM、固定轴Gather等使用成本模型工程或理论路径；模型存在但缺少axis、perm、group_list等运行值时保持不支持。所有路径都返回actual_backend=tilesim，不回退Roofline。
 

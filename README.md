@@ -19,7 +19,7 @@
 
 [uv](https://docs.astral.sh/uv/) 已安装时 Python 环境优先按已提交的 `uv.lock` 同步；未安装 uv 自动回退 `python3 -m venv` + pip。逐条创建 `.venv`、安装 requirements、更新锁文件和验证的完整命令见 [`docs/environment.md`](docs/environment.md)。
 
-未配置计算环境时仍可浏览示例。实际运行需将 `.env.example` 复制为 `.env`，填写已有引擎的路径，详见下文；`.env` 不入库，不自动安装模型依赖。未安装 uv、使用 venv+pip 回退时，可用 `PYTHON_BIN=/path/to/python3.12 ./setup.sh` 指定 Python。
+`setup.sh` 会把仓库内置的 Roofline 后端和固定版本 TileSim 安装到 OpScope 自己的 `.venv`，无需另行克隆 modeling 或填写 `.env`。TileSim 的 NumPy、SciPy 等平台依赖仍从 Python 包索引下载。未安装 uv、使用 venv+pip 回退时，可用 `PYTHON_BIN=/path/to/python3.12 ./setup.sh` 指定 Python。
 
 根目录 `index.html` 仍可直接用现代浏览器离线打开，不需要安装依赖；它是独立导出入口，在线应用使用 `frontend/dist/index.html`。
 
@@ -106,11 +106,18 @@ python3 -B build.py
 
 56 项 Python 测试、2 项前端状态测试、TypeScript 检查、Vite 和离线构建通过。FastAPI 路由在独立宿主挂载验证通过；真实 Roofline / TileSim 的端到端结果和原适配器一致。桌面验证配置校验/清空、双结果比较、流水选核/翻页和完整 JSON。仅PC使用，未做真机精度认证，尚未实际合入 modeling；集成边界见 [框架对齐说明](docs/framework-alignment.md)。
 
-本包不包含 modeling 后端、数据库、原 Git 历史、个人 Skill 或外部服务凭据。源码仓库已同步到 GitHub 的 Youngscc/opscope；未部署网站，未新增开源许可证授权。
+本包包含从既有 modeling 行为迁移的最小 Roofline 后端与硬件快照，以及原版 `msopmodeling 1.0.9` wheel；不包含 modeling 的任务系统、数据库、完整源码、原 Git 历史、个人 Skill 或外部服务凭据。TileSim wheel 的木兰宽松许可证副本位于 `vendor/msopmodeling/LICENSE`。源码仓库已同步到 GitHub 的 Youngscc/opscope；未部署网站。
 
 ## 本地运行算子评估
 
-在 `.env` 配置已有环境（以下路径需替换）：
+完成快速使用中的两条命令后，Roofline 和 TileSim 会直接启用：
+
+```bash
+./setup.sh
+./start.sh
+```
+
+`.env` 只作为高级覆盖入口，用于验证其他解释器或引擎工作目录：
 
 ```dotenv
 OPSCOPE_ENGINE_ROOT=/path/to/modeling
@@ -119,16 +126,16 @@ OPSCOPE_TILESIM_PYTHON=/path/to/tilesim-runtime/.venv/bin/python
 OPSCOPE_PORT=8768
 ```
 
-然后运行 `./start.sh`。也可通过 `./start.sh --engine-root /path/to/modeling --engine-python /path/to/python --tilesim-python /path/to/tile/python` 传入参数。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装 Web 依赖和构建前端。
+也可通过 `./start.sh --engine-root /path/to/root --engine-python /path/to/python --tilesim-python /path/to/python` 传入覆盖参数。正常使用不需要这些参数。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装依赖和构建前端。
 
 服务 API 位于 `/api/opscope`；[接口文档](http://127.0.0.1:8768/docs) 和 `/api/health` 可用于检查。计算组件继续使用各自独立解释器，不装入 Web 环境、不连接任务数据库。
 
 - 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
 - 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
 - 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
-- `--tilesim-python` 可省略；配置后使用独立安装的 msopmodeling 1.0.9。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
+- TileSim 默认使用 `.venv` 中由仓库 wheel 安装的 msopmodeling 1.0.9；`--tilesim-python` 仅用于覆盖。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
 - TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
 - “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。
 - 服务仅监听本机。任务保存在内存，最多同时2个、保留最近12个，每批计算超时60秒；重启会清空任务。需要留存的结果请下载HTML或JSON。
 
-实现与边界见 [本地评估方案](docs/live-evaluation-plan.md) 和 [组件复用分析](docs/modeling-reuse-analysis.md)。此功能不执行设备实测、不验证模型精度，已接入可选TileSim解释器，未接入外部测量数据库。详细范围见 [TileSim接入](docs/tilesim-integration-plan.md)。
+实现与边界见 [内置引擎迁移](docs/bundled-engines.md)、[本地评估方案](docs/live-evaluation-plan.md) 和 [组件复用分析](docs/modeling-reuse-analysis.md)。此功能不执行设备实测、不验证模型精度，未接入外部测量数据库。详细范围见 [TileSim接入](docs/tilesim-integration-plan.md)。

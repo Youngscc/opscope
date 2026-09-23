@@ -1,0 +1,467 @@
+{
+  "schema": "opscope-roofline-upstream-reference-v1",
+  "upstream_revision": "b1e5bdcabd5f5470335f925310feba7023a946ad",
+  "configs": {
+    "matmul": {
+      "key": "matmul",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            1024,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            512,
+            256
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "linear": {
+      "key": "linear",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            256,
+            512
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "bmm": {
+      "key": "bmm",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            32,
+            128,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "flash_attention": {
+      "key": "flash_attention",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "layernorm": {
+      "key": "layernorm",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "rms_norm": {
+      "key": "rms_norm",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "swiglu": {
+      "key": "swiglu",
+      "inputs": [
+        {
+          "name": "hidden",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "gate_w",
+          "shape": [
+            11008,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "up_w",
+          "shape": [
+            11008,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "down_w",
+          "shape": [
+            4096,
+            11008
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "embedding": {
+      "key": "embedding",
+      "inputs": [
+        {
+          "name": "weight",
+          "shape": [
+            32000,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "indices",
+          "shape": [
+            2,
+            512
+          ],
+          "dtype": "int32"
+        }
+      ]
+    },
+    "silu": {
+      "key": "silu",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "gelu": {
+      "key": "gelu",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "softmax": {
+      "key": "softmax",
+      "inputs": [
+        {
+          "name": "input",
+          "shape": [
+            32,
+            32,
+            512,
+            512
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    }
+  },
+  "rows": {
+    "matmul|Adevice03_Server": {
+      "latency_us": 1.6384,
+      "compute_us": 1.0198915501519756,
+      "memory_us": 1.6384,
+      "flops": 268435456,
+      "read_bytes": 1310720,
+      "write_bytes": 524288,
+      "arithmetic_intensity": 146.28571428571428,
+      "bound": "memory"
+    },
+    "matmul|H200_Server": {
+      "latency_us": 0.5461333333333334,
+      "compute_us": 0.5428421759352882,
+      "memory_us": 0.5461333333333334,
+      "flops": 268435456,
+      "read_bytes": 1310720,
+      "write_bytes": 524288,
+      "arithmetic_intensity": 146.28571428571428,
+      "bound": "memory"
+    },
+    "linear|Adevice03_Server": {
+      "latency_us": 1.6384,
+      "compute_us": 1.0198915501519756,
+      "memory_us": 1.6384,
+      "flops": 268435456,
+      "read_bytes": 1310720,
+      "write_bytes": 524288,
+      "arithmetic_intensity": 146.28571428571428,
+      "bound": "memory"
+    },
+    "linear|H200_Server": {
+      "latency_us": 0.5461333333333334,
+      "compute_us": 0.5428421759352882,
+      "memory_us": 0.5461333333333334,
+      "flops": 268435456,
+      "read_bytes": 1310720,
+      "write_bytes": 524288,
+      "arithmetic_intensity": 146.28571428571428,
+      "bound": "memory"
+    },
+    "bmm|Adevice03_Server": {
+      "latency_us": 8.426057142857143,
+      "compute_us": 2.231012765957447,
+      "memory_us": 8.426057142857143,
+      "flops": 536870912,
+      "read_bytes": 8388608,
+      "write_bytes": 1048576,
+      "arithmetic_intensity": 56.888888888888886,
+      "bound": "memory"
+    },
+    "bmm|H200_Server": {
+      "latency_us": 2.8086857142857142,
+      "compute_us": 1.0856843518705763,
+      "memory_us": 2.8086857142857142,
+      "flops": 536870912,
+      "read_bytes": 8388608,
+      "write_bytes": 1048576,
+      "arithmetic_intensity": 56.888888888888886,
+      "bound": "memory"
+    },
+    "flash_attention|Adevice03_Server": {
+      "latency_us": 154.9397829386329,
+      "compute_us": 154.9397829386329,
+      "memory_us": 29.95931428571429,
+      "flops": 8657043456,
+      "read_bytes": 25165824,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 258.0,
+      "bound": "compute"
+    },
+    "flash_attention|H200_Server": {
+      "latency_us": 15.915145612648221,
+      "compute_us": 15.915145612648221,
+      "memory_us": 9.986438095238094,
+      "flops": 8657043456,
+      "read_bytes": 25165824,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 258.0,
+      "bound": "compute"
+    },
+    "layernorm|Adevice03_Server": {
+      "latency_us": 22.6492416,
+      "compute_us": 22.6492416,
+      "memory_us": 4.3619740259740265,
+      "flops": 29360128,
+      "read_bytes": 8404992,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.7482926829268293,
+      "bound": "compute"
+    },
+    "layernorm|H200_Server": {
+      "latency_us": 4.998095238095238,
+      "compute_us": 0.8764217313432835,
+      "memory_us": 4.998095238095238,
+      "flops": 29360128,
+      "read_bytes": 8404992,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.7482926829268293,
+      "bound": "memory"
+    },
+    "rms_norm|Adevice03_Server": {
+      "latency_us": 9.2274688,
+      "compute_us": 9.2274688,
+      "memory_us": 4.359846233766234,
+      "flops": 25165824,
+      "read_bytes": 8396800,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.499267935578331,
+      "bound": "compute"
+    },
+    "rms_norm|H200_Server": {
+      "latency_us": 4.9956571428571435,
+      "compute_us": 0.7512186268656716,
+      "memory_us": 4.9956571428571435,
+      "flops": 25165824,
+      "read_bytes": 8396800,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.499267935578331,
+      "bound": "memory"
+    },
+    "swiglu|Adevice03_Server": {
+      "latency_us": 211.25722352941176,
+      "compute_us": 7.42391808,
+      "memory_us": 211.25722352941176,
+      "flops": 277081751552,
+      "read_bytes": 278921216,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 964.4005474452555,
+      "bound": "memory"
+    },
+    "swiglu|H200_Server": {
+      "latency_us": 8271.097061253731,
+      "compute_us": 8271.097061253731,
+      "memory_us": 70.41907450980392,
+      "flops": 277081751552,
+      "read_bytes": 278921216,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 964.4005474452555,
+      "bound": "compute"
+    },
+    "embedding|Adevice03_Server": {
+      "latency_us": 6.5376415584415595,
+      "compute_us": 0.0,
+      "memory_us": 6.5376415584415595,
+      "flops": 0,
+      "read_bytes": 16781312,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 0.0,
+      "bound": "memory"
+    },
+    "embedding|H200_Server": {
+      "latency_us": 7.491047619047619,
+      "compute_us": 0.0,
+      "memory_us": 7.491047619047619,
+      "flops": 0,
+      "read_bytes": 16781312,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 0.0,
+      "bound": "memory"
+    },
+    "silu|Adevice03_Server": {
+      "latency_us": 11.660165119999998,
+      "compute_us": 11.660165119999998,
+      "memory_us": 4.3577184415584425,
+      "flops": 16777216,
+      "read_bytes": 8388608,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.0,
+      "bound": "compute"
+    },
+    "silu|H200_Server": {
+      "latency_us": 4.993219047619047,
+      "compute_us": 0.5008124179104477,
+      "memory_us": 4.993219047619047,
+      "flops": 16777216,
+      "read_bytes": 8388608,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.0,
+      "bound": "memory"
+    },
+    "gelu|Adevice03_Server": {
+      "latency_us": 18.91631104,
+      "compute_us": 18.91631104,
+      "memory_us": 4.3577184415584425,
+      "flops": 16777216,
+      "read_bytes": 8388608,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.0,
+      "bound": "compute"
+    },
+    "gelu|H200_Server": {
+      "latency_us": 4.993219047619047,
+      "compute_us": 0.5008124179104477,
+      "memory_us": 4.993219047619047,
+      "flops": 16777216,
+      "read_bytes": 8388608,
+      "write_bytes": 8388608,
+      "arithmetic_intensity": 1.0,
+      "bound": "memory"
+    },
+    "softmax|Adevice03_Server": {
+      "latency_us": 1438.81404416,
+      "compute_us": 1438.81404416,
+      "memory_us": 789.5160470588235,
+      "flops": 1073741824,
+      "read_bytes": 536870912,
+      "write_bytes": 536870912,
+      "arithmetic_intensity": 1.0,
+      "bound": "compute"
+    },
+    "softmax|H200_Server": {
+      "latency_us": 263.1720156862745,
+      "compute_us": 29.138177042062416,
+      "memory_us": 263.1720156862745,
+      "flops": 1073741824,
+      "read_bytes": 536870912,
+      "write_bytes": 536870912,
+      "arithmetic_intensity": 1.0,
+      "bound": "memory"
+    }
+  }
+}

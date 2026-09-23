@@ -7,6 +7,7 @@ for arg in "$@"; do
     -h|--help) echo './setup.sh [--help]
 配置运行环境（首次或依赖变更后运行）：
 - Python：uv 可用时按 uv.lock 同步全部依赖组，否则创建 .venv 并 pip 安装 backend/requirements-dev.txt
+- 引擎：安装仓库内置 Roofline 所需环境及 vendor/msopmodeling 的固定 TileSim wheel
 - 前端：frontend/node_modules 缺失时执行 npm ci
 详见 docs/environment.md。'; exit 0 ;;
     *) echo "未知参数：$arg（setup.sh 不接受参数）" >&2; exit 2 ;;

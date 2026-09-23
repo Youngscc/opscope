@@ -104,8 +104,11 @@ class WebTest(unittest.TestCase):
             self.assertEqual(client.get('/api/opscope/capabilities').json()['ready'], True)
             self.assertEqual(client.post('/api/opscope/evaluations', json=request_body()).status_code, 202)
 
-    def test_demo_startup_without_engines(self):
-        # Standalone viewing works without modeling; execution is explicitly unavailable.
+    def test_standalone_startup_uses_bundled_engine(self):
+        # A fresh clone owns its runtime; no external modeling path is required.
         with TestClient(create_app(self.settings), base_url='http://127.0.0.1:8768') as client:
-            self.assertEqual(client.get('/api/opscope/capabilities').json()['ready'], False)
-            self.assertEqual(client.post('/api/opscope/evaluations', json=request_body()).status_code, 503)
+            capabilities = client.get('/api/opscope/capabilities').json()
+            self.assertTrue(capabilities['ready'])
+            self.assertTrue(capabilities['roofline'])
+            body = request_body(); body['hardware_ids'] = ['h100']; body['method_ids'] = ['roofline']
+            self.assertEqual(client.post('/api/opscope/evaluations', json=body).status_code, 202)

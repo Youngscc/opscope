@@ -6,7 +6,7 @@ import re
 
 from .tilesim_details import union_time
 from .time_comparison import compare_payload
-from opscope.offline.matrix_data import TABS
+from opscope.offline.matrix_data import TABS, pair_summary
 
 
 STYLE = """
@@ -45,7 +45,7 @@ def document(title, subtitle, navigation, sections, script=''):
             f'<title>{esc(title)} · OpScope</title><style>{STYLE}</style></head><body>'
             f'<header><div class="brand">OPSCOPE / MODEL REPORT</div><h1>{esc(title)}</h1>'
             f'<p>{esc(subtitle)}</p></header><div class="layout"><nav aria-label="报告目录">{nav}</nav>'
-            f'<main>{sections}</main></div><footer>OpScope · 模型预测，非设备实测 · 本报告离线可读</footer>'
+            f'<main>{sections}</main></div><footer>OpScope · 数据性质以结果来源标记为准 · 本报告离线可读</footer>'
             f'{script}</body></html>')
 
 
@@ -246,3 +246,32 @@ def single_report(job, row):
     return document(f'{name} · {method} 单项报告',
                     f'{payload["initial_configuration"]["operator"]} · 独立 HTML · 模型预测',
                     nav, ''.join(sections), script)
+
+
+def pair_report(payload, left, right):
+    """Compare exactly the two matrix cells selected, including demo provenance."""
+    summary = pair_summary(left, right)
+    names = [{item['id']: item['name'] for item in payload[key]}
+             for key in ('hardware', 'methods')]
+    labels = [f"{names[0][row['hardware']]} · {names[1][row['method']]}" for row in (left, right)]
+    sources = ['示例数据 · synthetic=true' if row.get('synthetic') else '模型预测，非设备实测'
+               for row in (left, right)]
+    chart = ''
+    if summary['chart']:
+        for index, row in enumerate((left, right)):
+            slot = 'B' if index else 'A'
+            width = summary['chart']['widths'][index]
+            chart += (f'<div class="chart-row"><span>{slot} · {esc(labels[index])}</span>'
+                      f'<div class="barline"><span class="bar {slot.lower()}" style="width:{width}%"></span></div>'
+                      f'<strong>{esc(row["latency"])} μs</strong></div>')
+        chart += f'<p class="note">同一尺度：0 — {esc(summary["chart"]["scale_us"])} μs</p>'
+    overview = table(['项目', '结果 A', '结果 B'], [
+        ('对象', *labels), ('数据来源', *sources), ('结果 ID', left['id'], right['id'])], 'pair')
+    overview += f'<p class="warning">{esc(summary["text"])}</p>' + chart
+    body = panel('overview', '总耗时对比', overview)
+    body += panel('details', '逐项指标', detail_blocks(left, right))
+    raw = json.dumps({'synthetic': any(row.get('synthetic') for row in (left, right)),
+                      'results': [left, right]}, ensure_ascii=False, indent=2)
+    body += panel('raw', '结果数据', f'<details><summary>展开原始 JSON</summary><pre>{esc(raw)}</pre></details>')
+    return document('双结果对比报告', 'A / B · ' + ' ↔ '.join(labels),
+                    [('overview', '总耗时'), ('details', '逐项指标'), ('raw', '结果数据')], body)

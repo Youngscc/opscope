@@ -80,6 +80,32 @@ class WebTest(unittest.TestCase):
         self.assertEqual(self.client.get('/static/missing.js').status_code, 404)
         self.assertEqual(self.client.get('/api/health').json()['status'], 'ok')
 
+    def test_selected_matrix_report(self):
+        # Two cells from one payload, including partial runs, are enough; never fall back on a missing job.
+        path = '/api/opscope/results/compare/report'
+        query = {'left': 'demo-h100-roofline', 'right': 'demo-h100-tilesim'}
+        response = self.client.get(path, params=query)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('双结果对比报告', response.text)
+        self.assertIn('synthetic=true', response.text)
+        self.assertIn('width:78.5%', response.text)
+        self.assertIn('+12.1%', response.text)
+        self.assertIn('attachment;', response.headers['content-disposition'])
+        self.runtime.job['status'] = 'running'
+        self.assertEqual(self.client.get(path, params={**query, 'job': JOB}).status_code, 200)
+        self.assertEqual(self.client.get(path, params={**query, 'job': 'b' * 32}).status_code, 404)
+        self.assertEqual(self.client.get(path, params={**query, 'right': query['left']}).status_code, 400)
+        self.assertEqual(self.client.get(path, params={**query, 'right': 'unknown'}).status_code, 404)
+        self.assertEqual(self.client.get(path, params={**query, 'right': 'demo-r200-profile'}).status_code, 409)
+        cross = self.client.get(path, params={**query, 'right': 'demo-h200-tilesim'})
+        self.assertIn('硬件与方法同时变化', cross.text)
+        self.assertNotIn('B 相对 A 耗时', cross.text)
+        row = next(row for row in self.runtime.job['payload']['results'] if row['id'] == query['left'])
+        row['id'] = '<script>alert(1)</script>'
+        escaped = self.client.get(path, params={**query, 'job': JOB, 'left': row['id']})
+        self.assertNotIn(row['id'], escaped.text)
+        self.assertIn('&lt;script&gt;', escaped.text)
+
     def test_local_host_origin_and_body_limits(self):
         # Reject foreign origins and oversized streamed JSON before a job is submitted.
         path = '/api/opscope/evaluations'

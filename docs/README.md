@@ -20,7 +20,8 @@
 - [算子目录方案](operator-catalog-plan.md)：算子、输入形状和 dtype 配置
 - [算子语义去重审计](operator-semantic-dedup-audit.md)：按数学逻辑、batch、布局和融合边界识别等价项
 - [逐结果更新](incremental-results.md)：评估结果逐卡返回和轮询协议
-- [两次评估对比](time-comparison.md)：按时间选择两批结果、同口径图表和并排详情
+- [矩阵双结果比较](matrix-comparison.md)：直接选两张卡片、浮窗图表和报告
+- [两次评估对比](time-comparison.md)：历史接口设计，时间选择界面已移除
 - [独立 HTML 报告](html-reports.md)：A/B 对比报告与单项事件明细报告的内容和边界
 - [数据语义](../.agent/data-semantics.md)：缺失、合成、预测和实测的口径
 

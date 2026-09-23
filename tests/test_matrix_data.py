@@ -44,9 +44,11 @@ class MatrixDataTest(unittest.TestCase):
         self.assertEqual(pair['issues'], [])
         self.assertAlmostEqual(pair['delta_percent'], 19 / 157 * 100)
         self.assertIn('+12.1%', pair['text'])
+        self.assertEqual(pair['chart'], {'scale_us': 200, 'widths': [78.5, 88.0]})
         cross = pair_summary(a, self.rows['demo-h200-tilesim'])
         self.assertEqual(cross['issues'], ['硬件与方法同时变化'])
         self.assertIsNone(cross['delta_percent'])
+        self.assertIsNotNone(cross['chart'])  # Raw values remain visible without a ratio.
         same_method = pair_summary(a, self.rows['demo-h200-roofline'])
         self.assertEqual(same_method['issues'], [])
 
@@ -87,3 +89,5 @@ class MatrixDataTest(unittest.TestCase):
         summary = pair_summary(a, self.rows['demo-h100-tilesim'])
         self.assertIsNone(summary['delta_percent'])
         self.assertIn('未定义', summary['text'])
+        self.assertEqual(summary['chart']['widths'][0], 0)
+        self.assertIsNone(pair_summary(a, self.rows['demo-r200-profile'])['chart'])

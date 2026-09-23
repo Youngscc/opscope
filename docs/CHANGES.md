@@ -4,6 +4,12 @@
 
 ## 2026-09-23
 
+### 改为直接选择两张矩阵卡片比较
+
+- 在线/离线常驻“加入对比”，标记 A/B、最多两项，取消/筛选/换选保持同步；页面移除评估时间选择区。浮窗新增同尺度总耗时图及按所选结果下载 HTML 报告，保留原始指标、不可比说明、零值与 synthetic 语义。主要修改 [ResultMatrix.vue](../frontend/src/components/ResultMatrix.vue)、[ResultDetails.vue](../frontend/src/components/ResultDetails.vue)、[矩阵预处理](../opscope/offline/matrix_data.py)、[报告路由](../backend/web/routes/opscope.py)与离线模板；见[设计](matrix-comparison.md)。
+- 验证：80 项 Python 与 3 项前端测试、类型检查/构建、离线生成、JS 语法和差异检查通过；桌面选择/取消/第三项限制/筛选、单项/双项详情、差异筛选、JSON、离线页面和报告视觉验收通过。实跑 H100/H200 小型 MatMul Roofline 并下载所选结果报告成功。
+- 经用户明确授权重启 8768 服务；历史接口保留但不再显示时间选择 UI。报告仍依赖服务内存快照，示例报告独立标明 synthetic。没有提交或推送。
+
 ### 修复 FP8/FP4 Roofline 峰值字段映射
 
 - [`bundled_roofline.py`](../opscope/evaluation/bundled_roofline.py) 从已有 `_tops` 字段读取 FP8/FP4 峰值，其他浮点精度继续读取 `_tflops`；未修改硬件数值。增加目录公式回归测试，并更新[缺口地图](evaluation-gap-map.md)、[数据口径](../.agent/data-semantics.md)和[项目记忆](../.agent/MEMORY.md)。

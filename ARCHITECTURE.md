@@ -24,9 +24,9 @@ Vue页面/组件 → Pinia状态 → /api/opscope APIRouter
 
 `frontend/src/pages/OpScopePage.vue` 是接入宿主的页面入口，`backend/web/routes/opscope.py` 是可挂载路由，`app.state.opscope_runtime` 注入计算运行时。生命周期由独立宿主或未来modeling宿主管理。API基址和前端部署base可配置；当前独立服务使用根base。具体迁移边界见 [框架对齐设计](docs/framework-alignment.md)。
 
-在线历史对比读取 `EvaluationRuntime` 已保留的终态任务（最多 12 个，重启即失效）。`time_comparison.py` 在后端按硬件×方法配对、校验配置/硬件/引擎身份、预处理总耗时图宽和计数；`TimeComparison.vue` 选择两个时间并展示图表与两侧完整结果。此入口不改变当前矩阵、单批双结果详情或离线快照。具体口径见[两次评估对比](docs/time-comparison.md)。
+当前比较入口直接位于硬件×方法矩阵：卡片常驻选择按钮，最多选择两个结果，A/B 身份在矩阵和详情保持一致；分类指标在浮窗并排展示，Python `matrix_data.pair_summary` 预处理共用尺度的总耗时图和可比性说明。在线与离线入口一致。历史评估查询和 `time_comparison.py` 保留兼容，但页面不再显示时间选择区。见[矩阵双结果比较](docs/matrix-comparison.md)。
 
-`html_reports.py` 根据同一保留快照生成两种独立 HTML：两次评估报告与单项/事件报告。前者复用 `time_comparison.py` 的可比性和图宽，后者只为实际存在的 TileSim 事件生成时间轴和完整分页事件明细；其它方法明确无流水。FastAPI 路由只提供终态任务下载，不依赖 modeling 或外部脚本。界面下载入口位于历史对比区和结果详情；口径见[独立 HTML 报告](docs/html-reports.md)。
+`html_reports.py` 根据同一保留快照生成两种独立 HTML：两次评估报告与单项/事件报告。前者复用 `time_comparison.py` 的可比性和图宽，后者只为实际存在的 TileSim 事件生成时间轴和完整分页事件明细；其它方法明确无流水。原有报告接口只提供终态任务下载；新增 `/results/compare/report` 按所选两个结果 ID 生成独立报告，支持示例与运行中已完成的卡片，不依赖 modeling 或外部脚本。界面下载入口位于双结果浮窗和单项详情；口径见[独立 HTML 报告](docs/html-reports.md)。
 
 以下为保留的离线生成链路：
 

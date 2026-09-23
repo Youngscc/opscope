@@ -9,7 +9,7 @@ from starlette.concurrency import run_in_threadpool
 
 from opscope.offline.build import build_payload, render_page
 from opscope.evaluation.time_comparison import compare_payload
-from opscope.evaluation.html_reports import comparison_report, single_report
+from opscope.evaluation.html_reports import comparison_report, single_report, pair_report
 
 router = APIRouter(prefix='/api/opscope', tags=['opscope'])
 
@@ -126,3 +126,23 @@ def snapshot(request: Request, job_id: str):
         return error('结果尚未完成。', 409)
     return HTMLResponse(render_page(job['payload']), headers={
         'Content-Disposition': f'attachment; filename="opscope-{job_id}.html"'})
+
+
+@router.get('/results/compare/report')
+def selected_report(request: Request, left: str, right: str, job: str | None = None):
+    if left == right:
+        return error('请选择两个不同的结果。')
+    record = get_job(request, job) if job is not None else None
+    payload = record.get('payload') if record else None
+    if job is None:
+        payload = bootstrap_payload()
+    if payload is None:
+        return error('评估记录不存在或已过期。', 404)
+    rows = [next((row for row in payload['results'] if row['id'] == key), None)
+            for key in (left, right)]
+    if any(row is None for row in rows):
+        return error('所选结果不存在。', 404)
+    if any(not row['available'] for row in rows):
+        return error('请选择两张已有结果的卡片。', 409)
+    return HTMLResponse(pair_report(payload, *rows), headers={
+        'Content-Disposition': 'attachment; filename="opscope-results-compare.html"'})

@@ -47,7 +47,7 @@ function show_evaluation_pending() {
       task: {...row.task, synthetic: false, status: selected ? 'queued' : 'not_run'}};
   });
   data.workload = {...Configuration.workload(state.config), synthetic: false};
-  state.selected = []; state.selecting = false; state.scope = null;
+  state.selected = []; state.scope = null;
   by_id('detail-panel').close();
   render_workload_heading(); update_filters(); render_evaluation_controls();
 }

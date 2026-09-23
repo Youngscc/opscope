@@ -160,7 +160,6 @@ function apply_configuration() {
     state.hardware = new Set(['modeling:Adevice03_Server', 'modeling:H100_Server', 'modeling:H200_Server'].filter(id => hardware_by_id(id)));
   } else if (previous !== 'demo' && demo) state.hardware = new Set(data.hardware.filter(hw => hw.group === 'demo').map(hw => hw.id));
   state.selected = [];
-  state.selecting = false;
   state.scope = null;
   by_id('workload-dialog').close();
   render_workload_heading();

@@ -113,7 +113,12 @@ def evaluation_comparison_issues(left, right):
 
 def pair_summary(left, right):
     issues = comparison_issues(left, right)
-    base = {'ids': [left['id'], right['id']], 'issues': issues, 'delta_percent': None,
+    chart = None
+    if all(row['available'] and row.get('latency_us') is not None for row in (left, right)):
+        ceiling = nice_ceiling(max(left['latency_us'], right['latency_us']) * 1.08)
+        chart = {'scale_us': ceiling, 'widths': [round(row['latency_us'] / ceiling * 100, 5)
+                                               for row in (left, right)]}
+    base = {'chart': chart, 'ids': [left['id'], right['id']], 'issues': issues, 'delta_percent': None,
             'text': '无法直接计算差值：' + '；'.join(issues)}
     if issues:
         return base

@@ -1,6 +1,6 @@
 'use strict';
 const data = JSON.parse(document.getElementById('result-data').textContent);
-const state = {hardware: new Set(data.hardware.filter(item => item.group === 'demo').map(item => item.id)), methods: new Set(data.methods.map(item => item.id)), metric: 'latency', chart: 'error', scope: null, selecting: false, selected: [], details: [], tab: 'overview', onlyDifferences: false, origin: null};
+const state = {hardware: new Set(data.hardware.filter(item => item.group === 'demo').map(item => item.id)), methods: new Set(data.methods.map(item => item.id)), metric: 'latency', chart: 'error', scope: null, selected: [], details: [], tab: 'overview', onlyDifferences: false, origin: null};
 const by_id = id => document.getElementById(id);
 const hardware_by_id = id => data.hardware.find(item => item.id === id);
 const method_by_id = id => data.methods.find(item => item.id === id);
@@ -31,7 +31,8 @@ function cell_markup(result) {
   const main = !available ? '—' : error ? (result.method === 'profile' ? '参考' : matrix.error_label) : `${result.latency}<small>μs</small>`;
   const secondary = !available ? result.reason : error ? `${result.latency} μs` : result.method === 'profile' ? '同硬件参考' : result.deviation_percent === null ? '模型预测 · 无实测参考' : `较参考 ${matrix.error_label}`;
   const source = available && result.method === 'roofline' ? `<span class="calibration ${result.source_class.includes('generic') ? 'generic' : ''}">${result.source_label}</span>` : '';
-  const check = state.selecting && available ? `<label class="cell-check"><input type="checkbox" data-select="${id}" ${state.selected.includes(id) ? 'checked' : ''} aria-label="选择 ${result_name(result)} 进行比较"></label>` : '';
+  const index = state.selected.indexOf(id);
+  const check = available ? `<button class="cell-compare" data-compare="${id}" aria-pressed="${index >= 0}" ${state.selected.length === 2 && index < 0 ? 'disabled' : ''} aria-label="${index >= 0 ? '取消对比' : '加入对比'} ${result_name(result)}">${index >= 0 ? (index ? 'B' : 'A') + ' · 已选 ×' : '+ 加入对比'}</button>` : '';
   return `<td class="matrix-cell ${available ? '' : 'is-missing'} ${result.method === 'profile' ? 'reference-cell' : ''} ${state.selected.includes(id) ? 'is-selected' : ''}"><div class="cell-inner">${check}<button class="cell-result" data-open="${id}" aria-haspopup="dialog" aria-controls="detail-panel" aria-label="${result_name(result)}，${available ? result.latency + ' 微秒' : escape_html(result.reason)}，查看详情"><span class="cell-value">${main}</span><span class="cell-secondary">${escape_html(secondary)}</span>${available ? `<span class="cell-meta"><span>${matrix.note}</span>${source}</span>` : ''}<span class="cell-arrow" aria-hidden="true">↗</span></button></div></td>`;
 }
 
@@ -60,10 +61,8 @@ function render_scope() {
 }
 
 function render_tray() {
-  by_id('compare-tray').hidden = !state.selecting;
-  by_id('selection-mode').setAttribute('aria-pressed', String(state.selecting));
-  by_id('selection-mode').textContent = state.selecting ? '退出选择' : '选择对比';
-  by_id('selection-label').textContent = state.selected.length ? state.selected.map(id => result_name(result_by_id(id))).join('  ↔  ') : '勾选两个结果，逐项比较详情';
+  by_id('compare-tray').hidden = !state.selected.length;
+  by_id('selection-label').textContent = state.selected.length ? state.selected.map((id, i) => `${i ? 'B' : 'A'} · ${result_name(result_by_id(id))}`).join('  ↔  ') + (state.selected.length === 1 ? ' · 再选一张卡片' : '') : '勾选两个结果，逐项比较详情';
   by_id('compare-button').disabled = state.selected.length !== 2;
 }
 
@@ -199,6 +198,7 @@ function render_detail_content() {
   by_id('comparison-notice').classList.toggle('has-issues', Boolean(notice?.issues.length));
   if (!available) by_id('detail-content').innerHTML = pending_detail(records[0]);
   else by_id('detail-content').innerHTML = paired ? paired_content(records) : single_content(records[0]);
+  if (paired && notice?.chart && state.tab === 'overview') by_id('detail-content').insertAdjacentHTML('afterbegin', pair_chart(records, notice.chart));
   render_traces();
 }
 
@@ -214,19 +214,14 @@ function open_details(ids, origin) {
   by_id('close-detail').focus({preventScroll: true});
 }
 
-function toggle_selection(input) {
-  if (input.checked && state.selected.length === 2) {
-    input.checked = false;
-    by_id('selection-label').textContent = '已选满两条，请先取消一条再选择';
-    announce('最多选择两个结果，请先取消一个');
-    return;
-  }
-  if (input.checked) state.selected.push(input.dataset.select);
-  else state.selected = state.selected.filter(id => id !== input.dataset.select);
-  input.closest('.matrix-cell').classList.toggle('is-selected', input.checked);
+function toggle_selection(id) {
+  if (state.selected.includes(id)) state.selected = state.selected.filter(value => value !== id);
+  else if (state.selected.length < 2) state.selected.push(id);
+  render_matrix();
   render_tray();
   announce(`已选择 ${state.selected.length} 个结果`);
 }
+
 
 function export_results(detail_only = false) {
   const records = detail_only ? state.details.map(result_by_id) : visible_results();
@@ -255,9 +250,11 @@ function on_change(event) {
     if (input.checked) collection.add(key);
     else collection.delete(key);
     update_filters();
-  } else if (input.dataset.select) toggle_selection(input);
-  else if (input.dataset.detailSlot !== undefined) {
+  } else if (input.dataset.detailSlot !== undefined) {
     state.details[Number(input.dataset.detailSlot)] = input.value;
+    state.selected = [...state.details];
+    render_matrix();
+    render_tray();
     render_selectors();
     render_detail_content();
     document.querySelector(`[data-detail-slot="${input.dataset.detailSlot}"]`).focus();
@@ -336,7 +333,6 @@ function bind_controls() {
   by_id('close-detail').addEventListener('click', () => by_id('detail-panel').close());
   by_id('compare-button').addEventListener('click', event => open_details([...state.selected], event.currentTarget));
   by_id('clear-selection').addEventListener('click', () => {state.selected = []; render_matrix(); render_tray();});
-  by_id('selection-mode').addEventListener('click', () => {state.selecting = !state.selecting; if (!state.selecting) state.selected = []; render_matrix(); render_tray();});
   by_id('chart-reset').addEventListener('click', () => {state.scope = null; render_scope(); render_chart();});
   by_id('workload-button').addEventListener('click', open_configuration);
   by_id('close-workload').addEventListener('click', () => by_id('workload-dialog').close());
@@ -353,3 +349,10 @@ render_chart();
 bind_controls();
 
 initialize_evaluation();
+
+document.addEventListener('click', event => {const button = event.target.closest('[data-compare]'); if (button && !button.disabled) toggle_selection(button.dataset.compare);});
+
+function pair_chart(records, chart) {
+  const rows = records.map((row, i) => `<div class="pair-summary-row"><span class="pair-summary-name"><b class="detail-result-badge result-${i ? 'b' : 'a'}">${i ? 'B' : 'A'}</b>${escape_html(result_name(row))}</span><div class="pair-summary-track"><span class="bar-${i ? 'b' : 'a'}" style="width:${chart.widths[i]}%"></span></div><strong>${escape_html(row.latency)}<small> μs</small></strong></div>`).join('');
+  return `<section class="pair-summary" aria-label="总耗时对比"><div class="pair-summary-heading"><h3>总耗时</h3><span>同一尺度 · μs · 越短越快</span></div>${rows}<p>0 — ${chart.scale_us} μs · 图中为原始耗时，比较限制见上方说明</p></section>`;
+}

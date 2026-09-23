@@ -1,5 +1,8 @@
 # 独立 HTML 报告
 
+> 当前界面直接从矩阵选择两个结果，见[矩阵双结果比较](matrix-comparison.md)。历史评估接口保留兼容，时间选择区已移除。
+
+
 ## 目标与来源边界
 
 参考 modeling 的 `backend/train/zrt/training/io/comparison_report.py` 与 `backend/train/zrt/report/html_writer.py`：报告为可下载的独立 HTML，先给结论，再给图表、输入依据和细节。OpScope 不具备模型级归因、敏感性重跑或实测校准，不能把 modeling 的相应章节照搬。报告生成只依赖本仓库保留的评估快照，不调用 modeling，也不重新执行模拟。

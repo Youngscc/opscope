@@ -4,6 +4,11 @@
 
 ## 2026-09-23
 
+### 优化字体层级与结果区域比例
+
+- 在共享 [styles.css](../styles.css) 中强化耗时、硬件/方法名和分节标题的字号/字重层级，提升标签可读性；收紧详情顶部，将更多空间留给内容，调整单项摘要卡比例及双结果表格列宽。重新生成 [index.html](../index.html)，在线/离线共用样式；不修改计算或交互逻辑。
+- 验证：Vue类型检查/生产构建、离线构建、14项构建与矩阵定向测试、差异格式检查通过；桌面检查矩阵、单项/双项详情、筛选、差异、JSON、长算子名称及离线双结果展示，无横向溢出，在线控制台无错误。8768已加载新静态产物，无需重启；未执行移动端检查，未提交或推送。
+
 ### 改为直接选择两张矩阵卡片比较
 
 - 在线/离线常驻“加入对比”，标记 A/B、最多两项，取消/筛选/换选保持同步；页面移除评估时间选择区。浮窗新增同尺度总耗时图及按所选结果下载 HTML 报告，保留原始指标、不可比说明、零值与 synthetic 语义。主要修改 [ResultMatrix.vue](../frontend/src/components/ResultMatrix.vue)、[ResultDetails.vue](../frontend/src/components/ResultDetails.vue)、[矩阵预处理](../opscope/offline/matrix_data.py)、[报告路由](../backend/web/routes/opscope.py)与离线模板；见[设计](matrix-comparison.md)。

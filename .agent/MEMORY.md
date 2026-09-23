@@ -1,8 +1,75 @@
 # 项目记忆
 
+## FP8 Roofline 硬件字段修复（2026-09-23，已实现并复验）
+
+`bundled_roofline.peak()` 的 FP8/FP4 读取改用现有 `_tops` 字段，其他浮点精度继续使用 `_tflops`，未改硬件数值。独立 worker 对 `infer:QuantBatchMatmulV3` 默认输入的 17 个非 TileSim 入口复验：16 成功、`Adevice03_POD` 1 项仍因 `fp8_tops=0` 不支持、0 运行失败；910B1/B4 整卡 Roofline 规格仍缺。回归测试锁定 H200 的 `fp8_tops=1979` 与 POD 零值语义；详见[缺口地图](../docs/evaluation-gap-map.md)。旧全量审计 CSV 是修复前快照，未重新生成。
+
+## 按任务变更记录（2026-09-23，已建立）
+
+新增 [变更记录 Skill](../agent_skills/opscope-change-record/SKILL.md) 和 [变更记录](../docs/CHANGES.md)。今后每个完成的仓库文件修改任务写一条实际结果、主要文件、验证和限制；只读工作与中间保存不记。重大变更的设计/计划、长期事实项目记忆、Git 提交说明仍分别维护。首次只记录新流程自身，未回填无法核实的早期任务，也不自动提交/推送。
+
+## 当前评估缺口索引（2026-09-23，静态审计核对）
+
+将同日 9,500 默认组合审计按缺输入、Roofline 规格/公式/单元、TileSim 硬件参数/适配、未接方法拆开，列出项目持久化位置、wheel 安装副本和同类可比数据，见[缺口地图](../docs/evaluation-gap-map.md)。该轮未修改模拟算法；当时发现 `infer:QuantBatchMatmulV3` 的 17 个 Roofline FP8 拒绝里，16 个是字段不匹配，后来已修复并增量复验，结果见本页首节。TileSim 配置随已打包 wheel 保存，`.venv` 是安装副本，不应作为长期改动位置。
+
+## 独立 HTML 对比与事件报告（2026-09-23，已实现并验证）
+
+参考 modeling 的独立 HTML 报告组织方式，在本项目新增两次评估对比报告和单项结果详细报告。对比报告复用在线历史对比的配对、可比性、变化率及统一图宽，逐组合并排呈现全部结构化指标和补充说明；单项报告包含任务身份、预测细项、核/通道活动时间轴、完整模拟事件（含类型、开始、时长）与原始预测字段。只有上游真实输出 `execution.events` 才显示事件；无流水明确说明缺失。两类报告都无外部资源，可下载后离线阅读，文本转义；接口仅对运行时保留的终态任务开放。设计与口径见[独立 HTML 报告](../docs/html-reports.md)。
+
+78 项 Python 测试、3 项前端测试、Vue 类型检查与生产构建、离线构建、JS 语法和差异格式检查通过。实际 TileSim 910B1 MatMul 128×128 FP16 生成 2.996023742971288 μs 和 15 个事件，独立报告包含这 15 条事件。浏览器工具策略禁止打开本地 `file://` 报告，故报告的桌面视觉效果未完成浏览器验收；其 HTML 内容、下载接口及内联 JS 语法已检查。报告仍受内存历史限制，服务重启或任务淘汰后不能重新下载。
+
+## 两次评估时间对比（2026-09-23，已实现）
+
+在线界面新增两次评估时间选择、相同硬件×方法的总耗时同尺度成对条形图、方向计数和逐项并排详情；原始结果可展开。后端仅列出内存中最近12个终态任务，并按配置、硬件规格与引擎身份决定能否计算变化率；缺失和零值保持原语义。离线HTML继续保留单批比较。架构和边界见[设计](../docs/time-comparison.md)。
+
+已通过74项Python测试、3项前端测试、Vue类型检查与生产构建、离线构建、JS语法和差异检查。在临时8795本地服务用两次H100 Roofline实跑验证时间选择、刷新后保留、同尺度图表、逐项详情与JSON展开；浏览器控制台无错误。未做持久化，服务重启后记录消失。
+
+
+## 项目管理 Skill 补充（2026-09-23，已实现）
+
+在三个领域 Skill 之外，按用户追问补充 [改动规划](../agent_skills/opscope-change-planning/SKILL.md) 与 [Git 交付](../agent_skills/opscope-git-delivery/SKILL.md)。前者只在跨模块、公共契约或性能口径变化时使用，单点低风险改动继续简化；后者只在用户要求 commit/push/PR 时使用，按实际差异包含相关未跟踪文件、排除临时和个人文件，遵循本仓库 GitHub 工作流，不套用 modeling 的 GitCode 发布模板。两者不会因写入计划而自行授权远程写入，也不要求重复确认已获授权的动作。[Skill 设计与分工](../docs/agent-workflows.md)和 `AGENTS.md` 已更新。
+
+新增两个 Skill 已通过 `quick_validate.py`；本轮仅更新文档和工作指引，未更改计算代码或执行 Git 发布。
+
+## 项目级 Skill 适配（2026-09-23，已实现）
+
+按用户要求，将原 modeling 流程中适合独立 OpScope 的部分改写为仓库内三个 Skill：[算子接入](../agent_skills/opscope-operator-onboarding/SKILL.md)、[评估结果核验](../agent_skills/opscope-evaluation-review/SKILL.md)、[硬件配置](../agent_skills/opscope-hardware-profile/SKILL.md)。`AGENTS.md` 按任务触发选择，并补充性能公式/硬件身份/结果口径变动时维护当前能力说明与不变量测试。Skill 不要求原 modeling、真机、数据库或个人环境；不引入其模型图、offload、校准桶及 GitCode 发布流程。设计与适用边界见[项目级 Skill 设计](../docs/agent-workflows.md)。
+
+三个 Skill 已用 skill-creator 的 `quick_validate.py` 校验通过，仓库内相对链接及差异格式已检查。本轮只更新工作流与文档，没有修改计算代码或运行性能测试；先前未提交功能改动保持原样。
+
+## 旧外部引擎配置清理（2026-09-23，已实现并验证）
+
+当前独立服务只用仓库 `.venv` 和内置 Roofline/TileSim。删除仅含旧外部路径与默认端口的本机 `.env`、过时 `.env.example`，移除启动脚本的 `.env` 加载、服务设置与 CLI 的三个外部引擎覆盖项；Vite 不再主动读取根目录 `.env`。保留端口参数、`setup.sh` 无 uv 回退所需的 `PYTHON_BIN` 与宿主集成用 `VITE_OPSCOPE_API_BASE`/`VITE_OPSCOPE_BASE` 命令环境变量。底层 `EvaluationRuntime` 构造参数仍供宿主注入和隔离测试。使用说明、架构和[清理记录](../docs/environment-cleanup.md)已同步。
+
+68 项 Python 测试、3 项前端测试、类型检查与生产构建、shell 语法及差异检查通过。正常 `./start.sh --port=8794` 启动后 HTTP 能力报告 Roofline/TileSim 均可用；128×128 MatMul 的 H200 Roofline 0.0512μs、910B1 TileSim 2.996023742971288μs，临时服务已关闭。自定义 Vite base/API 地址构建产物验证后恢复默认构建。没有改动原 modeling 仓库、依赖锁或已有未提交的其他功能修改。
+
+## 算子/方法缺口适配（2026-09-23，已实现并复验）
+
+在首次全目录审计后，新增本地82个推理算子资产及符号默认值快照、受限目录公式Roofline（`catalog-analytic`，明确区别于完整Kepler）、算子axis/perm属性及在线/离线编辑、7个默认TileSim模板和2个需手填axis的模板、GB200/R200缺带宽项的前置拦截。macOS Apple Silicon的`setup.sh`选Python3.11；SciPy加载失败时从`uv.lock`按SHA256装同版本macOS12 ARM64 wheel。本项目`.venv`实际可运行TileSim成本模型，无需原modeling运行环境。
+
+最终用本项目`.venv`遍历100模板×19硬件入口×5方法=9,500组合，实际执行1,118次、执行失败0：Roofline833成功（49模板，比基线多629组合/37模板），TileSim285成功（34默认模板；比首次本机多222，比工作环境对照多76/7模板）。Cumsum/GatherV2默认缺axis保持blocked_input；显式填axis=2/0后910B1各实跑成功，分别8.620018/134.468667μs。页面端实测Cumsum在910B1/910B4逐卡显示8.620/13.221μs、详情显示工程模型假设。新适配器对错误rank/轴张量形状前置拒绝；67项Python测试、3项前端状态测试、Vue构建、离线生成、JS语法和差异格式检查通过；桌面浏览器验证配置、筛选（25/40→20/35）、逐卡显示、详情、双结果比较（+12.1%）、JSON预览2条/synthetic=true，控制台无错误；临时服务已关闭。
+
+当时本机`.env`仍包含旧外部引擎路径，因此这轮适配复验显式清除环境覆盖，以本项目`.venv`直接启动FastAPI并通过HTTP提交Cumsum：能力报告Roofline/TileSim就绪，H200 Roofline目录公式0.1365375μs、910B1 TileSim工程模型8.620018μs，910B1 Roofline正确保持不支持。临时端口已关闭。旧`.env`随后按用户要求删除，见上方清理记录。
+
+仍缺910B1/B4整卡Roofline峰值/HBM、GPU BF16和GB200/R200部分TileSim参数、18个模板的默认维度及Cumsum/GatherV2轴值、通信模型、Profiling与方法3/4执行器。目录公式与原Kepler纯单算子路径在37模板×2硬件的74组中，输出shape/dtype一致72组、FLOPs一致60组；不能宣称两种模式数值完全等价。详见[适配实施与证据](../docs/operator-adaptation-plan.md)及[原始审计结果](../docs/audits/2026-09-23-adapted/summary.json)。下方首次审计的环境故障与未适配结论为历史基线，已由本节更新。
+
+## 全目录实跑审计（2026-09-23，已验证）
+
+用户要求逐算子×方法实跑并区分来源缺失和适配问题。新增 tools/audit_evaluations.py、audit_supplemental.py、audit_upstream_roofline.py；结果在 [审计报告](../docs/operator-method-audit.md) 与 docs/audits/2026-09-23-operator-method/。100 输入模板（94组）×19 硬件入口×5方法共9,500组合；默认门槛允许413次执行：Roofline204全成功；TileSim209中63成功、146因项目Python3.12.14的SciPy1.15.3 _spropack Mach-O动态库加载失败。已有Python3.11.16/SciPy1.15.3对照209全成功；TileSim源码hash一致、63个共有成功时延完全相等。当前环境未修复，不能把对照成功当作当前已可用。能力探测未覆盖成本模型工程API是待修项。
+
+已登记28个TileSim模板，27个默认输入完整且至少一个硬件可执行；FlashAttentionScore补head_dim=128后仍超事件上限，缩至[1,8,512,128]后两910B均成功。显式FP16等70个补充检查47成功、10引擎失败、13前置阻塞：新发现GB200/R200的BMM/TransposeBatchMatMul缺GM→L1带宽，Cast/Sigmoid/SwiGlu缺L0C→L2带宽，前置检查漏拦截。其他GPU BF16、910B Roofline规格仍缺。默认目录18个非通信输入模板缺维度；通信6个排除。大量已有TileSim模型仍缺axis/perm/group_list/量化/布局契约适配，不能笼统归为无模型。
+
+只读原modeling纯计算对照：64个可提交infer模板×2硬件，61个各返回结果、3个各失败；QuantLightningIndexer缺输出sparse_count、SparseIndexSelect缺index_topk，MoeGatingTopK二维输入在layers/moe.py:104按三维解包异常。61个返回结果中含START/END和零FLOPs简化结果，不等于完整性能模型。原仓库不是OpScope运行依赖。24项定向测试、产物唯一性/数值/缺失语义/来源hash检查、脚本语法与离线生成通过。本轮未改生产逻辑/锁文件/原仓库源码，未提交推送；保留之前未提交的算子选择UI修改。
+
+## 算子选择入口强调（2026-09-23，已验证）
+
+用户要求算子选择更显眼。在线页和离线模板把选择入口合入左侧当前算子标题：整个名称区域可点击，浅蓝底、主题色边框、28px 算子名、60px 高度，并显示“选择算子”与下拉箭头；形状摘要紧邻，右侧保留评估操作。复用原配置弹窗，离线 workload-name 标识移至按钮内 span，避免配置更新覆盖按钮结构。
+
+已通过 12 项目录/矩阵定向测试、3 项前端测试、Vue 类型检查与构建、JS 语法、离线生成和差异格式检查。1280px 桌面浏览器验证 MatMul 与 ColumnParallelLinearQuant 名称、无横向溢出、鼠标/Enter 打开配置、应用及恢复示例、硬件筛选、单条详情、双结果比较与 JSON（2 条结果、synthetic=true）；控制台无错误。8768 预览服务已启动。未新增依赖，未提交或推送。
+
 ## 内置评估引擎（2026-09-22，已实现）
 
-项目已把运行所需的轻量 Roofline 后端和 TileSim 发行包收进自身目录。执行 `./setup.sh` 后，`./start.sh` 默认只使用本仓库、仓库 `.venv` 和内置数据，不再要求存在外部 modeling 仓库、其 Python 环境或 `.env` 路径。原来的环境变量仍作为高级覆盖入口。
+项目已把运行所需的轻量 Roofline 后端和 TileSim 发行包收进自身目录。执行 `./setup.sh` 后，`./start.sh` 只使用本仓库、仓库 `.venv` 和内置数据，不再要求存在外部 modeling 仓库、其 Python 环境或 `.env` 路径。早期外部路径覆盖入口已在2026-09-23删除。
 
 Roofline 内置实现覆盖当前 11 个基础算子，并带 11 套由原运行时解析后固化的硬件规格；其默认配置在 Adevice03 Server 与 H200 Server 上逐字段对照上游参考，共 22 个结果、176 个数值/状态字段完全一致。TileSim 以 `vendor/msopmodeling/msopmodeling-1.0.9-py3-none-any.whl` 和 Mulan PSL v2 许可证随仓库保存，首次配置仍需从包索引安装 NumPy、SciPy、Pandas 等依赖。默认运行时已实测同时探测 Roofline 与 TileSim 成功，128×128 FP16 MatMul 在 910B1 上得到 2.996023742971288µs。
 

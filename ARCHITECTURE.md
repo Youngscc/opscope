@@ -8,6 +8,8 @@
 
 ## 当前形态
 
+离线覆盖审计由 `tools/audit_evaluations.py` 遍历本地目录和真实评估函数，输出输入快照、逐组合状态、环境身份和实际执行结果，不参与 Web 运行。`audit_supplemental.py` 单独记录显式改输入的对照；`audit_upstream_roofline.py` 仅在维护者提供原仓库时验证纯计算路径，不访问任务数据库。初始缺口见[全目录实跑审计](docs/operator-method-audit.md)，增量实现与项目独立环境验证见[算子适配扩展](docs/operator-adaptation-plan.md)。
+
 主要入口已改为 Vue 3 / TypeScript / Vite / Pinia / Vue Router + FastAPI / Uvicorn。`start.sh` 构建前端并在单端口提供页面/API；开发模式由 Vite 代理API。无任务数据库依赖。Roofline 最小后端和 TileSim wheel 随仓库提供，默认共用 OpScope `.venv`；worker 仍使用独立子进程和临时目录隔离执行。原单文件离线生成链路保留。
 
 ```text
@@ -21,6 +23,10 @@ Vue页面/组件 → Pinia状态 → /api/opscope APIRouter
 ```
 
 `frontend/src/pages/OpScopePage.vue` 是接入宿主的页面入口，`backend/web/routes/opscope.py` 是可挂载路由，`app.state.opscope_runtime` 注入计算运行时。生命周期由独立宿主或未来modeling宿主管理。API基址和前端部署base可配置；当前独立服务使用根base。具体迁移边界见 [框架对齐设计](docs/framework-alignment.md)。
+
+在线历史对比读取 `EvaluationRuntime` 已保留的终态任务（最多 12 个，重启即失效）。`time_comparison.py` 在后端按硬件×方法配对、校验配置/硬件/引擎身份、预处理总耗时图宽和计数；`TimeComparison.vue` 选择两个时间并展示图表与两侧完整结果。此入口不改变当前矩阵、单批双结果详情或离线快照。具体口径见[两次评估对比](docs/time-comparison.md)。
+
+`html_reports.py` 根据同一保留快照生成两种独立 HTML：两次评估报告与单项/事件报告。前者复用 `time_comparison.py` 的可比性和图宽，后者只为实际存在的 TileSim 事件生成时间轴和完整分页事件明细；其它方法明确无流水。FastAPI 路由只提供终态任务下载，不依赖 modeling 或外部脚本。界面下载入口位于历史对比区和结果详情；口径见[独立 HTML 报告](docs/html-reports.md)。
 
 以下为保留的离线生成链路：
 
@@ -41,7 +47,7 @@ opscope/offline/fixtures.py → execution_data.py
 
 - frontend/src：Vue组件、API客户端与Pinia状态；取消请求/配置切换使旧批次响应失效。
 - backend/web：FastAPI宿主、命名空间API、静态产物托管、生命周期和本地来源校验。
-- setup.sh：环境配置入口，按 `uv.lock` 创建/同步独立环境（`uv sync --locked --all-groups`，或 venv+requirements 回退）并安装前端依赖；命令见 [环境配置](docs/environment.md)。
+- setup.sh：环境配置入口，按 `uv.lock` 创建/同步独立环境（macOS Apple Silicon 选 Python 3.11 并修复已验证的 SciPy wheel 加载故障；其他平台沿用默认 3.12，或 venv+requirements 回退）并安装前端依赖；命令见 [环境配置](docs/environment.md)。
 - start.sh：校验环境就绪后构建/启动，开发模式负责子进程清理。
 
 - opscope/offline：合成任务上下文、目录、矩阵、示例执行数据和单文件生成；根 `build.py` 只是稳定入口。
@@ -80,19 +86,21 @@ opscope/offline/fixtures.py → execution_data.py
 
 ## 可选的本地评估运行时（2026-09-22）
 
-静态构建与示例不依赖外部仓库。`serve.py` 是服务兼容入口，默认使用仓库内置引擎；启动参数只用于高级解释器覆盖。`opscope/evaluation/evaluation_contract.py`根据内置模板规范化请求并校验基础算子形状/精度；客户端不能指定代码、硬件文件路径或公式。同目录`evaluation_runtime.py`维护有界内存任务，以独立子进程调用`engine_worker.py`，避免Web系统、任务数据库及共享Hub缓存。
+静态构建与示例不依赖外部仓库。`serve.py` 是服务兼容入口；独立服务只使用仓库内置引擎与当前 `.venv`，不读取旧外部引擎路径。`opscope/evaluation/evaluation_contract.py`根据内置模板规范化请求并校验基础算子形状/精度；客户端不能指定代码、硬件文件路径或公式。同目录`evaluation_runtime.py`维护有界内存任务，以独立子进程调用`engine_worker.py`，避免Web系统、任务数据库及共享Hub缓存。
 
 worker 使用 `bundled_roofline.py` 中迁移的 11 类公式与 `data/roofline_hardware.json` 硬件快照，返回原始数值、规格摘要和上游版本身份；不包含任务系统、查表或校准库。该worker仅处理Roofline，测量/方法3/4明确不支持，不做回退。`evaluation_results.py`生成`opscope-evaluation-v1`的工作负载、任务、来源和安全转义详情，由已有matrix_data生成全批图表尺度及比较数据。预测结果synthetic=false且measurement=false；空缺为null，不沿用fixture计数器或参考误差。
 
-TileSim worker由`tilesim_contract.py`维护显式算子/硬件支持矩阵，`tilesim_adapters.py`按算子生成输入输出、dtype、工作量和模型假设。MatMul/FA使用有流水的DSL工程路径，已验证的归一化、激活、逐元素、BMM、固定轴Gather等使用成本模型工程或理论路径；模型存在但缺少axis、perm、group_list等运行值时保持不支持。所有路径都返回actual_backend=tilesim，不回退Roofline。
+推理目录的额外 Roofline 路径由 `tools/snapshot_operator_specs.py` 生成版本化本地资产，`catalog_roofline.py` 用受限表达式解析、按输入绑定符号、校验输出/精度和硬件峰值，结果明确标识 `catalog-analytic`，不宣称与原 Kepler 完整图模型等价。`operator_parameters.py` 定义算子自身属性及已验证轴/排列范围，配置/导出与张量输入同走规范化摘要。对应的 TileSim 三维线性、归约、置换、扫描、Gather 适配在 `tilesim_adapters.py`；无数据时返回具体缺项。
+
+TileSim worker由`tilesim_contract.py`维护显式算子/硬件支持矩阵，`tilesim_adapters.py`按算子生成输入输出、dtype、工作量和模型假设。MatMul/FA使用有流水的DSL工程路径，已验证的归一化、激活、逐元素、BMM、线性变体、固定轴Gather/扫描、归约/置换等使用成本模型工程或理论路径；模型存在但缺少axis、perm、group_list等运行值时保持不支持。所有路径都返回actual_backend=tilesim，不回退Roofline。
 
 `evaluation-ui.js`处理服务探测、任务提交/轮询、运行状态和整批切换；配置改变递增请求代号，旧任务不覆盖新配置。`configuration.js`仍只做表单校验，实际数值计算在worker，格式化/比较在服务。`build.render_page`同时用于构建示例和生成完整离线结果快照；快照内嵌initial_configuration并单独保存恢复示例所需的fixture和matrix，不将示例混入评估结果。
 
-部署入口、限制见[README](README.md)，接口与方案见[本地评估设计](docs/live-evaluation-plan.md)。这是可选运行模式，不代表已将建模引擎打包到本项目；训练/推理来源仍不出现在界面中。
+部署入口、限制见[README](README.md)，接口与方案见[本地评估设计](docs/live-evaluation-plan.md)。当前使用已打包的最小建模引擎；训练/推理来源仍不出现在界面中。
 
 ## 可选 TileSim 流水（2026-09-22）
 
-`opscope/evaluation/tilesim_contract.py`固定硬件、算子、精度、形状与事件预算范围；同目录`tilesim_worker.py`在显式独立解释器中运行已审计1.0.9的EngMatmulL0。`evaluation_runtime.py`为每批创建临时目录隔离上游trace文件，单独处理TileSim失败并保留Roofline结果。服务仍仅依赖标准库，不安装第三方包。
+`opscope/evaluation/tilesim_contract.py`固定硬件、算子、精度、形状与事件预算范围；同目录`tilesim_worker.py`在本项目 `.venv` 的隔离子进程中运行已审计1.0.9的EngMatmulL0。`evaluation_runtime.py`为每批创建临时目录隔离上游trace文件，单独处理TileSim失败并保留Roofline结果。
 
 `evaluation_results.py`保存同次结果的模型原字段和规范化事件；`tilesim_details.py`计算每核/通道区间并集、统一全程时间轴和SVG路径。`trace-ui.js`只做选核、分页及显示；由build.py内嵌。JSON剔除trace_view几何但保留全部事件的name/ts/dur/pid/tid/ph，省略上游冗长cat对象字符串。HTML快照保留展示几何。活动百分比并非算力利用率。具体能力与验证见[TileSim接入](docs/tilesim-integration-plan.md)。
 

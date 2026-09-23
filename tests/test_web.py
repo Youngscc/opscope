@@ -3,6 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 try:
     from fastapi import FastAPI
@@ -16,8 +17,26 @@ except ImportError:
 from opscope.offline.build import build_payload
 from opscope.evaluation.evaluation_contract import normalize_request
 from tests.test_evaluation import request_body
+from tests.test_time_comparison import payload as comparison_payload, row as comparison_row
+from tests.test_html_reports import job as report_job
 
 JOB = 'a' * 32
+
+
+@unittest.skipIf(FastAPI is None, 'Install backend/requirements-dev.txt to test FastAPI')
+class SettingsTest(unittest.TestCase):
+    def test_legacy_engine_environment_does_not_configure_service(self):
+        # Old paths must not override the bundled runtime; active port settings still apply.
+        with patch.dict('os.environ', {'OPSCOPE_ENGINE_ROOT': '/old/modeling',
+                                       'OPSCOPE_ENGINE_PYTHON': '/old/python',
+                                       'OPSCOPE_TILESIM_PYTHON': '/old/tilesim/python',
+                                       'OPSCOPE_PORT': '8770',
+                                       'OPSCOPE_FRONTEND_PORT': '5174'}):
+            settings = Settings.from_env()
+        self.assertEqual((settings.port, settings.frontend_port), (8770, 5174))
+        self.assertFalse(hasattr(settings, 'engine_root'))
+        self.assertFalse(hasattr(settings, 'engine_python'))
+        self.assertFalse(hasattr(settings, 'tilesim_python'))
 
 
 class Runtime:
@@ -34,6 +53,8 @@ class Runtime:
         if since_revision is not None and since_revision == value.get('revision'):
             value.pop('payload', None)
         return value
+    def history(self):
+        return [{'id': JOB, 'created_at': '2026-09-23T00:00:00+00:00', 'operator': 'MatMul'}]
 
 
 @unittest.skipIf(FastAPI is None, 'Install backend/requirements-dev.txt to test FastAPI')
@@ -94,6 +115,45 @@ class WebTest(unittest.TestCase):
         self.assertNotIn('payload', unchanged)
         self.assertEqual(unchanged['revision'], 3)
         self.assertEqual(self.client.get(path+'/snapshot').status_code, 409)
+
+    def test_time_history_and_invalid_comparison(self):
+        # History is lightweight; an identical or expired pair does not masquerade as a comparison.
+        history = self.client.get('/api/opscope/evaluations/history')
+        self.assertEqual(history.json()[0]['id'], JOB)
+        path = '/api/opscope/evaluations/compare'
+        self.assertEqual(self.client.get(path, params={'left': JOB, 'right': JOB}).status_code, 400)
+        self.assertEqual(self.client.get(path, params={'left': JOB, 'right': 'b'*32}).status_code, 404)
+
+    def test_time_comparison_http_contract(self):
+        # The API returns precomputed paired bars and a signed change for two terminal jobs.
+        other = 'b' * 32
+        first = {'status': 'completed', 'payload': comparison_payload([comparison_row()], JOB)}
+        second = {'status': 'completed', 'payload': comparison_payload([comparison_row(latency=8)], other)}
+        self.runtime.get = lambda job_id, since_revision=None: {JOB:first, other:second}.get(job_id)
+        response = self.client.get('/api/opscope/evaluations/compare', params={'left':JOB,'right':other})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['rows'][0]['delta_percent'], -20)
+        self.assertEqual(response.json()['summary']['comparable'], 1)
+
+    def test_download_standalone_reports(self):
+        # Both report routes serve downloadable HTML from terminal retained jobs only.
+        other = 'b' * 32
+        jobs = {JOB: report_job(JOB, 200), other: report_job(other, 100)}
+        self.runtime.get = lambda job_id, since_revision=None: jobs.get(job_id)
+        single = self.client.get(f'/api/opscope/evaluations/{JOB}/report',
+                                 params={'hardware': 'h100', 'method': 'roofline'})
+        self.assertEqual(single.status_code, 200)
+        self.assertIn('attachment', single.headers['content-disposition'])
+        self.assertIn('200 μs', single.text)
+        compare = self.client.get('/api/opscope/evaluations/compare/report',
+                                  params={'left': JOB, 'right': other})
+        self.assertEqual(compare.status_code, 200)
+        self.assertIn('-50.0%', compare.text)
+        self.assertEqual(self.client.get(f'/api/opscope/evaluations/{JOB}/report',
+                                         params={'hardware': 'h200', 'method': 'roofline'}).status_code, 404)
+        jobs[JOB]['status'] = 'running'
+        self.assertEqual(self.client.get(f'/api/opscope/evaluations/{JOB}/report',
+                                         params={'hardware': 'h100', 'method': 'roofline'}).status_code, 404)
 
     def test_mount_in_existing_fastapi_host(self):
         # The host owns authentication/lifecycle; router works without standalone middleware.

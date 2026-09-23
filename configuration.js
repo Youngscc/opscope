@@ -6,7 +6,8 @@ const Configuration = (() => {
   function from_operator(op) {
     return {operator_id: op.id, operator: op.display_name || op.name, key: op.key, domain: op.domain,
       inputs: op.inputs.map(({name, role, shape, dtype}) => ({name, role, shape: [...shape], dtype})),
-      options: {}, source: clone(op.source), boundary: null};
+      options: {}, attributes: Object.fromEntries((op.parameters || []).map(field => [field.name, clone(field.default)])),
+      source: clone(op.source), boundary: null};
   }
 
   function parse_shape(value) {
@@ -27,6 +28,18 @@ const Configuration = (() => {
       if (!dtypes.includes(tensor.dtype)) errors.push({field: `dtype-${index}`, message: `${tensor.name}：请选择有效 dtype。`});
     });
     if (!errors.length) errors.push(...validate_contract(config));
+    for (const field of op.parameters || []) {
+      const item = config.attributes?.[field.name];
+      if (field.type === 'integer' && (!Number.isInteger(item) || item < -8 || item > 7))
+        errors.push({field: `attribute-${field.name}`, message: `${field.label}需要填写 -8 至 7 的整数。`});
+      if (field.type === 'permutation' && (!Array.isArray(item) || item.length !== 3 || item.slice().sort().join(',') !== '0,1,2'))
+        errors.push({field: `attribute-${field.name}`, message: '置换顺序须为 0、1、2 各一次。'});
+    }
+    if (config.operator_id === 'infer:TorchSum' && config.attributes?.axis !== 1) errors.push({field: 'attribute-axis', message: '当前模板只支持沿序列轴 1 归约。'});
+    if (config.operator_id === 'infer:GatherV2' && config.attributes?.axis !== 0) errors.push({field: 'attribute-axis', message: '当前模板只支持沿查找轴 0 取值。'});
+    if (config.operator_id === 'infer:Cumsum' && config.attributes?.axis !== 2) errors.push({field: 'attribute-axis', message: '当前 Cumsum 资产的工作量公式只支持最后一轴 2。'});
+    if (config.operator_id === 'infer:TorchCumsum' && config.attributes?.axis !== -1) errors.push({field: 'attribute-axis', message: '当前模型只支持沿最后一轴累加。'});
+    if (config.operator_id === 'infer:Transpose' && config.attributes?.permutation?.join(',') !== '0,2,1') errors.push({field: 'attribute-permutation', message: '当前模板只支持置换顺序 0,2,1。'});
     return errors;
   }
 
@@ -57,12 +70,13 @@ const Configuration = (() => {
   }
 
   function matches_demo(config, demo) {
-    return ['operator_id', 'domain', 'inputs', 'options', 'boundary'].every(key => JSON.stringify(config[key]) === JSON.stringify(demo[key]));
+    return ['operator_id', 'domain', 'inputs', 'options', 'attributes', 'boundary'].every(key => JSON.stringify(config[key]) === JSON.stringify(demo[key]));
   }
 
   function workload(config) {
     return {id: null, operator: config.operator, operator_id: config.operator_id,
       domain: config.domain, tensors: clone(config.inputs), options: clone(config.options),
+      attributes: clone(config.attributes || {}),
       boundary: config.boundary, outputs: null, flops: null, logical_bytes: null,
       source: clone(config.source), status: 'configured_not_run', synthetic: true};
   }

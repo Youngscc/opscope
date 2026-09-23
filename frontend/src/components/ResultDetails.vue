@@ -4,6 +4,7 @@ import { useOpScopeStore } from '../stores/opscope'
 import type { Fact, Result, Section } from '../types'
 import Modal from './Modal.vue'
 import TraceView from './TraceView.vue'
+import { api_base } from '../api/client'
 const props = defineProps<{ids:string[]}>()
 const emit = defineEmits<{close:[]; export:[rows:Result[]]; change:[ids:string[]]}>()
 const s = useOpScopeStore(), tab = ref('overview'), differences = ref(false)
@@ -13,6 +14,11 @@ const paired = computed(() => records.value.length===2)
 const available = computed(() => records.value.every(r=>r.available))
 const sections = computed(() => available.value ? records.value[0]?.sections[tab.value] || [] : [])
 const notice = computed(() => s.data!.matrix.pairs[props.ids.join('|')])
+function report(row:Result) {
+  const job=s.data?.evaluation?.id
+  if(!job || !['completed','failed'].includes(s.data?.evaluation?.status) || row.task?.run_id!==job || !['succeeded','failed','unsupported'].includes(row.task?.status))return ''
+  return `${api_base}/evaluations/${job}/report?${new URLSearchParams({hardware:row.hardware,method:row.method})}`
+}
 watch(() => props.ids, () => {tab.value='overview';differences.value=false})
 function facts(left:Fact[], right:Fact[]) {
   return [...new Set([...left,...right].map(f=>f.label))].map(label=>{
@@ -38,7 +44,7 @@ function keyboard(event:KeyboardEvent) {
 }
 </script>
 <template><Modal :open="!!records.length" title="结果详情" :class-name="`detail-dialog ${paired?'paired':''}`" @close="emit('close')"><div v-if="records.length" class="detail-shell">
-<header class="detail-header"><div><span class="eyebrow">RESULT DETAILS / {{s.label}}</span><h2>{{paired?'双结果对照':s.name(records[0]!)}}</h2><p>{{s.config!.operator}} · {{s.config!.inputs.length}} 个输入张量</p></div><div class="detail-actions"><button class="button" @click="emit('export',records)">导出 JSON</button><button class="button icon-button" aria-label="关闭结果详情" @click="emit('close')">×</button></div></header>
+<header class="detail-header"><div><span class="eyebrow">RESULT DETAILS / {{s.label}}</span><h2>{{paired?'双结果对照':s.name(records[0]!)}}</h2><p>{{s.config!.operator}} · {{s.config!.inputs.length}} 个输入张量</p></div><div class="detail-actions"><a v-for="(r,i) in records.filter(r=>report(r))" :key="r.id" class="button" :href="report(r)" download>{{paired?`下载 ${i?'B':'A'} 详细报告`:'下载单项报告'}}</a><button class="button" @click="emit('export',records)">导出 JSON</button><button class="button icon-button" aria-label="关闭结果详情" @click="emit('close')">×</button></div></header>
 <div v-if="paired" class="detail-selectors"><label v-for="(r,i) in records" :key="i"><span class="detail-result-badge" :class="i?'result-b':'result-a'" aria-hidden="true">{{i?'B':'A'}}</span><span class="sr-only">结果 {{i?'B':'A'}}</span><select :value="r.id" @change="change_slot(i,$event)"><option v-for="v in s.visible.filter(v=>v.available && (v.id===r.id || !ids.includes(v.id)))" :key="v.id" :value="v.id">{{s.name(v)}}</option></select></label></div>
 <div v-if="available" class="detail-nav"><div class="detail-tabs" role="tablist" aria-label="性能详情" @keydown="keyboard"><button v-for="t in s.data!.matrix.tabs" :id="'tab-'+t.id" :key="t.id" role="tab" aria-controls="detail-content" :aria-selected="tab===t.id" :tabindex="tab===t.id?0:-1" @click="select_tab(t.id)">{{t.name}}</button></div><label v-if="paired" class="diff-control"><input v-model="differences" type="checkbox">仅看差异</label></div>
 <div ref="scroll" class="detail-scroll"><div v-if="paired" class="comparison-notice" :class="{'has-issues':notice?.issues.length}">{{notice?.text}}</div><div id="detail-content" class="detail-content" role="tabpanel" :aria-labelledby="available?'tab-'+tab:undefined" :data-detail-tab="tab" tabindex="0">

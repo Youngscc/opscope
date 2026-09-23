@@ -98,6 +98,12 @@ function render_configuration() {
   const missing = op.inputs.some(t => t.shape.includes(null));
   by_id('operator-note').textContent = op.reason || (op.category === 'Flow' ? '流程标记，不是独立计算内核。' : missing ? '模板含未定义维度，请将 ? 替换为实际大小。' : '按张量设置形状与精度。');
   by_id('tensor-inputs').innerHTML = state.draft.inputs.map((tensor, index) => tensor_editor(tensor, index, op)).join('');
+  by_id('operator-attributes').hidden = !(op.parameters || []).length;
+  by_id('attribute-inputs').innerHTML = (op.parameters || []).map(field => {
+    const current = state.draft.attributes?.[field.name];
+    const display = Array.isArray(current) ? current.join(',') : current ?? '';
+    return `<label>${escape_html(field.label)}<input id="attribute-${field.name}" data-attribute="${field.name}" value="${escape_html(String(display))}" inputmode="numeric" autocomplete="off"></label>`;
+  }).join('');
   by_id('demo-options').hidden = op.domain !== 'demo';
   by_id('accumulator-dtype').value = state.draft.options.accumulator_dtype || 'fp32';
   by_id('tensor-layout').value = state.draft.options.layout || 'row-major';
@@ -113,6 +119,11 @@ function read_configuration() {
   const config = Configuration.clone(state.draft);
   config.inputs = config.inputs.map((tensor, index) => ({...tensor,
     shape: Configuration.parse_shape(by_id(`shape-${index}`).value), dtype: by_id(`dtype-${index}`).value}));
+  config.attributes = Object.fromEntries((catalog_operator(config.operator_id).parameters || []).map(field => {
+    const text = by_id(`attribute-${field.name}`).value.trim();
+    const parsed = field.type === 'permutation' ? text.split(',').map(value => Number(value.trim())) : (text === '' ? null : Number(text));
+    return [field.name, parsed];
+  }));
   if (config.domain === 'demo') config.options = {layout: by_id('tensor-layout').value,
     accumulator_dtype: by_id('accumulator-dtype').value,
     transpose_a: by_id('transpose-a').checked, transpose_b: by_id('transpose-b').checked};

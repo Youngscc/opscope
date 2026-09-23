@@ -8,6 +8,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from opscope.offline.build import build_payload, render_page
+from opscope.evaluation.time_comparison import compare_payload
+from opscope.evaluation.html_reports import comparison_report, single_report
 
 router = APIRouter(prefix='/api/opscope', tags=['opscope'])
 
@@ -67,9 +69,52 @@ def get_job(request, job_id, since_revision=None):
     return runtime.get(job_id) if since_revision is None else runtime.get(job_id, since_revision)
 
 
+@router.get('/evaluations/history')
+def history(request: Request):
+    runtime = getattr(request.app.state, 'opscope_runtime', None)
+    return runtime.history() if runtime else []
+
+
+@router.get('/evaluations/compare')
+def compare(request: Request, left: str, right: str):
+    if left == right:
+        return error('请选择两个不同的评估时间。')
+    first, second = get_job(request, left), get_job(request, right)
+    if not first or not second or any(job['status'] not in {'completed', 'failed'}
+                                     or 'payload' not in job for job in (first, second)):
+        return error('评估记录不存在、尚未完成或已过期。', 404)
+    return compare_payload(first['payload'], second['payload'])
+
+
+@router.get('/evaluations/compare/report')
+def compare_report(request: Request, left: str, right: str):
+    if left == right:
+        return error('请选择两个不同的评估时间。')
+    first, second = get_job(request, left), get_job(request, right)
+    if not first or not second or any(job['status'] not in {'completed', 'failed'}
+                                     or 'payload' not in job for job in (first, second)):
+        return error('评估记录不存在、尚未完成或已过期。', 404)
+    return HTMLResponse(comparison_report(first, second), headers={
+        'Content-Disposition': f'attachment; filename="opscope-compare-{left[:8]}-{right[:8]}.html"'})
+
+
 @router.get('/evaluations/{job_id}')
 def evaluation(request: Request, job_id: str, since_revision: int | None = None):
     return get_job(request, job_id, since_revision) or error('任务不存在或已过期。', 404)
+
+
+@router.get('/evaluations/{job_id}/report')
+def result_report(request: Request, job_id: str, hardware: str, method: str):
+    job = get_job(request, job_id)
+    if not job or job['status'] not in {'completed', 'failed'} or 'payload' not in job:
+        return error('评估记录不存在、尚未完成或已过期。', 404)
+    row = next((item for item in job['payload']['results'] if item['hardware'] == hardware
+                and item['method'] == method and item['task']['status'] != 'not_run'), None)
+    if row is None:
+        return error('本次任务没有这个评估结果。', 404)
+    label = re.sub('[^A-Za-z0-9_-]', '_', f'{hardware}-{method}')[:70]
+    return HTMLResponse(single_report(job, row), headers={
+        'Content-Disposition': f'attachment; filename="opscope-result-{job_id[:8]}-{label}.html"'})
 
 
 @router.get('/evaluations/{job_id}/snapshot')

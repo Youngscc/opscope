@@ -97,7 +97,7 @@ class EvaluationRuntime:
                 old = next(k for k, v in self.jobs.items() if v['status'] not in {'queued', 'running'})
                 del self.jobs[old]
             job_id = uuid.uuid4().hex
-            self.jobs[job_id] = {'id': job_id, 'status': 'queued', 'request': request}
+            self.jobs[job_id] = {'id': job_id, 'status': 'queued', 'created_at': stamp(), 'request': request}
         self.pool.submit(self.run, job_id, request)
         return {'id': job_id, 'status': 'queued'}
 
@@ -174,6 +174,18 @@ class EvaluationRuntime:
                       (k != 'payload' or since_revision != value.get('revision'))}
         # Published payloads are immutable; copying large traces need not block workers.
         return deepcopy(fields)
+
+    def history(self):
+        with self.lock:
+            jobs = [dict(id=job['id'], created_at=job.get('created_at'), status=job['status'],
+                         completed_at=job['payload']['evaluation'].get('completed_at'),
+                         operator=job['request']['configuration']['operator'],
+                         configuration_hash=job['request']['configuration_hash'],
+                         success_count=job['payload']['evaluation']['success_count'],
+                         total=job['payload']['evaluation']['total'])
+                    for job in self.jobs.values()
+                    if job['status'] in {'completed', 'failed'} and 'payload' in job]
+        return sorted(jobs, key=lambda item: item['created_at'] or '', reverse=True)
 
     def close(self):
         self.pool.shutdown(wait=True)

@@ -1,6 +1,6 @@
 # 后续接入与已知边界
 
-当前在线应用已采用Vue 3/TypeScript/Vite/Pinia/Router与FastAPI/Uvicorn，启动和宿主迁移入口见[框架对齐](../docs/framework-alignment.md)。`/api/opscope`路由可注入EvaluationRuntime；默认运行时已内置最小 Roofline 后端和固定 TileSim wheel，不再要求外部 modeling 仓库。完整 modeling 任务系统仍未合入。
+当前在线应用已采用Vue 3/TypeScript/Vite/Pinia/Router与FastAPI/Uvicorn，启动和宿主迁移入口见[框架对齐](../docs/framework-alignment.md)。`/api/opscope`路由可注入EvaluationRuntime；独立服务使用内置最小 Roofline 后端和固定 TileSim wheel，不再读取旧外部引擎路径。完整 modeling 任务系统仍未合入。
 
 本文保留历史接入分析；文末记录已实现的可选 Roofline 本地服务。上传解析器与profiling数据库仍未接入；文末更新TileSim实际接入状态。
 
@@ -64,7 +64,7 @@ TileSim本体与硬件配置仍缺失，因此只提供可观察的不可用原�
 
 ## TileSim 接入状态（2026-09-22，已实现）
 
-已通过可选--tilesim-python连接独立环境，MatMul+910B1/910B4使用DSL工程路径，和Roofline分别执行，不使用旧适配器。支持范围、固定分块及事件预算见[接入设计](../docs/tilesim-integration-plan.md)。真实来源字段、流水、JSON与详情已联通；其他算子/芯片仍未验证，无真机精度认证。默认4096²FP16和128²BF16均在两个硬件模型上实跑成功。
+初版曾通过 `--tilesim-python` 连接独立环境；该启动参数现已移除。MatMul+910B1/910B4使用DSL工程路径，和Roofline分别执行，不使用旧适配器。支持范围、固定分块及事件预算见[接入设计](../docs/tilesim-integration-plan.md)。真实来源字段、流水、JSON与详情已联通；其他算子/芯片仍未验证，无真机精度认证。默认4096²FP16和128²BF16均在两个硬件模型上实跑成功。
 
 ## 覆盖补齐更新（2026-09-22）
 

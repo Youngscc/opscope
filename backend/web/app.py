@@ -17,9 +17,7 @@ def create_app(settings=None, runtime=None):
     async def lifespan(app):
         owned = runtime is None
         if owned:
-            app.state.opscope_runtime = await run_in_threadpool(
-                EvaluationRuntime, settings.engine_root or None, settings.engine_python or None,
-                tilesim_python=settings.tilesim_python or None)
+            app.state.opscope_runtime = await run_in_threadpool(EvaluationRuntime)
         try:
             yield
         finally:

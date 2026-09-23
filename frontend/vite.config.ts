@@ -1,9 +1,9 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-export default defineConfig(({ mode }) => {
-  const env = { ...loadEnv(mode, '..', ''), ...process.env }
+export default defineConfig(() => {
+  const env = process.env
   return {
     plugins: [vue(), {
       name: 'shared-configuration',
@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
         this.addWatchFile(path)
         return readFileSync(path, 'utf8').replace(/^if \(typeof module.*$/m, '') + '\nexport default Configuration;'
       }
-    }], envDir: '..', base: env.VITE_OPSCOPE_BASE || '/',
+    }], base: env.VITE_OPSCOPE_BASE || '/',
     server: { host: '127.0.0.1', port: Number(env.OPSCOPE_FRONTEND_PORT || 5173), strictPort: true,
       proxy: { '/api': { target: `http://127.0.0.1:${env.OPSCOPE_PORT || 8768}`, changeOrigin: true } } },
     build: { assetsDir: 'static' }

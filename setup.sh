@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-if [[ -f .env ]]; then set -a; source .env; set +a; fi
 for arg in "$@"; do
   case "$arg" in
     -h|--help) echo './setup.sh [--help]
@@ -14,10 +13,22 @@ for arg in "$@"; do
   esac
 done
 if command -v uv >/dev/null 2>&1; then
-  uv sync --locked --all-groups
+  if [[ "$(uname -s)" == Darwin ]]; then
+    uv sync --python 3.11 --locked --all-groups
+    if [[ "$(uname -m)" == arm64 ]] && ! .venv/bin/python -c 'from scipy.interpolate import interp1d' >/dev/null 2>&1; then
+      wheel_url="$(.venv/bin/python -B tools/macos_scipy_wheel.py)"
+      uv pip install --python .venv/bin/python --reinstall-package scipy "$wheel_url"
+      .venv/bin/python -c 'from scipy.interpolate import interp1d'
+    fi
+  else
+    uv sync --locked --all-groups
+  fi
 else
   if [[ ! -x .venv/bin/python ]]; then
     runtime_python="${PYTHON_BIN:-python3}"
+    if [[ -z "${PYTHON_BIN:-}" && "$(uname -s)" == Darwin ]] && command -v python3.11 >/dev/null; then
+      runtime_python=python3.11
+    fi
     if [[ -z "${PYTHON_BIN:-}" ]] && ! "$runtime_python" -c 'import sys; sys.exit(sys.version_info < (3,10))'; then
       for candidate in python3.12 python3.11 python3.10; do
         if command -v "$candidate" >/dev/null; then runtime_python="$candidate"; break; fi

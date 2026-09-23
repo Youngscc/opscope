@@ -70,7 +70,7 @@ python3 -B build.py
 | `opscope/offline` | 示例数据、详情、矩阵预处理和离线单文件构建 |
 | `opscope/evaluation` | 请求契约、结果转换、独立 worker 与任务运行时 |
 | `tests` | Python 单元测试和离线 JavaScript 契约测试 |
-| `start.sh` / `.env.example` | 单端口启动、开发模式、外部引擎路径示例 |
+| `start.sh` | 单端口启动与开发模式，使用本项目内置引擎 |
 | `setup.sh` / `pyproject.toml` / `uv.lock` | 环境配置入口：锁定同步、venv+pip 回退与前端依赖安装 |
 | `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
 | `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
@@ -117,23 +117,14 @@ python3 -B build.py
 ./start.sh
 ```
 
-`.env` 只作为高级覆盖入口，用于验证其他解释器或引擎工作目录：
+独立服务固定使用本项目的 `.venv` 与内置引擎，不读取 `.env`，也不接受外部引擎路径参数。用 `./start.sh --port=8770` 改服务端口；开发模式还可设置 `--frontend-port=5174`。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装依赖和构建前端。
 
-```dotenv
-OPSCOPE_ENGINE_ROOT=/path/to/modeling
-OPSCOPE_ENGINE_PYTHON=/path/to/modeling/.venv/bin/python
-OPSCOPE_TILESIM_PYTHON=/path/to/tilesim-runtime/.venv/bin/python
-OPSCOPE_PORT=8768
-```
-
-也可通过 `./start.sh --engine-root /path/to/root --engine-python /path/to/python --tilesim-python /path/to/python` 传入覆盖参数。正常使用不需要这些参数。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装依赖和构建前端。
-
-服务 API 位于 `/api/opscope`；[接口文档](http://127.0.0.1:8768/docs) 和 `/api/health` 可用于检查。计算组件继续使用各自独立解释器，不装入 Web 环境、不连接任务数据库。
+服务 API 位于 `/api/opscope`；[接口文档](http://127.0.0.1:8768/docs) 和 `/api/health` 可用于检查。计算组件仍在独立子进程执行，不连接任务数据库。
 
 - 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
 - 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
 - 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
-- TileSim 默认使用 `.venv` 中由仓库 wheel 安装的 msopmodeling 1.0.9；`--tilesim-python` 仅用于覆盖。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
+- TileSim 使用 `.venv` 中由仓库 wheel 安装的 msopmodeling 1.0.9。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
 - TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
 - “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。
 - 服务仅监听本机。任务保存在内存，最多同时2个、保留最近12个，每批计算超时60秒；重启会清空任务。需要留存的结果请下载HTML或JSON。

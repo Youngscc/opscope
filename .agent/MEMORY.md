@@ -2,7 +2,7 @@
 
 ## GitHub 到 GitCode 分支同步（2026-09-24）
 
-本项目 GitHub Youngscc/opscope 的 main 为主，GitCode YYoung_G/opscope main 为副本；单向快进同步保留 SHA，不强推，不同步额外分支/标签。工作流需 GITCODE_TOKEN，自动运行需 GITCODE_SYNC_ENABLED=true；可手动 dry-run。5项隔离 Git 测试通过，实际远端状态看 Actions 日志。详见[配置说明](../docs/github-gitcode-sync.md)。
+本项目 GitHub Youngscc/opscope 的 main 为主，GitCode YYoung_G/opscope main 为副本；单向快进同步保留 SHA，不强推，不同步额外分支/标签。工作流需 GITCODE_TOKEN，自动运行需 GITCODE_SYNC_ENABLED=true；可手动 dry-run。5项隔离 Git 测试通过，三个仓库 Actions 演练和首次正式同步成功，目标 SHA 一致，自动同步已启用；用户选择保留全部原有工作流。本地工作区与远程配置未调整。详见[配置说明](../docs/github-gitcode-sync.md)。
 
 ## 字体层级与排版细化（2026-09-23，已验证）
 

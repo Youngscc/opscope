@@ -8,7 +8,7 @@
 
 - 新增 [同步工作流](../.github/workflows/sync-to-gitcode.yml)、分支推送脚本、隔离 Git 测试与[配置说明](github-gitcode-sync.md)。OpScope 的 main 对应 YYoung_G/opscope main；同批为 modeling、UI 的 fork 准备了 main 到原 GitCode 接入分支的映射。
 - 同步保留提交身份，只允许快进；不复制其他分支/标签，不覆盖独立提交。令牌仅从 Actions Secret 读取，自动触发需显式启用变量。
-- 验证：5 项本地真实 Git 测试通过，覆盖创建、快进、重复运行、分叉拒绝、演练无写入及其他分支/标签保留。远端同步状态以 GitHub Actions 日志与目标 SHA 为准。
+- 验证：5 项本地真实 Git 测试通过，覆盖创建、快进、重复运行、分叉拒绝、演练无写入及其他分支/标签保留。三个仓库的 Actions 演练和首次正式同步成功，日志核对目标 SHA 一致，自动同步变量已启用；按用户选择保留全部已有工作流。本地未提交功能改动未发布。
 
 ## 2026-09-23
 

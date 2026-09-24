@@ -28,7 +28,8 @@ GitCode 的其他分支、标签和原团队镜像规则不在本次修改范围
 GitCode 新目标仓库需先创建，建议私有空仓库，不初始化 README、许可证或 gitignore，
 避免无关初始提交导致拒绝快进。同步工作流不负责创建或删除仓库。
 
-fork 的 Actions 需启用本次同步工作流；继承的反向同步/门禁流程不应在此 fork 中启用。
+用户选择保留 fork 继承的全部原有工作流，本次未停用或取消旧流程。
+新增同步只从 GitHub main 向指定 GitCode 分支推送；不要另行把反向同步指向同一 GitHub 主仓。
 原团队 `laksjdf` 仓库的工作流保持不变。私有仓库使用 GitHub 托管 Ubuntu runner，
 会使用账号的 Actions 配额；不依赖原团队的 self-hosted runner。
 
@@ -48,3 +49,10 @@ fork 的 Actions 需启用本次同步工作流；继承的反向同步/门禁�
 - [隔离 Git 测试](../.github/scripts/test_sync_gitcode_branch.py)
 
 令牌创建参见 [GitCode 官方文档](https://docs.gitcode.com/docs/help/home/user_center/security_management/user_pat/)。
+
+## 首次验收（2026-09-24）
+
+已创建 GitCode 私有空仓 `YYoung_G/opscope`。三个 GitHub 仓库均已配置
+`GITCODE_TOKEN`；各自的只读演练、正式同步与目标 SHA 核对成功，
+`GITCODE_SYNC_ENABLED=true` 已开启。[本仓库首次正式同步](https://github.com/Youngscc/opscope/actions/runs/35977012969)。
+现有本地工作区的未提交修改不在本次发布范围内，本地分支及远程地址未调整。

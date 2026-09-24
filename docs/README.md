@@ -2,6 +2,8 @@
 
 ## 使用与运行
 
+- [GitHub 到 GitCode 分支同步](github-gitcode-sync.md)：目标映射、令牌设置、演练及冲突处理
+
 - [README](../README.md)：项目简介、启动方式和验证命令
 - [uv 环境配置](environment.md)：从零创建 `.venv`、requirements 文件、依赖更新、启动与验证命令
 - [项目级 Skill 设计](agent-workflows.md)：算子接入、评估结果核验和硬件配置的适用边界

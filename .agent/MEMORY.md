@@ -1,5 +1,9 @@
 # 项目记忆
 
+## GitHub 到 GitCode 分支同步（2026-09-24）
+
+本项目 GitHub Youngscc/opscope 的 main 为主，GitCode YYoung_G/opscope main 为副本；单向快进同步保留 SHA，不强推，不同步额外分支/标签。工作流需 GITCODE_TOKEN，自动运行需 GITCODE_SYNC_ENABLED=true；可手动 dry-run。5项隔离 Git 测试通过，实际远端状态看 Actions 日志。详见[配置说明](../docs/github-gitcode-sync.md)。
+
 ## 字体层级与排版细化（2026-09-23，已验证）
 
 共享 `styles.css` 细化在线/离线桌面层级：辅助文字12px、正文14px、分节标题18px、主标题24–26px、矩阵关键数值28–30px；标题700、标签/数值600，继续用系统字体与等宽数字，不引入在线字体依赖。硬件/方法轴加粗，单位次级化，工作负载说明与状态同排；详情头部/标签区压缩，摘要主卡与次卡宽比由2:1调整为1.6:1，双结果指标名列22%，数值两列等宽。修改已有规则并保留现有交互与数据语义。

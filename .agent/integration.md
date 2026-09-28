@@ -1,5 +1,10 @@
 # 后续接入与已知边界
 
+## 2026-09-24 共享模式更新
+
+用户已授权复用 modeling。可选 HTTP 模式已实现，之前关于“完全独立”的约束继续适用于默认独立模式；共享路径主动依赖配置的 modeling 服务，不再以本地算子/硬件/公式兜底。唯一当前说明见[共享模式](../docs/modeling-runtime.md)。严格后端在 modeling，OpScope 只负责表单、批次映射和结果展示。原宿主前端保持不变；新动态目录的 ID 不再受内置目录限制。
+
+
 当前在线应用已采用Vue 3/TypeScript/Vite/Pinia/Router与FastAPI/Uvicorn，启动和宿主迁移入口见[框架对齐](../docs/framework-alignment.md)。`/api/opscope`路由可注入EvaluationRuntime；独立服务使用内置最小 Roofline 后端和固定 TileSim wheel，不再读取旧外部引擎路径。完整 modeling 任务系统仍未合入。
 
 本文保留历史接入分析；文末记录已实现的可选 Roofline 本地服务。上传解析器与profiling数据库仍未接入；文末更新TileSim实际接入状态。

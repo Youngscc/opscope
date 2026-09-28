@@ -1,0 +1,101 @@
+operator_id,operator_name,hardware,method,status,latency_us,reason
+builtin:matmul,MatMul,H200_Server (train spec),roofline,succeeded,0.5461333333333334,
+builtin:linear,Linear,H200_Server (train spec),roofline,succeeded,0.5461333333333334,
+builtin:bmm,BMM,H200_Server (train spec),roofline,succeeded,2.8086857142857142,
+builtin:flash_attention,FlashAttention,H200_Server (train spec),roofline,succeeded,15.915145612648221,
+builtin:layernorm,LayerNorm,H200_Server (train spec),roofline,succeeded,4.998095238095238,
+builtin:rms_norm,RMSNorm,H200_Server (train spec),roofline,succeeded,4.9956571428571435,
+builtin:swiglu,SwiGLU,H200_Server (train spec),roofline,succeeded,8271.097061253731,
+builtin:embedding,Embedding,H200_Server (train spec),roofline,succeeded,7.491047619047619,
+builtin:silu,SiLU,H200_Server (train spec),roofline,succeeded,4.993219047619047,
+builtin:gelu,GELU,H200_Server (train spec),roofline,succeeded,4.993219047619047,
+builtin:softmax,Softmax,H200_Server (train spec),roofline,succeeded,263.1720156862745,
+asset:68,AddRMSNormQuant,H200_Server (train spec),roofline,succeeded,14.982095238095239,
+asset:10,AddRmsNorm,H200_Server (train spec),roofline,succeeded,14.982095238095239,
+asset:11,AddRmsNormBias,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:37,AllGather,H200_Server (train spec),roofline,unsupported,,该资产不属于两种方法的单算子建模范围
+asset:38,AllReduce,H200_Server (train spec),roofline,unsupported,,该资产不属于两种方法的单算子建模范围
+asset:12,Cast,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:13,CausalConv1d,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：num_cache_lines, state_len"
+asset:1,ChunkGatedDeltaRule,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：key_head_dim, num_key_heads, key_head_dim, num_key_heads, num_value_heads, value_head_dim, num_value_heads, key_head_dim, num_value_heads, value_head_dim"
+asset:49,ColumnParallelLinear,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:48,ColumnParallelLinearQuant,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:57,Compressor,H200_Server (train spec),roofline,succeeded,1709.648391641791,
+asset:14,Cumsum,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:15,DynamicMxQuant,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:75,DynamicQuant,H200_Server (train spec),roofline,succeeded,7.489828571428572,
+asset:16,DynamicQuantV2,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:45,END,H200_Server (train spec),roofline,unsupported,,该资产不属于两种方法的单算子建模范围
+asset:41,Embedding,H200_Server (train spec),roofline,succeeded,14.984533333333333,
+asset:42,EngramGate,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：engram_head_dim, engram_max_ngram_size, engram_n_heads, engram_head_dim, engram_max_ngram_size, engram_n_heads"
+asset:43,EngramLookup,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：engram_head_dim, engram_num_embeddings, engram_head_dim, engram_num_embeddings"
+asset:44,EngramPrefetch,H200_Server (train spec),roofline,unsupported,,'engram_head_dim'
+asset:2,FlashAttentionScore,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：qk_head_dim, qk_head_dim, qk_nope_head_dim"
+asset:17,FusedGdnGating,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：num_heads, num_heads, num_heads, num_heads"
+asset:3,FusedInferAttentionScore,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：qk_head_dim, qk_head_dim, qk_nope_head_dim, max_num_blocks, qk_head_dim, qk_nope_head_dim, qk_rope_head_dim, qk_rope_head_dim"
+asset:47,GatedResidual,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：hc_count, hc_count, hc_count, hc_lowrank, hc_count, hc_lowrank"
+asset:18,GatherV2,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:19,GemmaRmsNorm,H200_Server (train spec),roofline,succeeded,9.988876190476189,
+asset:50,GroupMatMul,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:29,GroupedMatmul,H200_Server (train spec),roofline,succeeded,39.808426235254466,
+asset:30,GroupedMatmulSwigluQuantV2,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:58,IndexCompressorEpilog,H200_Server (train spec),roofline,succeeded,0.4096,
+asset:59,IndexPrologV4,H200_Server (train spec),roofline,succeeded,9.791390476190477,
+asset:60,KVCompressorEpilog,H200_Server (train spec),roofline,succeeded,0.31207619047619045,
+asset:4,KvQuantSparseFlashAttention,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：kv_lora_rank, qk_rope_head_dim, kv_lora_rank, qk_rope_head_dim, kv_lora_rank, index_topk"
+asset:20,LayerNormV4,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:63,LightningIndexer,H200_Server (train spec),roofline,succeeded,12.60007619047619,
+asset:51,Linear,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:54,MHCHead,H200_Server (train spec),roofline,succeeded,32.93665882352941,
+asset:55,MHCPost,H200_Server (train spec),roofline,succeeded,1709.648391641791,
+asset:56,MHCPre,H200_Server (train spec),roofline,succeeded,32821.2426201791,
+asset:61,MLAEpilogV4,H200_Server (train spec),roofline,succeeded,1709.648391641791,
+asset:62,MLAPrologV4,H200_Server (train spec),roofline,succeeded,15.915885714285714,
+asset:52,MatMul,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:7,MatMulV3,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:31,MlaPrologV3,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：kv_lora_rank, qk_rope_head_dim, kv_lora_rank, qk_nope_head_dim, kv_lora_rank, qk_rope_head_dim, kv_lora_rank, qk_rope_head_dim, qk_rope_head_dim, kv_lora_rank, qk_rope_head_dim"
+asset:39,MoECombine,H200_Server (train spec),roofline,succeeded,37.02462745098039,
+asset:40,MoEDispatch,H200_Server (train spec),roofline,succeeded,24.9856,
+asset:64,MoEGate,H200_Server (train spec),roofline,succeeded,29.152404667571236,
+asset:65,MoEGateHashTopK,H200_Server (train spec),roofline,succeeded,5.152914285714285,
+asset:66,MoEGateTopK,H200_Server (train spec),roofline,succeeded,29.142623175033922,
+asset:67,MoETopK,H200_Server (train spec),roofline,succeeded,0.23893333333333336,
+asset:34,MoeDistributeCombineV3,H200_Server (train spec),roofline,unsupported,,缺少符号维度：ep_size
+asset:35,MoeDistributeDispatchV3,H200_Server (train spec),roofline,unsupported,,"'name=expert_token_nums 解析 shape 时出错: ""shape 变量 \'n_routed_experts\' 在上下文中未找到""'"
+asset:33,MoeGatingTopK,H200_Server (train spec),roofline,unsupported,,"not enough values to unpack (expected 3, got 2)"
+asset:21,Mul,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:71,PLELayer,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：hc_count, heads_per_ngram, ngram_size, ngram_vocab_size_base, ple_embed_dim, hc_count, ple_embed_dim, ple_embed_dim"
+asset:74,QSAIndexer,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：indexer_head_dim, indexer_kv_heads, indexer_n_heads, indexer_head_dim, indexer_head_dim"
+asset:8,QuantBatchMatmulV3,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:32,QuantLightningIndexer,H200_Server (train spec),roofline,unsupported,,"'name=sparse_indices 解析 shape 时出错: ""shape 变量 \'sparse_count\' 在上下文中未找到""'"
+asset:69,RMSNormGated,H200_Server (train spec),roofline,succeeded,9.991314285714287,
+asset:70,RMSNormQuant,H200_Server (train spec),roofline,succeeded,9.988876190476189,
+asset:22,RmsNorm,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:72,RopeComplex,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:73,RopeInterLeave,H200_Server (train spec),roofline,succeeded,14.979657142857144,
+asset:53,RowParallelLinear,H200_Server (train spec),roofline,succeeded,115.80633086619481,
+asset:46,START,H200_Server (train spec),roofline,unsupported,,该资产不属于两种方法的单算子建模范围
+asset:23,ScatterNdUpdate,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:24,Sigmoid,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:36,SituAndMul,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:5,SparseAttnSharedkv,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：sliding_window, cmp_len"
+asset:6,SparseFlashAttention,H200_Server (train spec),roofline,unsupported,,缺少符号维度：index_topk
+asset:76,SparseIndexSelect,H200_Server (train spec),roofline,unsupported,,"'name=topk_2 解析 shape 时出错: ""shape 变量 \'index_topk\' 在上下文中未找到""'"
+asset:25,SwiGlu,H200_Server (train spec),roofline,succeeded,33.15350588235294,
+asset:26,SwiGluQuant,H200_Server (train spec),roofline,succeeded,27.629929411764707,
+asset:27,SwigluGroupQuant,H200_Server (train spec),roofline,unsupported,,缺少符号维度：routed_tokens_per_rank
+asset:77,TorchAdd,H200_Server (train spec),roofline,succeeded,14.979657142857144,
+asset:78,TorchCos,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:79,TorchCumsum,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:80,TorchMm,H200_Server (train spec),roofline,succeeded,0.5461333333333334,
+asset:81,TorchMul,H200_Server (train spec),roofline,succeeded,14.979657142857144,
+asset:82,TorchSin,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:83,TorchSoftmax,H200_Server (train spec),roofline,succeeded,9.986438095238094,
+asset:84,TorchSort,H200_Server (train spec),roofline,succeeded,24.672376470588233,
+asset:85,TorchSum,H200_Server (train spec),roofline,succeeded,4.9956571428571435,
+asset:28,Transpose,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:9,TransposeBatchMatMul,H200_Server (train spec),roofline,unsupported,,此算子没有已登记的共享 Roofline 公式
+asset:86,vision_encoder_block,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：vision_hidden_size, vision_patch_tokens, vision_hidden_size, vision_hidden_size, vision_hidden_size, vision_hidden_size, vision_hidden_size, vision_intermediate_size, vision_hidden_size, vision_intermediate_size"
+asset:87,vision_patch_embed,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：vision_in_channels, vision_patch_size, vision_patch_tokens, vision_temporal_patch_size, vision_hidden_size, vision_in_channels, vision_patch_size, vision_temporal_patch_size"
+asset:88,vision_patch_merger,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：vision_hidden_size, vision_patch_tokens, vision_hidden_size, vision_hidden_size, vision_spatial_merge_size, vision_hidden_size, vision_out_hidden_size, vision_spatial_merge_size"
+asset:89,vision_text_embedding_merge,H200_Server (train spec),roofline,unsupported,,"缺少符号维度：hc_count, vision_merged_tokens"

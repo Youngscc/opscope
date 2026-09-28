@@ -1,5 +1,52 @@
 # 项目记忆
 
+## 本轮 Git 交付范围（2026-09-28）
+
+共享接入、lookup 预设、算子补齐及覆盖文档一起按类别交付至 GitHub 两仓库的 codex/opscope-modeling-integration 分支。modeling 的 origin 仍为 GitCode，推送使用用户指定 GitHub URL，不改远端配置；main 不合并，现有 GitCode 镜像仅跟随 main。用户 trace、个人目录、原有 AGENTS/stats 与无关历史文档保留本地。提交及推送实际状态以分支历史为准。
+
+## 共享算子配置与覆盖（2026-09-28，已验证）
+
+在 modeling 补齐 100 模板的符号参数、严格 shape/dtype 合同、资产工作量复用与 TileSim 原生理论/工程适配；OpScope 只传参数和展示有效参数/来源，不新增模型计算依赖。当前结果与缺口以[覆盖说明](../docs/shared-operator-coverage.md)为准，取代下文第一阶段 55/45 和“仅理论模式”的当前能力描述。H200 默认 Roofline 93 成功/7 非计算范围；TileSim 默认 11 成功/89 不支持，独立显式 BF16→FP16 实验 24/76（不会自动改精度）。300 项 CSV 与资产/硬件快照已保存，未做全硬件或任意形状认证。
+
+RmsNorm FP16 x128²/gamma128、B1/S128 经轻量 OpScope→HTTP→worker：Roofline 0.0345333333μs、TileSim 0.6943698719μs。桌面配置/筛选/详情/双结果/JSON 预览及单项、对比报告 HTTP 200 已核验。97 项 Python、5 项前端、类型/构建/离线生成/JS 检查通过；modeling 严格26通过，扩大回归187通过/3已复现基线失败，全量仍5个收集错误，E2E4/4。
+
+原生 TileSim 缺模型、精度/输入输出合同不符及内部异常继续保留具体原因，未伪造输入/硬件或回退；工程模式标签按实际模式展示。测试8802/8803使用隔离任务库，8768未动，未提交/推送。旧本地副本物理清理、生产身份、真实流水仍未完成。
+
+
+## 共享后端接入第一阶段（2026-09-24，已实现）
+
+用户要求开始重构。OpScope integration 分支新增可选 HTTP provider；设置 `OPSCOPE_MODELING_URL` 后，目录/硬件/算子和 Roofline/TileSim 计算来自 modeling，任务复用其现有 jobs/worker，不运行本地引擎，不回退。modeling 兼容扩展 strict 请求、版本冻结和目录 GET；原 UI 无源码改动。当前独立模式/离线和旧副本保留，只有环境依赖已拆成 local-engine extra，物理删除待覆盖验收。
+
+`./setup.sh --modeling` 与 `./start.sh --modeling-url=...`，身份文件可用 `OPSCOPE_MODELING_HEADERS_FILE` 指定已有合法加密头。轻量全新环境没有 NumPy/SciPy/Torch/TileSim，真实 H200_Server 128² FP16 MatMul HTTP Roofline=0.0512μs、TileSim=0.14128508391203703μs；逐项展示、详情、双结果、JSON、单项/双项报告已检查。100模板×H200 Roofline默认输入初查55成功45unsupported。只有理论TileSim，无假流水；拒绝未认证形状/精度/型号转换，补充分项明确来源。
+
+验证与剩余事项以[持续说明](../docs/modeling-runtime.md)和[实施计划](../docs/modeling-backend-integration-plan.md)为准。OpScope 90项Python、4项前端、类型/生产构建通过；modeling严格测试通过，但全量5个收集错误、硬件专项2项失败，不能声称全部通过。生产身份透传、全硬件/算子等价覆盖与完整去重未完成。未提交/推送/合并远端基线，原8768未重启；验证用隔离数据库和8802/8803测试服务。
+
+
+## 接入轻量化原则（2026-09-24，待实施）
+
+用户要求能复用就复用、保持轻量。已收紧[接入设计](../docs/modeling-backend-integration-design.md)和[计划](../docs/modeling-backend-integration-plan.md)：优先复用 modeling 现有 assets、单算子和 jobs 接口及任务/权限/存储；不足时先兼容扩展，必要才新增。原先规划的目录路由和共享服务目录是候选而非必建。OpScope 保留当前展示/报告与薄适配，不另建队列、数据库或引擎框架；迁移后移除重复建模及数据依赖。仅调整文档，尚未实施。
+
+## 接入范围补充：硬件和算子数据复用（2026-09-24，待实施）
+
+用户进一步明确硬件/算子数据也复用 modeling，已补入[设计](../docs/modeling-backend-integration-design.md)与[计划](../docs/modeling-backend-integration-plan.md)。集成模式读取 modeling 可见资产和统一加载器，涵盖规格、TileSim 配置映射、算子输入/属性/默认值及语义；按资产 ID/版本固定有效配置。同名异规格不混合，语义分组由 modeling 提供。OpScope 本地快照只保留离线/显式独立用途，远程缺项不回填旧值。核实统一硬件加载器为 `backend/hardware/builtin_hardware.py`，旧 train registry 是兼容导出；现有 assets 服务已有算子/硬件查询与版本路径。新增目录刷新、版本变更及脱离本地快照的验收项；本轮仅更新计划，无运行代码改动或功能实测。
+
+## Modeling 后端接入计划（2026-09-24，尚未实施）
+
+本轮按用户要求只形成[接入设计](../docs/modeling-backend-integration-design.md)及[实施计划](../docs/modeling-backend-integration-plan.md)。推荐 OpScope 保留页面和矩阵编排，通过 HTTP provider 调用 modeling 新增的严格单算子服务与既有任务系统；两种模型和语义适配由 modeling 负责，宿主前端不动，集成路径禁止本地计算或方法回退。先打通真实 MatMul，再扩目录；验证完成前不删除独立引擎。
+
+静态审计本地 modeling `f571e9f`：TileSim 策略仍含 Roofline 回退；`can_simulate` 会真实预测，`simulate` 从 Roofline 补充分项；输入默认理论模式，存在 dtype/硬件近似映射。需记录字段来源和有效配置，避免把补充指标当原生流水。检查的 modeling `.venv` 未发现 TileSim 对应包/导入路径，只说明该环境尚待配置；本轮未运行预测。实施前对齐本地分支与 GitHub 主/GitCode 副的远端基线，保留既有未提交改动。此次仅修改计划文档及导航/记录，没有实现接入、改动运行代码或发布。
+
+## Modeling 接入分支准备（2026-09-24）
+
+用户要求在 modeling 与其独立前端 zrt-sim-ui 各创建 `codex/opscope-modeling-integration`，已从各自当前 HEAD 创建并切换，保留原未提交修改；OpScope 分支不变。接入先保持 modeling 前端不动，优先让 OpScope 调用 modeling 后端 Roofline/TileSim，不再自行实现这两种建模计算。当前仅准备分支和记录边界，尚未修改调用链、移除内置引擎或验证接入；见[接入试验边界](../docs/modeling-integration-scope.md)。
+
+## 方法顺序与 lookup 预设（2026-09-23，已验证）
+
+矩阵、筛选、图例和报告方法顺序改为真机数据 → MSKPP → ESL → Roofline → TileSim。前三项预设 lookup，保留 profile/method3/method4 内部 ID 兼容已有示例/任务；方法目录增加 backend，行结果带 method_name/method_backend，JSON可识别名称与预设方式。lookup 尚未接数据源，实际运行前三项明确 unsupported/null，actual_backend保持空；原示例继续 synthetic，不声称查表命中，真机数据仍为唯一参考基线。详见[预设边界](../docs/method-lookup-presets.md)。
+
+81项Python测试、3项前端测试、Vue类型检查/构建、离线生成、JS语法与差异检查通过。H200、128×128 FP16 MatMul 五方法 HTTP 实跑：前三项均缺lookup数据源，Roofline 0.0512 μs、TileSim 0.14128508391203703 μs成功。桌面检查列顺序/lookup标签、MSKPP与ESL对比、方法筛选与JSON名称/预设字段；控制台未见错误。旧8768服务无历史任务、页面处于示例状态时正常重启，当前页面已更新。
+
+
 ## 字体层级与排版细化（2026-09-23，已验证）
 
 共享 `styles.css` 细化在线/离线桌面层级：辅助文字12px、正文14px、分节标题18px、主标题24–26px、矩阵关键数值28–30px；标题700、标签/数值600，继续用系统字体与等宽数字，不引入在线字体依赖。硬件/方法轴加粗，单位次级化，工作负载说明与状态同排；详情头部/标签区压缩，摘要主卡与次卡宽比由2:1调整为1.6:1，双结果指标名列22%，数值两列等宽。修改已有规则并保留现有交互与数据语义。

@@ -1,5 +1,8 @@
 # OpScope 文档导航
 
+- [共享建模模式：当前能力、轻量安装、启动与限制](modeling-runtime.md)
+
+
 ## 使用与运行
 
 - [README](../README.md)：项目简介、启动方式和验证命令
@@ -27,6 +30,10 @@
 
 ## 建模与 TileSim
 
+- [Modeling 接入试验边界](modeling-integration-scope.md)：双仓库分支基线、先复用后端且不改宿主前端的约束（尚未实现）
+- [Modeling 后端接入设计](modeling-backend-integration-design.md)：严格调用两种模型、共享服务/API、任务与结果来源契约（待实施）
+- [Modeling 后端接入计划](modeling-backend-integration-plan.md)：环境、共享执行、API、OpScope provider、目录覆盖与验收顺序（待实施）
+
 - [全目录算子与方法实跑审计](operator-method-audit.md)：9,500 个默认组合、环境对照、逐模板缺项与上游责任划分
 - [算子适配扩展](operator-adaptation-plan.md)：目录公式 Roofline、新 TileSim 模型、算子属性和独立环境复验
 - [当前评估缺口与参数位置](evaluation-gap-map.md)：逐类缺项、持久化路径、可对照的同类规格和原始审计入口
@@ -44,3 +51,7 @@
 - [结果矩阵实施计划](result-matrix-plan.md)
 - [虚拟方法](virtual-methods.md)
 - [历史记录](HISTORY.md)
+
+- [方法顺序与 lookup 预设](method-lookup-presets.md)：真机数据、MSKPP、ESL、Roofline、TileSim 的命名、顺序与缺源边界
+
+- [共享算子配置与双方法覆盖](shared-operator-coverage.md)：100 模板、300 项 H200 配置实验及缺口路径。

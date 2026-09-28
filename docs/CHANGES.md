@@ -2,7 +2,54 @@
 
 此处按**完成的修改任务**记录结果与验证，不按文件保存次数记流水。历史原型迭代见 [HISTORY.md](HISTORY.md)；长期项目事实见 [项目记忆](../.agent/MEMORY.md)。记录不等于已提交或已发布。
 
+## 2026-09-28
+
+### 分类提交共享后端与算子覆盖改动
+
+按环境、功能、设计文档和覆盖审计组织 OpScope 提交，并将 modeling 的共享后端实现与说明分别提交。明确纳入原忽略规则漏掉的 TileSim 适配模块；用户 trace、个人设置及 modeling 原有无关修改不纳入。GitHub 集成分支为交付目标，未合入 main，不触发仅跟随 main 的 GitCode 镜像。验证沿用本轮已完成测试，并检查暂存差异及生成文件一致性；实际推送结果以 Git 远端核对为准。
+
+### 补齐共享目录配置及算子方法适配
+
+- modeling 新增严格符号绑定、资产工作量与共享 SFU 策略复用，补齐合法 dtype、输出、固定轴以及 TileSim 原生理论/工程适配；宿主前端未改。OpScope 的 [provider](../opscope/evaluation/modeling_provider.py)、配置表单和[来源详情](../opscope/evaluation/modeling_details.py)只传递有界参数并展示实际模式，不复制计算公式。
+- [覆盖说明](shared-operator-coverage.md)记录 100 模板的 300 项 H200 审计及资产/硬件快照：Roofline 默认 93/100 成功；TileSim 默认 11/100，显式 BF16→FP16 实验 24/100。两项审计超时延长后成功，没有计为不支持；精度不会自动转换。余项按原生模型、张量合同、硬件/精度或执行错误列出原因和路径。
+- 验证：97项 Python、5项前端、类型/生产构建、离线生成、JS语法通过；modeling严格26通过，扩大回归187通过/3原始基线同样失败，全量5个原有收集错误，E2E4/4。真实 HTTP RmsNorm 双方法、桌面配置/矩阵/详情/双结果/JSON预览，以及单项/对比报告接口通过。
+- 边界：不代表全硬件或任意输入已支持；未补造 TileSim 缺失算法/输入，不提供虚假流水或方法回退。原8768未改，隔离8803展示更新结果；未提交/推送。
+
+## 2026-09-24
+
+### 实现共享建模后端接入与轻量环境
+
+- 新增 [HTTP provider](../opscope/evaluation/modeling_provider.py) 与来源详情适配；复用 modeling 资产目录、硬件解析、Roofline/TileSim、既有单算子任务和 worker，保留逐格结果、比较和报告。在线提交按资产 ID/hash 固定配置，严格方法不回退、不使用本地规格补缺；同名硬件按配置 ID 区分。宿主前端无本轮源码变更。
+- 增加 [轻量 requirements](../backend/requirements-modeling.txt)、`setup.sh --modeling`、启动服务 URL/身份文件配置，本地引擎变为可选 extra。OpScope 取消接口将切换配置传到上游并停止后续组合。当前能力、安装与限制见[共享模式](modeling-runtime.md)，覆盖初查见[CSV](audits/2026-09-24-shared-roofline-h200.csv)。
+- 验证：OpScope 90 项 Python、4 项前端、类型/生产构建、离线生成、JS/bash 语法及差异检查通过。全新无 NumPy/SciPy/Torch/TileSim 的环境真实调用 H200_Server 128² FP16 MatMul，Roofline 0.0512μs、TileSim 0.14128508391203703μs；页面配置/筛选/逐卡/详情/双结果、JSON及两个报告接口核验。真实取消上游任务终态为 cancelled。modeling 严格与包兼容14项通过，E2E4/4；联合硬件专项34/36，全量5个收集错误阻断，未宣称全部通过。
+- 边界：100模板×H200 Roofline初查55成功45不支持，不是全硬件/全方法覆盖。工程流水、完整语义去重、生产登录透传和旧副本物理清理仍未完成；独立模式显式保留。未提交/推送，未重启原8768；临时8802/8803使用隔离任务库供本轮验证。
+
+### 收紧接入计划以优先复用并保持轻量
+
+- 更新[设计](modeling-backend-integration-design.md)、[计划](modeling-backend-integration-plan.md)、接入边界及记忆：明确直接复用、兼容扩展、必要新增的顺序；候选新接口不再作为必建项，复用现有资产、任务、权限、存储和展示实现，增加重复模块/依赖清理验收。
+- 验证：核对 modeling 现有 assets 和基础单算子路由，文档链接及差异格式检查通过。仅修改计划文档，未改变接口或运行行为，未运行功能测试，未提交或推送。
+
+### 将硬件与算子数据复用纳入接入计划
+
+- 补充[接入设计](modeling-backend-integration-design.md)与[实施计划](modeling-backend-integration-plan.md)：明确复用 modeling 硬件加载器、算子/硬件资产及版本权限，列出数据源、只读目录接口、同名配置边界、本地快照迁移和数据更新验收；同步接入边界与项目记忆。
+- 验证：静态核对现有硬件加载、算子模板、资产查询/版本及 TileSim 配置映射路径；文档相对链接与差异格式检查通过。仅扩展计划，未修改数据或执行代码，未运行功能测试，未提交或推送。
+
+### 制定 OpScope 复用 Modeling 后端的接入计划
+
+- 新增[接入设计](modeling-backend-integration-design.md)与[实施计划](modeling-backend-integration-plan.md)，明确宿主前端不动、两种模型在 modeling 统一执行、OpScope 通过远程 provider 接入；列出方法回退、字段来源、近似映射、依赖及缓存问题，给出分阶段文件清单和验收标准。同步边界文档、导航与项目记忆。
+- 验证：对照本地源码与依赖元数据核查调用链，检查本次文档相对链接及差异格式。本轮仅形成计划，未安装依赖、修改运行代码、执行性能预测或测试套件；新接入能力尚未实现，未提交或推送。既有未提交功能修改保持原样。
+
+### 准备 Modeling 接入试验分支与约束
+
+- modeling 与 zrt-sim-ui 从各自当前 HEAD 创建并切换至 `codex/opscope-modeling-integration`；在[接入边界](modeling-integration-scope.md)记录基线、保持宿主前端不动、直接复用 Roofline/TileSim 后端的原则，更新文档导航与项目记忆。
+- 验证：两仓库分支、HEAD、工作区状态及已跟踪差异摘要核对，既有改动保留。本次未修改运行代码，未执行运行测试；尚未实现接入，未提交或推送，OpScope 分支保持不变。
+
 ## 2026-09-23
+
+### 统一方法顺序并预设 lookup
+
+- [方法目录](../opscope/offline/fixtures.py) 按真机数据、MSKPP、ESL、Roofline、TileSim排序；前三项配置为lookup，保留旧内部ID。示例、在线结果、筛选、详情/报告和JSON同步命名与预设元数据；运行时未接查表数据明确返回缺源原因，不回退计算。见[方案](method-lookup-presets.md)。
+- 验证：81项Python测试、3项前端测试、类型检查/构建、离线生成、JS语法及差异检查通过。HTTP实跑H200小型MatMul，前三项unsupported且耗时为空，Roofline/TileSim分别0.0512/0.14128508391203703 μs成功；桌面顺序、lookup标签、MSKPP/ESL对比、筛选及JSON检查通过。尚未实现lookup数据导入与匹配，不将示例当真实命中；未提交或推送。
 
 ### 优化字体层级与结果区域比例
 

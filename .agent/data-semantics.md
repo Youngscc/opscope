@@ -1,5 +1,14 @@
 # 数据口径
 
+## 共享建模来源（2026-09-24）
+
+远程结果标记 `engine.provider=modeling`，保留方法实际身份、硬件/算子hash、源码与校准摘要、上游run ID。TileSim总时延来自其原生输出，分项若来自Roofline明确 `field_sources=roofline.supplement`；补充失败返回null。当前共享理论路径不生成事件，不把零占位画成流水。详情的指标名称稳定、来源放在数值说明中，便于双列比较。有效配置来自提交时冻结资产，不回填OpScope旧目录。具体边界见[当前能力](../docs/modeling-runtime.md)。
+
+
+## 方法预设（2026-09-23）
+
+显示顺序为真机数据、MSKPP、ESL、Roofline、TileSim；前三种预设 lookup，内部保留 profile/method3/method4 ID。预设类型 `method_backend` 不代表已执行，未接数据时实际后端仍为空、耗时为空、状态 unsupported。示例数值未变，synthetic 标记继续保留；MSKPP/ESL 不能替代真机参考。当前没有查表文件、匹配或插值能力。
+
 ## 矩阵双结果比较（2026-09-23，当前入口）
 
 直接选择当前矩阵两张有结果的卡片；Python 按二者原始总耗时生成从零开始的同尺度条形图，包括零值。口径不满足既有比较条件时仍显示绝对值与原因，但不计算变化率；不能从图中推断准确性、归因或实测加速。在线所选结果报告复用同一判定，示例保留 synthetic 标记。下方时间比较为保留接口的历史说明，页面入口已经移除。
@@ -28,10 +37,10 @@ UI不展示来源项目或训练/推理域；100个内部模板按名称忽略�
 
 | 方法 | 当前示例 | 必须保留的边界 |
 | --- | --- | --- |
-| Profiling | 耗时、计数器、活动与流水 | 全部合成；并未采集真机 |
+| 真机数据（lookup） | 耗时、计数器、活动与流水 | 全部合成；并未采集真机 |
 | Roofline | 总耗时、可用的计算/访存成本、校准元数据 | 不生成实际计数器、kernel 或 trace |
 | Tilesim | 总耗时与详细执行示例 | 细项标“扩展字段示例”，不是原适配器真实输出 |
-| 方法3 / 方法4 | 各5条手工虚拟总耗时 | 尚未指定模拟器；分项、瓶颈、kernel与流水为空；不继承旧Accel-Sim记录 |
+| MSKPP / ESL（lookup） | 各5条手工虚拟总耗时 | 尚未配置 lookup 数据源；分项、瓶颈、kernel与流水为空；不继承旧Accel-Sim记录 |
 
 Roofline 校准 status=calibrated/generic；source=bucket/aggregate/regression/heuristic。H200 演示 regression，compute_us、memory_us、bound 为 null，不从总时延虚构分项；其他解析示例的成本也不是真实模型计算。
 

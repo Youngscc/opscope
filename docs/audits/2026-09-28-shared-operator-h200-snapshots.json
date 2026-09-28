@@ -1,0 +1,3630 @@
+{
+  "hardware": {
+    "name": "H200_Server",
+    "label": "NVIDIA H200 Server (H200, 8 GPU)",
+    "vendor": "nvidia",
+    "device_type": "gpu",
+    "chip_name": "H200",
+    "borrowed_from": null,
+    "compute": {
+      "cube": {
+        "fp16_tflops": 989,
+        "bf16_tflops": 989,
+        "fp32_tflops": 989,
+        "int8_tops": 1979,
+        "int4_tops": 0,
+        "fp8_tops": 1979,
+        "fp4_tops": 0
+      },
+      "vector": {
+        "fp16_tflops": 67,
+        "bf16_tflops": 67,
+        "fp32_tflops": 67,
+        "int8_tops": 0,
+        "int4_tops": 0,
+        "fp8_tops": 0,
+        "fp4_tops": 0
+      },
+      "sfu": {
+        "fp16_tops": 30,
+        "fp8_tops": 30,
+        "int8_tops": 0,
+        "fp4_tops": 30
+      },
+      "sram_kb_per_sm": 228,
+      "compute_ratio": null
+    },
+    "memory": {
+      "tiers": [
+        {
+          "name": "L2",
+          "bandwidth_gbps": 12288,
+          "capacity_mb": 50
+        },
+        {
+          "name": "HBM",
+          "bandwidth_gbps": 4800,
+          "capacity_mb": 144384
+        }
+      ]
+    },
+    "interconnect": {
+      "tiers": [
+        {
+          "name": "intra_node",
+          "type": "NVLink4",
+          "bandwidth_gbps": 450,
+          "latency_us": 1,
+          "topology": "all_to_all",
+          "num_devices": 8,
+          "kb_efficiency": 0.7
+        },
+        {
+          "name": "scale_out",
+          "type": "InfiniBand_NDR",
+          "bandwidth_gbps": 50,
+          "latency_us": 2,
+          "topology": "fat_tree",
+          "num_devices": 0,
+          "kb_efficiency": 0.7
+        }
+      ]
+    },
+    "flash_attention_fwd_coefficient": 1.0,
+    "overlap_ratio": {
+      "attn_core": 0.6
+    },
+    "ep_overlap_waves": 4,
+    "flash_attention_bwd_coefficient": 1.0
+  },
+  "operators": {
+    "builtin:matmul": {
+      "key": "matmul",
+      "label": "MatMul",
+      "op_type": "aten.matmul",
+      "category": "Linear",
+      "input_template": [
+        {
+          "name": "A",
+          "shape": [
+            1024,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            512,
+            256
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:linear": {
+      "key": "linear",
+      "label": "Linear",
+      "op_type": "aten.linear",
+      "category": "Linear",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            256,
+            512
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:bmm": {
+      "key": "bmm",
+      "label": "BMM",
+      "op_type": "aten.bmm",
+      "category": "Linear",
+      "input_template": [
+        {
+          "name": "A",
+          "shape": [
+            32,
+            128,
+            512
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:flash_attention": {
+      "key": "flash_attention",
+      "label": "FlashAttention",
+      "op_type": "aten.scaled_dot_product_attention.default",
+      "category": "Attention",
+      "input_template": [
+        {
+          "name": "Q",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            2,
+            32,
+            512,
+            128
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:layernorm": {
+      "key": "layernorm",
+      "label": "LayerNorm",
+      "op_type": "aten.layer_norm.default",
+      "category": "Normalization",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:rms_norm": {
+      "key": "rms_norm",
+      "label": "RMSNorm",
+      "op_type": "rms_norm",
+      "category": "Normalization",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "weight",
+          "shape": [
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:swiglu": {
+      "key": "swiglu",
+      "label": "SwiGLU",
+      "op_type": "swiglu",
+      "category": "Activation",
+      "input_template": [
+        {
+          "name": "hidden",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "gate_w",
+          "shape": [
+            11008,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "up_w",
+          "shape": [
+            11008,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "down_w",
+          "shape": [
+            4096,
+            11008
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:embedding": {
+      "key": "embedding",
+      "label": "Embedding",
+      "op_type": "aten.embedding.default",
+      "category": "Embedding",
+      "input_template": [
+        {
+          "name": "weight",
+          "shape": [
+            32000,
+            4096
+          ],
+          "dtype": "bf16"
+        },
+        {
+          "name": "indices",
+          "shape": [
+            2,
+            512
+          ],
+          "dtype": "int32"
+        }
+      ]
+    },
+    "builtin:silu": {
+      "key": "silu",
+      "label": "SiLU",
+      "op_type": "aten.silu.default",
+      "category": "Activation",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:gelu": {
+      "key": "gelu",
+      "label": "GELU",
+      "op_type": "aten.gelu.default",
+      "category": "Activation",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            1024,
+            4096
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "builtin:softmax": {
+      "key": "softmax",
+      "label": "Softmax",
+      "op_type": "aten._softmax.default",
+      "category": "Activation",
+      "input_template": [
+        {
+          "name": "input",
+          "shape": [
+            32,
+            32,
+            512,
+            512
+          ],
+          "dtype": "bf16"
+        }
+      ]
+    },
+    "asset:68": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp16": "3 * B * S * hidden_size",
+        "fp32": "4 * B * S * hidden_size"
+      },
+      "description": "Residual add + normalization + quantization: y = quant(norm(x + residual))",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x1",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "x2",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "norm",
+      "name": "AddRMSNormQuant",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[B, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:10": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp32": "5 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Residual add fused with RMS normalization: y = rmsnorm(x1 + x2), rstd is the reciprocal standard deviation and the pre-norm residual (aclnnAddRmsNorm)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x1",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x2",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "input_layernorm",
+      "name": "AddRmsNorm",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "rstd",
+          "shape": "[B * S, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "gamma",
+          "shape": "[hidden_size]"
+        }
+      ]
+    },
+    "asset:11": {
+      "category": "Normalization",
+      "compute_flops": {
+        "bf16": "5 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Residual add fused with biased RMS normalization: y = rmsnorm(x1 + x2, gamma, beta), rstd is the reciprocal standard deviation and x the pre-norm residual sum (aclnnAddRmsNormBias)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x1",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x2",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "norm.add_rms_norm_bias",
+      "name": "AddRmsNormBias",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "rstd",
+          "shape": "[B * S, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "gamma",
+          "shape": "[hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "beta",
+          "shape": "[hidden_size]"
+        }
+      ]
+    },
+    "asset:37": {
+      "category": "Communication",
+      "compute_flops": {},
+      "description": "AllGather collective communication: gather sharded tensors from all TP devices",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "logits_shard",
+          "shape": "[B, S, vocab_size // lmhead_tp_size]"
+        }
+      ],
+      "module": "lm_head",
+      "name": "AllGather",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "logits",
+          "shape": "[B, S, vocab_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:38": {
+      "category": "Communication",
+      "compute_flops": {},
+      "description": "AllReduce collective communication: reduce tensors across TP group and distribute result",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.o_proj",
+      "name": "AllReduce",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:12": {
+      "category": "Quantization",
+      "compute_flops": {
+        "bf16": "B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Element-wise dtype conversion; the output dtype is chosen by the required dst_type attribute, so the asset models the bf16 -> fp32 path (aclnnCast)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "quantization",
+      "name": "Cast",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:13": {
+      "category": "LinearAttention",
+      "compute_flops": {
+        "bf16": "(2 * K + 3) * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Causal depthwise 1-D convolution over the sequence axis with in-place conv-state update: y takes x's shape, conv_states output takes conv_states input's shape (same name declared as both input and output in the op_def). attrs: activation_mode default \"silu\", null_block_id default 0 (ops-transformer/mamba/causal_conv1d/op_host/causal_conv1d_def.cpp)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight",
+          "shape": "[K, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "conv_states",
+          "shape": "[num_cache_lines, state_len, hidden_size]"
+        }
+      ],
+      "module": "attn.causal_conv1d",
+      "name": "CausalConv1d",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "conv_states",
+          "shape": "[num_cache_lines, state_len, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:1": {
+      "category": "LinearAttention",
+      "compute_flops": {
+        "bf16": "6 * B * S * num_value_heads * key_head_dim * value_head_dim"
+      },
+      "compute_unit": "mix",
+      "description": "Chunked Gated Delta Rule（chunk 版门控 Delta 规则，线性注意力的 prefill 形态）：按 chunk 切块并行地递推状态 S_t = α_t·S_{t-1} + β_t·(v_t − α_t·S_{t-1}k_t)k_t^T，并输出 o_t = S_t·(q_t·scale)。真机 op_def：ops-transformer/attention/chunk_gated_delta_rule/op_host/chunk_gated_delta_rule_def.cpp（query/key/value/beta/initial_state/actual_seq_lengths 全 REQUIRED，g 是 OPTIONAL 输入、scale_value 是 OPTIONAL 属性，按仓规落实现类不进资产）。张量名序与 op_def 声明序逐位一致（query key value beta initial_state actual_seq_lengths → out final_state；OPTIONAL 的 g 声明在 actual_seq_lengths 之后，被跳过不影响必填位逐位对齐）。真机内核 KERNEL_TYPE_MIX_AIC_1_2（cube 打 3 组 V×K 矩阵乘、vector/SFU 做 g 的累积与状态逐元素缩放），故 compute_unit 取 mix。形状按真机 aclnn 表取：query/key (T, Nk, Dk)、value (T, Nv, Dv)、beta (T, Nv)、initial_state (B, Nv, Dv, Dk)、actual_seq_lengths (B,)，输出 out (T, Nv, Dv)、final_state (B, Nv, Dv, Dk)。T 是打包后的扁平 token 轴（无 batch 分维），建模侧写 B * S。compute_flops 取每 token 每 value head 的 3 组 Dv×Dk 矩阵乘（v−α·Sk、⊗k 外积更新、S·q），与同算法的建模层算子 GatedDeltaNet 同口径（其表达式为 6 * B * S * linear_num_value_heads * linear_key_head_dim * linear_value_head_dim）；chunk 内的 q·k^T 与 attn·v 两组块内矩阵乘不计入，两侧一致。",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B * S, num_key_heads, key_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key",
+          "shape": "[B * S, num_key_heads, key_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value",
+          "shape": "[B * S, num_value_heads, value_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "beta",
+          "shape": "[B * S, num_value_heads]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "initial_state",
+          "shape": "[B, num_value_heads, value_head_dim, key_head_dim]"
+        },
+        {
+          "dtype": "int32",
+          "name": "actual_seq_lengths",
+          "shape": "[B]"
+        }
+      ],
+      "module": "attn.linear_attn",
+      "name": "ChunkGatedDeltaRule",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "out",
+          "shape": "[B * S, num_value_heads, value_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "final_state",
+          "shape": "[B, num_value_heads, value_head_dim, key_head_dim]"
+        }
+      ],
+      "params": []
+    },
+    "asset:49": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size * intermediate_dim"
+      },
+      "description": "TP Column-Parallel Linear: weight sharded along out_features dimension",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.x_proj",
+      "name": "ColumnParallelLinear",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y_shard",
+          "shape": "[B, S, intermediate_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "weight_shard",
+          "shape": "[intermediate_dim, hidden_size]"
+        }
+      ]
+    },
+    "asset:48": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size * intermediate_dim"
+      },
+      "description": "TP Column-Parallel Linear with quantization: weight sharded along out_features, output quantized",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "linear.column_parallel_quant",
+      "name": "ColumnParallelLinearQuant",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "y_shard",
+          "shape": "[B, S, intermediate_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "weight_shard",
+          "shape": "[intermediate_dim, hidden_size]"
+        }
+      ]
+    },
+    "asset:57": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp16": "4 * B * S * hidden_size * head_dim"
+      },
+      "description": "KV Cache Compressor: compresses key-value representations for reduced memory footprint",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "kv",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.compressor",
+      "name": "Compressor",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "kv",
+          "shape": "[B, S // compress_ratio, head_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "wkv",
+          "shape": "[head_dim, hidden_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "wgate",
+          "shape": "[head_dim, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "ape",
+          "shape": "[compress_ratio, head_dim]"
+        }
+      ]
+    },
+    "asset:14": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "B * S * max(top_k - 1, 0)"
+      },
+      "compute_unit": "vector",
+      "description": "Prefix sum over the token axis for low-latency MoE routing metadata (aclnnCumsum)",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "x",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int64",
+          "name": "axis",
+          "shape": "[1]"
+        }
+      ],
+      "module": "moe.routing_prefix_sum",
+      "name": "Cumsum",
+      "outputs": [
+        {
+          "dtype": "int64",
+          "name": "y",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "params": []
+    },
+    "asset:15": {
+      "category": "Quantization",
+      "compute_flops": {
+        "bf16": "4 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Dynamic block-MX quantization of activations: per-64-element E8M0 scale and FP8 result (aclnnDynamicMxQuant)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "quantization",
+      "name": "DynamicMxQuant",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "y",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "mxscale",
+          "shape": "[B * S, (hidden_size + 63) // 64, 2]"
+        }
+      ],
+      "params": []
+    },
+    "asset:75": {
+      "category": "Quantization",
+      "compute_flops": {
+        "bf16": "3 * B * S * hidden_size"
+      },
+      "description": "Dynamic quantization",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "quantization",
+      "name": "DynamicQuant",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "out",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[B, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:16": {
+      "category": "Quantization",
+      "compute_flops": {
+        "bf16": "3 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Dynamic per-token quantization to INT8 with a smoothing factor (aclnnDynamicQuantV2); smooth_scales and group_index are optional and live in the implementation class",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "quantization",
+      "name": "DynamicQuantV2",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[B, S]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "offset",
+          "shape": "[B, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:45": {
+      "category": "Flow",
+      "compute_flops": {},
+      "description": "模型出口，标记推理终点",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "in",
+          "shape": "[B, S, vocab_size]"
+        }
+      ],
+      "module": "END",
+      "name": "END",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "out",
+          "shape": "[B, S, vocab_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:41": {
+      "category": "Embedding",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "Token embedding lookup: gather rows of the table by token id (aclnnEmbedding)",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "x",
+          "shape": "[B, S]"
+        },
+        {
+          "dtype": "int64",
+          "name": "indices",
+          "shape": "[B, S]"
+        }
+      ],
+      "module": "embed",
+      "name": "Embedding",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:42": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp8": "2 * B * S * (engram_max_ngram_size - 1) * engram_n_heads * engram_head_dim * (hc_mult + 1) * hidden_size"
+      },
+      "compute_unit": "mix",
+      "description": "Engram projection and signed-square-root residual gate",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "l1_lookup_reduced",
+          "shape": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "l0_ffn_state",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        }
+      ],
+      "module": "engram.wkv",
+      "name": "EngramGate",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "l1_engram",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp8",
+          "name": "wkv",
+          "shape": "[(hc_mult + 1) * hidden_size, (engram_max_ngram_size - 1) * engram_n_heads * engram_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "q_weight",
+          "shape": "[hc_mult, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "k_weight",
+          "shape": "[hc_mult, hidden_size]"
+        }
+      ]
+    },
+    "asset:43": {
+      "category": "MLA",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "Sparse Engram row lookup with full sharded table residency",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "token_ids",
+          "shape": "[B, S]"
+        }
+      ],
+      "module": "engram.lookup",
+      "name": "EngramLookup",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "l1_lookup",
+          "shape": "[B, S, (engram_max_ngram_size - 1) * engram_n_heads, engram_head_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp8",
+          "name": "weight",
+          "shape": "[engram_num_embeddings[0] + 0, engram_head_dim]"
+        },
+        {
+          "dtype": "int8",
+          "name": "scale",
+          "shape": "[engram_num_embeddings[0] + 0, engram_head_dim // 32]"
+        }
+      ]
+    },
+    "asset:44": {
+      "category": "Communication",
+      "compute_flops": {},
+      "compute_unit": "communication",
+      "description": "Packed Engram host-to-device prefetch; total cost is full H2D service; graph latency accounts for overlap",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "token_ids",
+          "shape": "[B, S]"
+        }
+      ],
+      "module": "engram.prefetch",
+      "name": "EngramPrefetch",
+      "outputs": [],
+      "params": []
+    },
+    "asset:2": {
+      "category": "Attention",
+      "compute_flops": {
+        "bf16": "2 * B * num_attention_heads // tp_size * S * seq_len * qk_head_dim + 2 * B * num_attention_heads // tp_size * S * seq_len * qk_nope_head_dim"
+      },
+      "compute_unit": "mix",
+      "description": "FlashAttention score computation: softmax(QK^T * scale + mask) @ V with on-line softmax, BNSD layout; real_shift, drop_mask, padding_mask, atten_mask and the actual-seq/scale/rope inputs are all optional and live in the implementation class (aclnnFlashAttentionScore)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B, num_attention_heads // tp_size, S, qk_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key",
+          "shape": "[B, num_attention_heads // tp_size, seq_len, qk_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value",
+          "shape": "[B, num_attention_heads // tp_size, seq_len, qk_nope_head_dim]"
+        }
+      ],
+      "module": "attn.core",
+      "name": "FlashAttentionScore",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "softmax_max",
+          "shape": "[B, num_attention_heads // tp_size, S, 8]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "softmax_sum",
+          "shape": "[B, num_attention_heads // tp_size, S, 8]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "softmax_out",
+          "shape": "[0, 0, 0, 0]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "attention_out",
+          "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]"
+        }
+      ],
+      "params": []
+    },
+    "asset:17": {
+      "category": "LinearAttention",
+      "compute_flops": {
+        "fp32": "9 * B * S * num_heads"
+      },
+      "compute_unit": "vector",
+      "description": "GDN (Gated Delta Network) 融合门控：一次 kernel 出两路——g = -exp(a_log) * softplus(a + dt_bias)，beta_output = sigmoid(b)。softplus 取 (1/beta)*ln(1+exp(beta*(a+dt_bias)))，当 beta*(a+dt_bias) > threshold 时退线性近似防溢出。真机 op_def：ops-transformer/experimental/attention/fused_gdn_gating/op_host/fused_gdn_gating_def.cpp（a_log/a/b/dt_bias 全 REQUIRED，g/beta_output 全 REQUIRED，beta/threshold 是 OPTIONAL 属性、落实现类）。张量名序与 op_def 声明序逐位一致（校验器按序比，错了直接判违规）；校准侧要的 numel 是主数据路 a 的逐元素数，而族级 elementwise 取形固定读 inputs[0]、这里却是常量 a_log，故由算子类用 `calibration_semantics` 显式指到 a（见 `layers/elementwise/fused_gdn_gating.py`）。族目录按语义域取 elementwise（纯向量，无 cube 通道），与真机 op_def 所在的 attention 目录是两回事。profiling 实测：input '48;8192,48;8192,48;48'（a/b 各 48 个长 8192 的 run，a_log/dt_bias 各 48 个标量），output '1,8192,48;1,8192,48'，故主数据路为扁平 [B * S, num_heads] 且 a/b 与 a_log/dt_bias 数量相等（每 head 一项）。g 真机固定 FLOAT32，beta_output 与 b 同 dtype。",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "a_log",
+          "shape": "[num_heads]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "a",
+          "shape": "[B * S, num_heads]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "b",
+          "shape": "[B * S, num_heads]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "dt_bias",
+          "shape": "[num_heads]"
+        }
+      ],
+      "module": "attn.fused_gdn_gating",
+      "name": "FusedGdnGating",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "g",
+          "shape": "[1, B * S, num_heads]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "beta_output",
+          "shape": "[1, B * S, num_heads]"
+        }
+      ],
+      "params": []
+    },
+    "asset:3": {
+      "category": "Attention",
+      "compute_flops": {
+        "bf16": "2 * B * num_attention_heads // tp_size * S * kv_len * qk_head_dim + 2 * B * num_attention_heads // tp_size * S * kv_len * qk_nope_head_dim"
+      },
+      "compute_unit": "mix",
+      "description": "Fused inference attention (aclnnFusedInferAttentionScore V4): softmax(QK^T * scale) @ V, BNSD layout. The 31 inputs are declared in op_def order; key/value/several scale inputs are DYNAMIC rather than OPTIONAL, so the naming rule requires every one of them to be registered here. Attributes: num_heads=1, scale=1.0, pre_tokens/next_tokens=2147483647, input_layout=\"BSH\", num_key_value_heads=0, sparse_mode=0, inner_precise=1, block_size=0, antiquant_mode=0, softmax_lse_flag=false, out_dtype=0 (ops-transformer/attention/fused_infer_attention_score/op_host/fused_infer_attention_score_def.cpp)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B, num_attention_heads // tp_size, S, qk_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "pse_shift",
+          "shape": "[B, num_attention_heads // tp_size, S, kv_len]"
+        },
+        {
+          "dtype": "bool",
+          "name": "atten_mask",
+          "shape": "[2048, 2048]"
+        },
+        {
+          "dtype": "int64",
+          "name": "actual_seq_lengths",
+          "shape": "[B]"
+        },
+        {
+          "dtype": "int64",
+          "name": "actual_seq_lengths_kv",
+          "shape": "[B]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dequant_scale1",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "quant_scale1",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dequant_scale2",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "quant_scale2",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "quant_offset2",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "antiquant_scale",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "antiquant_offset",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "int32",
+          "name": "block_table",
+          "shape": "[B, max_num_blocks]"
+        },
+        {
+          "dtype": "int64",
+          "name": "query_padding_size",
+          "shape": "[B]"
+        },
+        {
+          "dtype": "int64",
+          "name": "kv_padding_size",
+          "shape": "[B]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_antiquant_scale",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_antiquant_offset",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value_antiquant_scale",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value_antiquant_offset",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_shared_prefix",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value_shared_prefix",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_nope_head_dim]"
+        },
+        {
+          "dtype": "int64",
+          "name": "actual_shared_prefix_len",
+          "shape": "[B]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "query_rope",
+          "shape": "[B, num_attention_heads // tp_size, S, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_rope",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_rope_antiquant_scale",
+          "shape": "[B, num_key_value_heads // tp_size, kv_len, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dequant_scale_query",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "learnable_sink",
+          "shape": "[num_attention_heads // tp_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "q_start_idx",
+          "shape": "[1]"
+        },
+        {
+          "dtype": "int64",
+          "name": "kv_start_idx",
+          "shape": "[1]"
+        }
+      ],
+      "module": "attn.fia",
+      "name": "FusedInferAttentionScore",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "attention_out",
+          "shape": "[B, num_attention_heads // tp_size, S, qk_nope_head_dim]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "softmax_lse",
+          "shape": "[B, num_attention_heads // tp_size, S, 1]"
+        }
+      ],
+      "params": []
+    },
+    "asset:47": {
+      "category": "MHC",
+      "compute_flops": {
+        "bf16": "2 * B * S * hc_count * hidden_size * (2 * hc_lowrank + hc_count)"
+      },
+      "description": "Low-rank Hyper-Connection mix and residual injection",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "hyper_state",
+          "shape": "[B, S, hc_count * hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "block_output",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "hyper_connection",
+      "name": "GatedResidual",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "block_input",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "hyper_state",
+          "shape": "[B, S, hc_count * hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "norm_scale",
+          "shape": "[hc_count * hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "down_inject_weight",
+          "shape": "[hc_lowrank + hc_count, hc_count * hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "up_weight",
+          "shape": "[hc_count * hidden_size, hc_lowrank]"
+        }
+      ]
+    },
+    "asset:18": {
+      "category": "Embedding",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "Indexed row gather from a table; the real-machine kernel behind token embedding lookup (aclnnGatherV2)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[vocab_size, hidden_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "indices",
+          "shape": "[B, S]"
+        },
+        {
+          "dtype": "int64",
+          "name": "axis",
+          "shape": "[1]"
+        }
+      ],
+      "module": "embed",
+      "name": "GatherV2",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:19": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp32": "7 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Gemma-style RMS normalization with offset scale y = x * rstd * (1 + gamma); same kernel as RmsNorm (gemma_rms_norm_apt.cpp includes rms_norm/arch35/rms_norm_regbase_perf.h with IS_GEMMA=true), whose only extra work is one Adds(gamma, 1.0f) per element -> 7 vector ops and no SFU; profiled at [8192, 5120] + [5120] -> [8192, 5120] + [8192, 1]",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "norm.gemma_rms",
+      "name": "GemmaRmsNorm",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "rstd",
+          "shape": "[B * S, 1]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "gamma",
+          "shape": "[hidden_size]"
+        }
+      ]
+    },
+    "asset:50": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp16": "2 * B * S * expert_groups * hidden_size * 2 * moe_intermediate_size"
+      },
+      "description": "Grouped Matrix Multiplication for MoE experts",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "moe.routed_expert.gate_up_proj",
+      "name": "GroupMatMul",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "expert_out",
+          "shape": "[B, S, 2 * moe_intermediate_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "weight",
+          "shape": "[expert_groups, 2 * moe_intermediate_size, hidden_size]"
+        }
+      ]
+    },
+    "asset:29": {
+      "category": "Linear",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * moe_intermediate_size"
+      },
+      "compute_unit": "cube",
+      "description": "Grouped matrix multiplication for MoE experts; every tensor except group_list and per_token_scale is declared DYNAMIC (tensor-list), the length of which is itself the group count (aclnnGroupedMatmul)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight",
+          "shape": "[expert_groups, hidden_size, moe_intermediate_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "bias",
+          "shape": "[expert_groups, moe_intermediate_size]"
+        },
+        {
+          "dtype": "uint64",
+          "name": "scale",
+          "shape": "[expert_groups]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "offset",
+          "shape": "[expert_groups]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "antiquant_scale",
+          "shape": "[expert_groups, moe_intermediate_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "antiquant_offset",
+          "shape": "[expert_groups, moe_intermediate_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "group_list",
+          "shape": "[expert_groups]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "per_token_scale",
+          "shape": "[B * S]"
+        }
+      ],
+      "module": "moe.routed_expert.down_proj",
+      "name": "GroupedMatmul",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, moe_intermediate_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:30": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp8": "2 * B * S * hidden_size * 2 * moe_intermediate_size"
+      },
+      "compute_unit": "mix",
+      "description": "MoE grouped gate-up GEMM fused with dequant, SwiGLU and block-MX quantization (aclnnGroupedMatmulSwigluQuantV2)",
+      "inputs": [
+        {
+          "dtype": "fp8",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "x_scale",
+          "shape": "[B * S, (hidden_size + 63) // 64, 2]"
+        },
+        {
+          "dtype": "int64",
+          "name": "group_list",
+          "shape": "[expert_groups]"
+        }
+      ],
+      "module": "moe.routed_expert.gate_up_proj",
+      "name": "GroupedMatmulSwigluQuantV2",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "y",
+          "shape": "[B * S, moe_intermediate_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "y_scale",
+          "shape": "[B * S, (moe_intermediate_size + 63) // 64, 2]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp8",
+          "name": "weight",
+          "shape": "[expert_groups, 2 * moe_intermediate_size, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "weight_scale",
+          "shape": "[expert_groups, 2 * moe_intermediate_size, (hidden_size + 63) // 64, 2]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "weight_assist_matrix",
+          "shape": "[expert_groups, 2 * moe_intermediate_size]"
+        }
+      ]
+    },
+    "asset:58": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp16": "factor * 2 * B * S // compress_ratio * index_head_dim"
+      },
+      "description": "Index Compressor Epilog: reconstructs routing indices from compressed representation",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "compressed_idx",
+          "shape": "[B, S // compress_ratio, index_head_dim]"
+        }
+      ],
+      "module": "attn.compressor",
+      "name": "IndexCompressorEpilog",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "indices",
+          "shape": "[B, S // compress_ratio, index_head_dim]"
+        }
+      ],
+      "params": [],
+      "red_tips": "factor=1(prefill), 0.25(decode, compress_ratio=4), 0.008(decode, compress_ratio=128)"
+    },
+    "asset:59": {
+      "category": "MLA",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * index_n_heads",
+        "fp8": "2 * B * S * q_lora_rank * index_n_heads * index_head_dim"
+      },
+      "description": "Index Prolog DeepSeek-V4: pre-processing step that prepares hidden states for index-based expert routing",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "qr",
+          "shape": "[B, S, q_lora_rank]"
+        }
+      ],
+      "module": "attn.indexer_proj",
+      "name": "IndexPrologV4",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "query",
+          "shape": "[B, S, index_n_heads]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "query",
+          "shape": "[B, S, index_n_heads * index_head_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "weight_proj",
+          "shape": "[index_n_heads, hidden_size]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "q_b",
+          "shape": "[index_n_heads * index_head_dim, q_lora_rank]"
+        }
+      ]
+    },
+    "asset:60": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp16": "factor * 2 * B * S // compress_ratio * head_dim"
+      },
+      "description": "KV Compressor Epilog: reconstructs KV cache from compressed representation",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "kv",
+          "shape": "[B, S // compress_ratio, head_dim]"
+        }
+      ],
+      "module": "attn.compressor",
+      "name": "KVCompressorEpilog",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "kv",
+          "shape": "[B, S // compress_ratio, head_dim]"
+        }
+      ],
+      "params": [],
+      "tips": "factor=1(prefill) 0.25(decode, compress_ratio=4), 0.008(decode, compress_ratio=128)"
+    },
+    "asset:4": {
+      "category": "Attention",
+      "compute_flops": {
+        "fp8": "2 * B * S * num_attention_heads // tp_size * index_topk * (2 * kv_lora_rank + qk_rope_head_dim)"
+      },
+      "compute_unit": "mix",
+      "description": "Sparse FlashAttention with FP8-quantized paged K/V (aclnnKvQuantSparseFlashAttention); the dequant scales, block table and sequence-length tensors are OPTIONAL and not modeled",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank + qk_rope_head_dim]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "key",
+          "shape": "[B, seq_len, 1, kv_lora_rank + qk_rope_head_dim]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "value",
+          "shape": "[B, seq_len, 1, kv_lora_rank]"
+        },
+        {
+          "dtype": "int32",
+          "name": "sparse_indices",
+          "shape": "[B, S, index_topk]"
+        }
+      ],
+      "module": "attn.sparse_full",
+      "name": "KvQuantSparseFlashAttention",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "attention_out",
+          "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]"
+        }
+      ],
+      "params": []
+    },
+    "asset:20": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp32": "7 * B * S * index_head_dim"
+      },
+      "compute_unit": "vector",
+      "description": "LayerNorm with mean/variance reductions, optional scale and bias (aclnnLayerNormV4)",
+      "inputs": [
+        {
+          "dtype": "fp32",
+          "name": "x",
+          "shape": "[B, S, index_head_dim]"
+        },
+        {
+          "dtype": "int64",
+          "name": "normalized_shape",
+          "shape": "[1]"
+        }
+      ],
+      "module": "attn.dsa_indexer.norm",
+      "name": "LayerNormV4",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "y",
+          "shape": "[B, S, index_head_dim]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "mean",
+          "shape": "[B, S, 1]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "rstd",
+          "shape": "[B, S, 1]"
+        }
+      ],
+      "params": []
+    },
+    "asset:63": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp16": "5 * B * S * index_n_heads * seq_len // compress_ratio",
+        "fp8": "2 * B * S * index_n_heads * index_head_dim * seq_len // compress_ratio"
+      },
+      "description": "Lightning Indexer: fast approximate nearest-neighbor index for MoE expert routing",
+      "inputs": [
+        {
+          "dtype": "fp8",
+          "name": "query",
+          "shape": "[B, S, index_n_heads, index_head_dim]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "key",
+          "shape": "[B, seq_len // compress_ratio, index_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weights",
+          "shape": "[B, S, index_n_heads]"
+        }
+      ],
+      "module": "attn.indexer",
+      "name": "LightningIndexer",
+      "outputs": [
+        {
+          "dtype": "int64",
+          "name": "topk_indices",
+          "shape": "[B, S, seq_len // compress_ratio]"
+        }
+      ],
+      "params": []
+    },
+    "asset:51": {
+      "category": "Linear",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * hidden_size"
+      },
+      "description": "Dense linear transformation Y = X @ W^T",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.x_proj",
+      "name": "Linear",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "weight",
+          "shape": "[hidden_size, hidden_size]"
+        }
+      ]
+    },
+    "asset:54": {
+      "category": "MHC",
+      "compute_flops": {
+        "fp32": "6 * B * S * hc_mult * hidden_size + 2 * B * S * hc_mult * hidden_size * hc_mult + 11 * B * S * hc_mult"
+      },
+      "description": "Multi-Head Cache Head: per-depth token prediction with shared embedding head",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        }
+      ],
+      "module": "mhc_head",
+      "name": "MHCHead",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "logits",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp32",
+          "name": "hc_head_fn",
+          "shape": "[hc_mult, hc_mult * hidden_size]"
+        }
+      ]
+    },
+    "asset:55": {
+      "category": "MHC",
+      "compute_flops": {
+        "fp32": "2 * B * S * hc_mult * hidden_size + B * S * hc_mult * (hc_mult + hc_mult - 1) * hidden_size"
+      },
+      "description": "hc_post for deepseek-v4: projects MHC output back to hidden_size",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "residual",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "post",
+          "shape": "[B, S, hc_mult]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "comb",
+          "shape": "[B, S, hc_mult, hc_mult]"
+        }
+      ],
+      "module": "mhc_post",
+      "name": "MHCPost",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:56": {
+      "category": "MHC",
+      "compute_flops": {
+        "fp32": "6 * B * S * hc_mult * hidden_size + 2 * B * S * hc_mult * hidden_size * (2 + hc_mult) * hc_mult"
+      },
+      "description": "hc_pre in deepseek-v4: projects hidden states for MHC computation",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hc_mult, hidden_size]"
+        }
+      ],
+      "module": "mhc_pre",
+      "name": "MHCPre",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "post",
+          "shape": "[B, S, hc_mult]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "comb",
+          "shape": "[B, S, hc_mult * hc_mult]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp32",
+          "name": "hc_fn",
+          "shape": "[(2+hc_mult)*hc_mult, hc_mult * hidden_size]"
+        }
+      ]
+    },
+    "asset:61": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp16": "2 * B * S * o_groups * o_lora_rank // o_tp_size * num_attention_heads * head_dim // o_groups",
+        "fp8": "2 * B * S * o_groups * o_lora_rank // o_tp_size * hidden_size"
+      },
+      "description": "MLA Epilog DeepSeek-V4: projects attention output back to hidden_size after Multi-Head Latent Attention",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "attn_out",
+          "shape": "[B, S, o_groups, num_attention_heads * head_dim // o_groups]"
+        }
+      ],
+      "module": "attn.o_proj",
+      "name": "MLAEpilogV4",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "wo_a",
+          "shape": "[o_groups * o_lora_rank // o_tp_size, num_attention_heads * head_dim // o_groups]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "wo_b",
+          "shape": "[hidden_size, o_groups * o_lora_rank // o_tp_size]"
+        }
+      ]
+    },
+    "asset:62": {
+      "category": "MLA",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size * q_lora_rank + 2 * B * S * hidden_size * head_dim",
+        "fp32": "4 * B * S * (q_lora_rank + num_attention_heads // tp_size * head_dim + head_dim)",
+        "int8": "2 * B * S * q_lora_rank * num_attention_heads // tp_size * head_dim"
+      },
+      "description": "MLA Prolog DeepSeek-V4: projects hidden states to Q and compressed KV for Multi-Head Latent Attention",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.x_proj",
+      "name": "MLAPrologV4",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "query_nope",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "key_nope",
+          "shape": "[B, S, 1, head_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "wq_a",
+          "shape": "[q_lora_rank, hidden_size]"
+        },
+        {
+          "dtype": "int8",
+          "name": "wq_b",
+          "shape": "[num_attention_heads // tp_size * head_dim, q_lora_rank]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "wkv",
+          "shape": "[head_dim, hidden_size]"
+        }
+      ]
+    },
+    "asset:52": {
+      "category": "Linear",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * intermediate_size"
+      },
+      "description": "Standard matrix multiplication Y = X @ W^T",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "mlp.gate_up_proj",
+      "name": "MatMul",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, intermediate_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "weight",
+          "shape": "[intermediate_size, hidden_size]"
+        }
+      ]
+    },
+    "asset:7": {
+      "category": "Linear",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * intermediate_size"
+      },
+      "description": "Dense GEMM Y = X @ W^T (aclnnMatmul)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x1",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "mlp.gate_up_proj",
+      "name": "MatMulV3",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, intermediate_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "x2",
+          "shape": "[intermediate_size, hidden_size]"
+        }
+      ]
+    },
+    "asset:31": {
+      "category": "MLA",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * q_lora_rank + 2 * B * S * q_lora_rank * num_attention_heads // tp_size * (kv_lora_rank + qk_rope_head_dim) + 2 * B * S * hidden_size * (kv_lora_rank + qk_rope_head_dim) + 2 * B * S * num_attention_heads // tp_size * qk_nope_head_dim * kv_lora_rank"
+      },
+      "compute_unit": "mix",
+      "description": "MLA prefill prolog: Q/KV down- and up-projections, the Cq/Ckv RMS norms, RoPE and the paged KV-cache write, all in one kernel (aclnnMlaPrologV3); cache_index, the dequant/quant scales, actual_seq_len and k_nope_clip_alpha are optional and live in the implementation class",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "token_x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight_dq",
+          "shape": "[hidden_size, q_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight_uq_qr",
+          "shape": "[q_lora_rank, num_attention_heads // tp_size * (kv_lora_rank + qk_rope_head_dim)]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight_uk",
+          "shape": "[num_attention_heads // tp_size, qk_nope_head_dim, kv_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "weight_dkv_kr",
+          "shape": "[hidden_size, kv_lora_rank + qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "rmsnorm_gamma_cq",
+          "shape": "[q_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "rmsnorm_gamma_ckv",
+          "shape": "[kv_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "rope_sin",
+          "shape": "[B, S, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "rope_cos",
+          "shape": "[B, S, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "kv_cache",
+          "shape": "[B, 1, seq_len, kv_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "kr_cache",
+          "shape": "[B, 1, seq_len, qk_rope_head_dim]"
+        }
+      ],
+      "module": "attn.x_proj",
+      "name": "MlaPrologV3",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B, S, num_attention_heads // tp_size, kv_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "query_rope",
+          "shape": "[B, S, num_attention_heads // tp_size, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "kv_cache",
+          "shape": "[B, 1, seq_len, kv_lora_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "kr_cache",
+          "shape": "[B, 1, seq_len, qk_rope_head_dim]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dequant_scale_q_nope",
+          "shape": "[B * S, num_attention_heads // tp_size, 1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "query_norm",
+          "shape": "[B, S, q_lora_rank]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dequant_scale_q_norm",
+          "shape": "[B * S, 1]"
+        }
+      ],
+      "params": []
+    },
+    "asset:39": {
+      "category": "Communication",
+      "compute_flops": {},
+      "description": "MoE Expert Output Combine via AllToAll: weighted sum back to token sequence",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "expert_out",
+          "shape": "[top_k, B, S, hidden_size]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_ids",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "module": "moe.combine",
+      "name": "MoECombine",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:40": {
+      "category": "Communication",
+      "compute_flops": {},
+      "description": "MoE Token Dispatch via AllToAll: route tokens to assigned experts",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_ids",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "module": "moe.dispatch",
+      "name": "MoEDispatch",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "dispatched_x",
+          "shape": "[top_k, B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:64": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "2 * B * S * hidden_size * num_experts + 5 * B * S * num_experts"
+      },
+      "description": "MoE Gate: computes expert affinity scores from hidden states",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "moe.gate",
+      "name": "MoEGate",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "scores",
+          "shape": "[B, S, num_experts]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp32",
+          "name": "gate_weight",
+          "shape": "[num_experts, hidden_size]"
+        }
+      ]
+    },
+    "asset:65": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "2 * B * S * hidden_size * num_experts + 7 * B * S * num_experts"
+      },
+      "description": "MoE Gate with Hash: hash-based expert routing for load-balanced deterministic assignment",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "token_ids",
+          "shape": "[B, S]"
+        }
+      ],
+      "module": "moe.gate_topk",
+      "name": "MoEGateHashTopK",
+      "outputs": [
+        {
+          "dtype": "int32",
+          "name": "expert_indices",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "expert_weights",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp32",
+          "name": "gate_weight",
+          "shape": "[num_experts, hidden_size]"
+        }
+      ]
+    },
+    "asset:66": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "2 * B * S * hidden_size * num_experts + 7 * B * S * num_experts"
+      },
+      "description": "MoE Router with Top-K gating: scores = softmax(TopK(X @ W_gate))",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "moe.gate_topk",
+      "name": "MoEGateTopK",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "topk_weights",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int64",
+          "name": "topk_indices",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp32",
+          "name": "gate_weight",
+          "shape": "[num_experts, hidden_size]"
+        }
+      ]
+    },
+    "asset:67": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "2 * B * S * num_experts + 3 * B * S * top_k"
+      },
+      "description": "MoE Top-K: selects top-k experts and normalizes weights via softmax",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "scores",
+          "shape": "[B, S, num_experts]"
+        }
+      ],
+      "module": "moe.topk",
+      "name": "MoETopK",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "topk_weights",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int64",
+          "name": "topk_indices",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "params": []
+    },
+    "asset:34": {
+      "category": "Communication",
+      "compute_flops": {},
+      "compute_unit": "communication",
+      "description": "DeepEP low-latency MoE expert combine via AllToAll: gather expert outputs back to token order (aclnnMoeDistributeCombineV3)",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "context",
+          "shape": "[1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "expand_x",
+          "shape": "[top_k, B, S, hidden_size]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_ids",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int32",
+          "name": "assist_info_for_combine",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int32",
+          "name": "ep_send_counts",
+          "shape": "[ep_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "expert_scales",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "module": "moe.combine",
+      "name": "MoeDistributeCombineV3",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:35": {
+      "category": "Communication",
+      "compute_flops": {},
+      "compute_unit": "communication",
+      "description": "DeepEP low-latency MoE token dispatch via AllToAll: route tokens to expert-hosting ranks (aclnnMoeDistributeDispatchV3)",
+      "inputs": [
+        {
+          "dtype": "int64",
+          "name": "context",
+          "shape": "[1]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_ids",
+          "shape": "[B, S, top_k]"
+        }
+      ],
+      "module": "moe.dispatch",
+      "name": "MoeDistributeDispatchV3",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "expand_x",
+          "shape": "[top_k, B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "dynamic_scales",
+          "shape": "[top_k, B, S, 1]"
+        },
+        {
+          "dtype": "int32",
+          "name": "assist_info_for_combine",
+          "shape": "[B, S, top_k]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_token_nums",
+          "shape": "[n_routed_experts]"
+        },
+        {
+          "dtype": "int32",
+          "name": "ep_recv_count",
+          "shape": "[ep_size]"
+        },
+        {
+          "dtype": "int32",
+          "name": "tp_recv_count",
+          "shape": "[tp_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "expand_scales",
+          "shape": "[top_k, B, S, 1]"
+        }
+      ],
+      "params": []
+    },
+    "asset:33": {
+      "category": "MoE",
+      "compute_flops": {
+        "fp32": "6 * B * S * num_experts"
+      },
+      "compute_unit": "vector",
+      "description": "Fused MoE gating: score, optional bias, group-limited top-k selection and renorm in one kernel; the token axis is flattened, x is strictly 2D (aclnnMoeGatingTopK)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, num_experts]"
+        }
+      ],
+      "module": "moe.gate_topk",
+      "name": "MoeGatingTopK",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, top_k]"
+        },
+        {
+          "dtype": "int32",
+          "name": "expert_idx",
+          "shape": "[B * S, top_k]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "out",
+          "shape": "[B * S, num_experts]"
+        }
+      ],
+      "params": []
+    },
+    "asset:21": {
+      "category": "Elementwise",
+      "compute_flops": {
+        "bf16": "B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Element-wise multiply y = x1 * x2 with numpy-style broadcasting; no attributes (ops-math/math/mul/op_host/mul_def.cpp)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x1",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "x2",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "mlp.act_fn",
+      "name": "Mul",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:71": {
+      "category": "Embedding",
+      "compute_flops": {
+        "bf16": "2 * B * S * ple_embed_dim * (hc_count * hidden_size + hidden_size)"
+      },
+      "description": "N-gram embedding, gated injection and short convolution",
+      "inputs": [
+        {
+          "dtype": "int32",
+          "name": "input_ids",
+          "shape": "[B, S]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "hyper_state",
+          "shape": "[B, S, hc_count * hidden_size]"
+        }
+      ],
+      "module": "ple",
+      "name": "PLELayer",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "ple_out",
+          "shape": "[B, S, hc_count * hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "ngram_embedding",
+          "shape": "[ngram_vocab_size_base * (ngram_size - 1) * heads_per_ngram, ple_embed_dim // ((ngram_size - 1) * heads_per_ngram)]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key_weight",
+          "shape": "[hc_count * hidden_size, ple_embed_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value_weight",
+          "shape": "[hidden_size, ple_embed_dim]"
+        }
+      ]
+    },
+    "asset:74": {
+      "category": "Attention",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * (indexer_n_heads + indexer_kv_heads) * indexer_head_dim + 2 * B * S * indexer_n_heads * indexer_head_dim * ((kv_len + indexer_compress_ratio - 1) // indexer_compress_ratio)"
+      },
+      "description": "Compressed-key sparse-attention projection, scoring and top-k selection",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.qsa_indexer",
+      "name": "QSAIndexer",
+      "outputs": [
+        {
+          "dtype": "int32",
+          "name": "selected_indices",
+          "shape": "[B, S, min(indexer_budget + indexer_compress_ratio - 1, kv_len)]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "index_qk_weight",
+          "shape": "[(indexer_n_heads + indexer_kv_heads) * indexer_head_dim, hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "q_norm_scale",
+          "shape": "[indexer_head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "k_norm_scale",
+          "shape": "[indexer_head_dim]"
+        }
+      ]
+    },
+    "asset:8": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp8": "2 * B * S * hidden_size * intermediate_size"
+      },
+      "compute_unit": "cube",
+      "description": "Quantized batch matmul Y = X @ W^T with per-tensor dequant scale (aclnnQuantMatmulV3)",
+      "inputs": [
+        {
+          "dtype": "fp8",
+          "name": "x1",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "mlp.gate_up_proj",
+      "name": "QuantBatchMatmulV3",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, intermediate_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp8",
+          "name": "x2",
+          "shape": "[intermediate_size, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[1]"
+        }
+      ]
+    },
+    "asset:32": {
+      "category": "Attention",
+      "compute_flops": {
+        "fp16": "3 * B * S * num_attention_heads",
+        "int8": "2 * B * S * num_attention_heads * head_dim"
+      },
+      "compute_unit": "mix",
+      "description": "Quantized DSA lightning indexer: INT8 Q@K score, dequant by scaleQ*scaleK, ReLU and weighted head reduction, then top-k selection; BSND layout, key head count is 1 (aclnnQuantLightningIndexer)",
+      "inputs": [
+        {
+          "dtype": "int8",
+          "name": "query",
+          "shape": "[B, S, num_attention_heads, head_dim]"
+        },
+        {
+          "dtype": "int8",
+          "name": "key",
+          "shape": "[B, S, 1, head_dim]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "weights",
+          "shape": "[B, S, num_attention_heads]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "query_dequant_scale",
+          "shape": "[B, S, num_attention_heads]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "key_dequant_scale",
+          "shape": "[B, S, 1]"
+        }
+      ],
+      "module": "attn.dsa_indexer",
+      "name": "QuantLightningIndexer",
+      "outputs": [
+        {
+          "dtype": "int32",
+          "name": "sparse_indices",
+          "shape": "[B, S, 1, sparse_count]"
+        }
+      ],
+      "params": []
+    },
+    "asset:69": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp32": "5 * B * S * hidden_size"
+      },
+      "description": "Gated RMS Normalization: rms_norm(x) * gate where gate is a learned or computed parameter",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "gate",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "norm.rms_gated",
+      "name": "RMSNormGated",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "weight",
+          "shape": "[hidden_size]"
+        }
+      ]
+    },
+    "asset:70": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size",
+        "fp32": "4 * B * S * hidden_size"
+      },
+      "description": "RMS Normalization with quantization: quant(rms_norm(x))",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "norm",
+      "name": "RMSNormQuant",
+      "outputs": [
+        {
+          "dtype": "int8",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[B, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:22": {
+      "category": "Normalization",
+      "compute_flops": {
+        "fp32": "6 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Root mean square normalization with per-channel gamma (aclnnRmsNorm); rstd is a required output. A5 regbase kernel counts 6 vector ops per element and no SFU (arch35: Mul square, fold/head Add tree, Mul(rstd), Mul(gamma); rstd comes from Adds(eps)/Div/Sqrt/Newton-Raphson, all inside __VEC_SCOPE__)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, hidden_size]"
+        }
+      ],
+      "module": "norm",
+      "name": "RmsNorm",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B * S, hidden_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "rstd",
+          "shape": "[B * S, 1]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "gamma",
+          "shape": "[hidden_size]"
+        }
+      ]
+    },
+    "asset:72": {
+      "category": "Position",
+      "compute_flops": {
+        "bf16": "3 * B * S * num_attention_heads // tp_size * head_dim"
+      },
+      "description": "Complex-number Rotary Position Embedding: applies RoPE in complex domain for better precision",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        }
+      ],
+      "module": "attn",
+      "name": "RopeComplex",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        }
+      ],
+      "params": []
+    },
+    "asset:73": {
+      "category": "Position",
+      "compute_flops": {
+        "bf16": "6 * B * S * num_attention_heads // tp_size * head_dim"
+      },
+      "description": "Interleaved Rotary Position Embedding: applies RoPE with alternating interleaved frequency bands",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "q",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "k",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        }
+      ],
+      "module": "pos.rope_interleave",
+      "name": "RopeInterLeave",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "q_out",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "k_out",
+          "shape": "[B, S, num_attention_heads // tp_size, head_dim]"
+        }
+      ],
+      "params": []
+    },
+    "asset:53": {
+      "category": "Linear",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size * intermediate_dim"
+      },
+      "description": "TP Row-Parallel Linear: weight sharded along in_features dimension, all-reduce on output",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x_shard",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.o_proj",
+      "name": "RowParallelLinear",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, intermediate_dim]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "fp16",
+          "name": "weight_shard",
+          "shape": "[intermediate_dim, hidden_size]"
+        }
+      ]
+    },
+    "asset:46": {
+      "category": "Flow",
+      "compute_flops": {},
+      "description": "模型入口，标记推理起点",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "out",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "START",
+      "name": "START",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "out",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:23": {
+      "category": "Attention",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "In-place indexed write into the DSA index cache (aclnnScatterNdUpdate)",
+      "inputs": [
+        {
+          "dtype": "fp8",
+          "name": "var",
+          "shape": "[B, seq_len, index_head_dim]"
+        },
+        {
+          "dtype": "int32",
+          "name": "indices",
+          "shape": "[B, S]"
+        },
+        {
+          "dtype": "fp8",
+          "name": "updates",
+          "shape": "[B, S, index_head_dim]"
+        }
+      ],
+      "module": "attn.dsa_indexer.cache_update",
+      "name": "ScatterNdUpdate",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "var",
+          "shape": "[B, seq_len, index_head_dim]"
+        }
+      ],
+      "params": []
+    },
+    "asset:24": {
+      "category": "Activation",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size"
+      },
+      "compute_unit": "vector",
+      "description": "Sigmoid activation y = 1 / (1 + exp(-x)); no attributes (ops-nn/experimental/activation/sigmoid/op_host/sigmoid_def.cpp)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "activation",
+      "name": "Sigmoid",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:36": {
+      "category": "Activation",
+      "compute_flops": {
+        "fp32": "11 * B * S * intermediate_size"
+      },
+      "description": "SituAndMul activation: y = beta * tanh(gate / beta) * sigmoid(gate) * linear_beta * tanh(up / linear_beta)",
+      "inputs": [
+        {
+          "dtype": "fp32",
+          "name": "x",
+          "shape": "[B, S, 2 * intermediate_size]"
+        }
+      ],
+      "module": "mlp.act_fn",
+      "name": "SituAndMul",
+      "outputs": [
+        {
+          "dtype": "fp32",
+          "name": "y",
+          "shape": "[B, S, intermediate_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:5": {
+      "category": "Attention",
+      "compute_flops": {
+        "bf16": "4 * B * S * num_attention_heads * head_dim * seq_len"
+      },
+      "compute_unit": "mix",
+      "description": "SparseAttnSharedKV（共享 KV 的稀疏注意力）——DSV4 真机注意力核：O = softmax(Q@K_t^T · softmax_scale)@V，其中 K_t=V_t 是 ori_kv（滑窗段）、cmp_kv（压缩段）与 cmp_sparse_indices（稀疏选块）按 cmp_ratio 拼出的实际参与集合。真机 op_def：ops-transformer/experimental/attention/sparse_attn_sharedkv/op_host/sparse_attn_sharedkv_def.cpp，声明序 q → ori_kv → cmp_kv → ori_sparse_indices → cmp_sparse_indices → ori_block_table → cmp_block_table → cu_seqlens_q → cu_seqlens_ori_kv → cu_seqlens_cmp_kv → seqused_q → seqused_kv → sinks → metadata → attn_out → softmax_lse，其中只有 q、attn_out、softmax_lse 是 REQUIRED。本资产按 SparseFlashAttention / KvQuantSparseFlashAttention 同款（同族、同为稀疏注意力核）只登记可建模的三张量：q、两张 KV 与两输出；其余 OPTIONAL 的索引/分页表/累积序列长/metadata 是运行期寻址元数据，不带形状与算量语义，按仓规落实现类不进资产。shape 按建模侧统一口径取 BSND（q 与 attn_out 同形 [B, S, num_attention_heads, head_dim]；softmax_lse 是逐 query 的 lse，末维为 1）。ori_kv/cmp_kv 真机在 PageAttention 下是 [block_num, block_size, KV_N, D] 的页表形态，此处按 BSND 建模，两张量分属不同段、长度各不相同：ori_kv 是未压缩的滑窗段，长度取 sliding_window（真机 ori_win_left 默认 127，含自身共 128，配置口径见 hf config 的 sliding_window）；cmp_kv 是压缩段，长度取 cmp_len。两张量长度都由实现类在 update_bsz_qlen_kvlen 里按实际值改写，资产侧只声明形态、到每个模型上由实现类给出本层真实长度。compute_flops 取两组矩阵乘（Q@K^T 与 P@V 各一次），口径是 B × S × 参与位置数：seq_len 由实现类在 update_bsz_qlen_kvlen 里按本层实际参与长度（滑窗段 + 压缩段）改写，资产侧只声明形态。softmax 的 SFU/vector 工作量按仓规硬编码在实现类。",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "q",
+          "shape": "[B, S, num_attention_heads, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "ori_kv",
+          "shape": "[B, sliding_window, 1, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "cmp_kv",
+          "shape": "[B, cmp_len, 1, head_dim]"
+        }
+      ],
+      "module": "attn.sparse",
+      "name": "SparseAttnSharedkv",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "attn_out",
+          "shape": "[B, S, num_attention_heads, head_dim]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "softmax_lse",
+          "shape": "[B, S, num_attention_heads, 1]"
+        }
+      ],
+      "params": []
+    },
+    "asset:6": {
+      "category": "Attention",
+      "compute_flops": {
+        "bf16": "4 * B * S * num_attention_heads * head_dim * seq_len"
+      },
+      "compute_unit": "mix",
+      "description": "Sparse flash attention: fused attention over index-selected KV positions (aclnnSparseFlashAttention)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "query",
+          "shape": "[B, S, num_attention_heads, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "key",
+          "shape": "[B, seq_len, 1, head_dim]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "value",
+          "shape": "[B, seq_len, 1, head_dim]"
+        },
+        {
+          "dtype": "int32",
+          "name": "sparse_indices",
+          "shape": "[B, S, index_topk]"
+        }
+      ],
+      "module": "attn.fia",
+      "name": "SparseFlashAttention",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "attention_out",
+          "shape": "[B, S, num_attention_heads, head_dim]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "softmax_max",
+          "shape": "[B, num_attention_heads, S]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "softmax_sum",
+          "shape": "[B, num_attention_heads, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:76": {
+      "category": "MLA",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "Sparse score top-k selection after index score reduction",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "l2_scores_reduced",
+          "shape": "[B, S, seq_len // 2]"
+        }
+      ],
+      "module": "attn.indexer.select",
+      "name": "SparseIndexSelect",
+      "outputs": [
+        {
+          "dtype": "int32",
+          "name": "topk_2",
+          "shape": "[B, S, index_topk]"
+        }
+      ],
+      "params": []
+    },
+    "asset:25": {
+      "category": "Activation",
+      "compute_flops": {
+        "bf16": "6 * B * S * intermediate_size"
+      },
+      "compute_unit": "vector",
+      "description": "SwiGLU activation y = silu(gate) * up, the last-dim input half split being the GLU axis (aclnnSwiGlu)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, 2 * intermediate_size]"
+        }
+      ],
+      "module": "mlp.act_fn",
+      "name": "SwiGlu",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, intermediate_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:26": {
+      "category": "Activation",
+      "compute_flops": {
+        "bf16": "14 * B * S * intermediate_size"
+      },
+      "compute_unit": "vector",
+      "description": "SwiGLU activation with dynamic per-token FP8 quantization (aclnnSwiGluQuant)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B * S, 2 * intermediate_size]"
+        }
+      ],
+      "module": "mlp.act_fn",
+      "name": "SwiGluQuant",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "y",
+          "shape": "[B * S, intermediate_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "scale",
+          "shape": "[B * S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:27": {
+      "category": "Activation",
+      "compute_flops": {
+        "bf16": "14 * routed_tokens_per_rank * moe_intermediate_size"
+      },
+      "compute_unit": "vector",
+      "description": "Grouped SwiGLU activation with dynamic per-token quantization (aclnnSwigluGroupQuant)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[routed_tokens_per_rank, 2 * moe_intermediate_size]"
+        }
+      ],
+      "module": "moe.grouped_swiglu_quant",
+      "name": "SwigluGroupQuant",
+      "outputs": [
+        {
+          "dtype": "fp8",
+          "name": "y",
+          "shape": "[routed_tokens_per_rank, moe_intermediate_size]"
+        },
+        {
+          "dtype": "fp32",
+          "name": "y_scale",
+          "shape": "[routed_tokens_per_rank]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "y_origin",
+          "shape": "[routed_tokens_per_rank, moe_intermediate_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:77": {
+      "category": "Torch",
+      "compute_flops": {
+        "fp16": "B * S * hidden_size"
+      },
+      "description": "Element-wise tensor addition: y = a + b",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "a",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "b",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "torch.add",
+      "name": "TorchAdd",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:78": {
+      "category": "Torch",
+      "compute_flops": {},
+      "description": "Element-wise cosine: y = cos(x)",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn",
+      "name": "TorchCos",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:79": {
+      "category": "Torch",
+      "compute_flops": {
+        "bf16": "B * S * hidden_size"
+      },
+      "description": "Cumulative sum along a dimension: y[i] = sum(x[0..i])",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "torch.cumsum",
+      "name": "TorchCumsum",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:80": {
+      "category": "Torch",
+      "compute_flops": {
+        "fp16": "2 * M * K * N"
+      },
+      "description": "Matrix multiplication: y = a @ b",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "a",
+          "shape": "[M, K]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "b",
+          "shape": "[K, N]"
+        }
+      ],
+      "module": "torch.mm",
+      "name": "TorchMm",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[M, N]"
+        }
+      ],
+      "params": []
+    },
+    "asset:81": {
+      "category": "Torch",
+      "compute_flops": {
+        "fp16": "B * S * hidden_size"
+      },
+      "description": "Element-wise tensor multiplication: y = a * b",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "a",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "fp16",
+          "name": "b",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "torch.mul",
+      "name": "TorchMul",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:82": {
+      "category": "Torch",
+      "compute_flops": {},
+      "description": "Element-wise sine: y = sin(x)",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn",
+      "name": "TorchSin",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:83": {
+      "category": "Torch",
+      "compute_flops": {
+        "fp16": "2 * B * S * hidden_size"
+      },
+      "description": "Softmax along the last dimension: y = exp(x) / sum(exp(x))",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn",
+      "name": "TorchSoftmax",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:84": {
+      "category": "Torch",
+      "compute_flops": {
+        "bf16": "B * S * hidden_size * 14"
+      },
+      "description": "Sort tensor along a dimension: values, indices = sort(x, dim=d)",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "torch.sort",
+      "name": "TorchSort",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "values",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "indices",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:85": {
+      "category": "Torch",
+      "compute_flops": {
+        "fp16": "B * S * hidden_size - 1"
+      },
+      "description": "Sum reduction: y = sum(x, dim=d)",
+      "inputs": [
+        {
+          "dtype": "fp16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "torch.sum",
+      "name": "TorchSum",
+      "outputs": [
+        {
+          "dtype": "fp16",
+          "name": "y",
+          "shape": "[B, hidden_size]"
+        }
+      ],
+      "params": []
+    },
+    "asset:28": {
+      "category": "Quantization",
+      "compute_flops": {},
+      "compute_unit": "vector",
+      "description": "Permute the axes of x into y; the permutation is a tensor input (perm) rather than an attribute, so the asset models the 3D [B, S, D] <-> [B, D, S] case (aclnnTranspose)",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x",
+          "shape": "[B, S, hidden_size]"
+        },
+        {
+          "dtype": "int64",
+          "name": "perm",
+          "shape": "[3]"
+        }
+      ],
+      "module": "quantization",
+      "name": "Transpose",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, hidden_size, S]"
+        }
+      ],
+      "params": []
+    },
+    "asset:9": {
+      "category": "MLA",
+      "compute_flops": {
+        "bf16": "2 * B * S * hidden_size * intermediate_size"
+      },
+      "compute_unit": "cube",
+      "description": "Transpose fused batch matmul C[m,b,n] = A[b,m,k] @ B[b,k,n], the A transpose being selected by perm_x1 (aclnnTransposeBatchMatMul); bias and scale are optional and live in the implementation class",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "x1",
+          "shape": "[B, S, hidden_size]"
+        }
+      ],
+      "module": "attn.w_vc_proj",
+      "name": "TransposeBatchMatMul",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "y",
+          "shape": "[B, S, intermediate_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "x2",
+          "shape": "[B, hidden_size, intermediate_size]"
+        }
+      ]
+    },
+    "asset:86": {
+      "compute_flops": {
+        "bf16": "8 * vision_patch_tokens * vision_hidden_size * vision_hidden_size + 4 * vision_patch_tokens * vision_hidden_size * vision_intermediate_size + 4 * vision_num_heads * vision_attention_token_pairs * (vision_hidden_size // vision_num_heads)"
+      },
+      "compute_unit": "mix",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "vision_hidden",
+          "shape": "[vision_patch_tokens, vision_hidden_size]"
+        }
+      ],
+      "op_module": "vision.encoder",
+      "op_name": "VisionEncoderBlock",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "vision_hidden",
+          "shape": "[vision_patch_tokens, vision_hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "norm1_scale",
+          "shape": "[vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "qkv_weight",
+          "shape": "[3 * vision_hidden_size, vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "o_weight",
+          "shape": "[vision_hidden_size, vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "norm2_scale",
+          "shape": "[vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "fc1_weight",
+          "shape": "[vision_intermediate_size, vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "fc2_weight",
+          "shape": "[vision_hidden_size, vision_intermediate_size]"
+        }
+      ]
+    },
+    "asset:87": {
+      "compute_flops": {
+        "bf16": "2 * vision_patch_tokens * vision_hidden_size * vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size"
+      },
+      "compute_unit": "mix",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "pixel_values",
+          "shape": "[vision_patch_tokens, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]"
+        }
+      ],
+      "op_module": "vision.patch_embed",
+      "op_name": "VisionPatchEmbed",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "vision_hidden",
+          "shape": "[vision_patch_tokens, vision_hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "projection_weight",
+          "shape": "[vision_hidden_size, vision_in_channels * vision_temporal_patch_size * vision_patch_size * vision_patch_size]"
+        }
+      ]
+    },
+    "asset:88": {
+      "compute_flops": {
+        "bf16": "2 * vision_merged_tokens * (vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size) * (vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size + vision_out_hidden_size)"
+      },
+      "compute_unit": "mix",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "vision_hidden",
+          "shape": "[vision_patch_tokens, vision_hidden_size]"
+        }
+      ],
+      "op_module": "vision.merger",
+      "op_name": "VisionPatchMerger",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "visual_embeddings",
+          "shape": "[vision_merged_tokens, vision_out_hidden_size]"
+        }
+      ],
+      "params": [
+        {
+          "dtype": "bf16",
+          "name": "norm_scale",
+          "shape": "[vision_hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "fc1_weight",
+          "shape": "[vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "fc2_weight",
+          "shape": "[vision_out_hidden_size, vision_hidden_size * vision_spatial_merge_size * vision_spatial_merge_size]"
+        }
+      ]
+    },
+    "asset:89": {
+      "compute_flops": {},
+      "compute_unit": "mix",
+      "inputs": [
+        {
+          "dtype": "bf16",
+          "name": "text_embeddings",
+          "shape": "[B, S, hc_count * hidden_size]"
+        },
+        {
+          "dtype": "bf16",
+          "name": "visual_embeddings",
+          "shape": "[vision_merged_tokens, hidden_size]"
+        }
+      ],
+      "op_module": "multimodal.embedding_merge",
+      "op_name": "VisionTextEmbeddingMerge",
+      "outputs": [
+        {
+          "dtype": "bf16",
+          "name": "hyper_state",
+          "shape": "[B, S, hc_count * hidden_size]"
+        }
+      ],
+      "params": []
+    }
+  }
+}

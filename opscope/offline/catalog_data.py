@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from .fixtures import HARDWARE, METHODS
+from .fixtures import HARDWARE, METHODS, method_identity
 from opscope.evaluation.operator_parameters import PARAMETERS, defaults
 
 
@@ -78,7 +78,7 @@ def pending_results(hardware):
         for method in METHODS:
             reason = '尚未评估'
             rows.append({'id': f"demo-{device['id']}-{method[0]}", 'hardware': device['id'],
-                         'method': method[0], 'available': False, 'synthetic': True,
+                         'method': method[0], **method_identity(method[0]), 'available': False, 'synthetic': True,
                          'reason': reason, 'latency_us': None, 'deviation_percent': None,
                          'matrix': {'latency_width': None, 'error_position': None, 'error_label': '—', 'note': reason},
                          'task': {'task_id': None, 'run_id': None, 'status': 'not_run',

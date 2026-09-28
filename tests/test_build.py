@@ -111,7 +111,7 @@ class PresentationDataTest(unittest.TestCase):
         # One result per hardware; metadata follows the total and never fabricates regression parts.
         payload = build_payload()
         self.assertEqual([item['id'] for item in payload['methods']],
-                         ['profile', 'roofline', 'tilesim', 'method3', 'method4'])
+                         ['profile', 'method3', 'method4', 'roofline', 'tilesim'])
         rows = [row for row in payload['results'] if row['method'] == 'roofline']
         self.assertEqual(len(rows), 19)
         results = {row['hardware']: row for row in rows}

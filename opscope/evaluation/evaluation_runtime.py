@@ -87,7 +87,7 @@ class EvaluationRuntime:
         return result
 
     def submit(self, body):
-        request = normalize_request(body)
+        request = self.normalize(body)
         if not self.capabilities['ready']:
             raise ValueError(self.capabilities['reason'])
         with self.lock:
@@ -100,6 +100,12 @@ class EvaluationRuntime:
             self.jobs[job_id] = {'id': job_id, 'status': 'queued', 'created_at': stamp(), 'request': request}
         self.pool.submit(self.run, job_id, request)
         return {'id': job_id, 'status': 'queued'}
+
+    def normalize(self, body):
+        return normalize_request(body)
+
+    def make_payload(self, request, raw, job_id):
+        return evaluation_payload(request, raw, job_id)
 
     def stream_method(self, request, kind, on_row):
         env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
@@ -137,7 +143,7 @@ class EvaluationRuntime:
                                     'result': None, 'reason': reason})
 
     def publish(self, job_id, request, rows, status='running', reason=None):
-        payload = evaluation_payload(request, {'rows': list(rows.values()), 'status': status}, job_id)
+        payload = self.make_payload(request, {'rows': list(rows.values()), 'status': status}, job_id)
         with self.lock:
             job = self.jobs[job_id]
             job.update(status=status, payload=payload, revision=job.get('revision', 0) + 1)

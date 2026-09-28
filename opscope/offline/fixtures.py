@@ -9,12 +9,27 @@ HARDWARE = [
     ("r200", "R200", "待确认", "项目别名 · 正式 SKU 待核实"),
 ]
 METHODS = [
-    ("profile", "真机 Profiling", "采集报告", "profile"),
+    ("profile", "真机数据", "lookup", "profile"),
+    ("method3", "MSKPP", "lookup", "method3"),
+    ("method4", "ESL", "lookup", "method4"),
     ("roofline", "Roofline", "解析模型", "roofline"),
-    ("tilesim", "Tilesim", "仿真", "tilesim"),
-    ("method3", "方法3", "虚拟数据", "method3"),
-    ("method4", "方法4", "虚拟数据", "method4"),
+    ("tilesim", "TileSim", "仿真", "tilesim"),
 ]
+LOOKUP_METHODS = {'profile', 'method3', 'method4'}
+
+
+def method_config(method_id):
+    """Requested backend is a preset, never evidence of actual execution."""
+    item = next(item for item in METHODS if item[0] == method_id)
+    return {'id': item[0], 'name': item[1], 'source': item[2], 'color': item[3],
+            'backend': 'lookup' if method_id in LOOKUP_METHODS else method_id}
+
+
+def method_identity(method_id):
+    method = method_config(method_id)
+    return {'method_name': method['name'], 'method_backend': method['backend']}
+
+
 # These illustrative numbers are deliberately independent of real device specs.
 VALUES = {
     "ascend": {"profile": 248.0, "roofline": 232.0, "tilesim": 260.0},

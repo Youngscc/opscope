@@ -10,6 +10,8 @@ import time
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from opscope.offline.fixtures import LOOKUP_METHODS, method_config
+
 if __package__:
     from .evaluation_contract import digest, hardware_key
     from .bundled_roofline import DATA, simulate
@@ -75,10 +77,8 @@ def evaluate(request, root, on_row=None):
 
 
 def unavailable_reason(request, method, key, caps):
-    if method == 'profile':
-        return '尚未接入实测参考'
-    if method in {'method3', 'method4'}:
-        return '尚未配置评估组件'
+    if method in LOOKUP_METHODS:
+        return f"{method_config(method)['name']}：未配置 lookup 数据源，暂无查表结果"
     if method == 'tilesim':
         return caps['tilesim_reason']
     if method == 'roofline' and request['configuration']['operator_id'].startswith('infer:'):

@@ -30,8 +30,11 @@ const Configuration = (() => {
     if (!errors.length) errors.push(...validate_contract(config));
     for (const field of op.parameters || []) {
       const item = config.attributes?.[field.name];
-      if (field.type === 'integer' && (!Number.isInteger(item) || item < -8 || item > 7))
-        errors.push({field: `attribute-${field.name}`, message: `${field.label}需要填写 -8 至 7 的整数。`});
+      const low = field.minimum ?? -8, high = field.maximum ?? 7;
+      if (field.type === 'integer' && (!Number.isInteger(item) || item < low || item > high))
+        errors.push({field: `attribute-${field.name}`, message: `${field.label}需要填写 ${low} 至 ${high} 的整数。`});
+      if (field.type === 'integer_list' && (!Array.isArray(item) || !item.length || item.length > 16 || item.some(n => !Number.isInteger(n) || n < low || n > high)))
+        errors.push({field: `attribute-${field.name}`, message: `${field.label}需要填写范围内的整数列表。`});
       if (field.type === 'permutation' && (!Array.isArray(item) || item.length !== 3 || item.slice().sort().join(',') !== '0,1,2'))
         errors.push({field: `attribute-${field.name}`, message: '置换顺序须为 0、1、2 各一次。'});
     }

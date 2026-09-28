@@ -3,7 +3,7 @@ import html
 import json
 from pathlib import Path
 
-from .fixtures import HARDWARE, METHODS, RESOURCE_STATS, VALUES
+from .fixtures import HARDWARE, METHODS, RESOURCE_STATS, VALUES, method_config, method_identity
 from .execution_data import execution_record
 from .task_details import hardware_detail, input_detail, task_context, task_overview, workload_record
 from .matrix_data import prepare_matrix
@@ -98,7 +98,7 @@ def latency_detail(hardware, method, latency):
     record = execution_record(hardware, method, latency)
     rows = [('总时延', f'{latency:.2f} μs'), ('边界', '设备侧单 kernel')]
     if method != 'profile':
-        rows += [('Profiling 参考', f'{reference:.2f} μs'), ('偏差', f'{delta:+.1f}%')]
+        rows += [('真机参考', f'{reference:.2f} μs'), ('偏差', f'{delta:+.1f}%')]
     return kv(rows) + phase_bars(record)
 
 
@@ -179,7 +179,7 @@ def evidence_detail(hardware, method, result_id):
                  ('时钟（示例）', f"{record['clock_mhz']} MHz"),
                  ('版本 / 编译参数', 'demo-toolchain · -O3 · FP32 accumulate')]
     rows += [('原始报告', '未导入；数据由本地 fixtures 生成')]
-    message = 'Tilesim 详情是待接入的扩展字段示例。' if method == 'tilesim' else '合成示例，未运行真实评估。'
+    message = 'TileSim 详情是待接入的扩展字段示例。' if method == 'tilesim' else '合成示例，未运行真实评估。'
     return kv(rows) + f'<p class="note">{message}</p>'
 
 
@@ -218,7 +218,7 @@ def component_label(value, qualifier):
 def make_result(hardware, method):
     latency = VALUES.get(hardware, {}).get(method)
     result_id = f'demo-{hardware}-{method}'
-    row = {'id': result_id, 'hardware': hardware, 'method': method, 'available': latency is not None, 'synthetic': True}
+    row = {'id': result_id, 'hardware': hardware, 'method': method, **method_identity(method), 'available': latency is not None, 'synthetic': True}
     context = task_context(hardware, method, result_id, latency is not None)
     row.update(context)
     if latency is None:
@@ -229,6 +229,8 @@ def make_result(hardware, method):
     record = execution_record(hardware, method, latency)
     qualifier = '估算' if record['kind'] == 'analytic' else '活动'
     source_label = next(item[2] for item in METHODS if item[0] == method)
+    if method == 'profile':
+        source_label = '示例数据'
     if method == 'tilesim':
         source_label = '扩展字段示例'
     if method == 'roofline':
@@ -250,7 +252,7 @@ def build_payload():
     demo_ids = {item[0] for item in HARDWARE}
     results.extend({**row, 'workload': workload_record()} for row in pending if row['hardware'] not in demo_ids)
     matrix = prepare_matrix(results)
-    return {'schema': 'operator-ui-demo-v1', 'synthetic': True, 'notice': '合成 UI 示例，非实测或实际仿真结果', 'workload': {'operator': 'MatMul', 'm': 4096, 'n': 4096, 'k': 4096, 'dtype': 'FP16', 'flops': FLOPS, 'logical_bytes': LOGICAL_BYTES, 'boundary': 'device kernel only'}, 'hardware': hardware, 'methods': [{'id': item[0], 'name': item[1], 'source': item[2], 'color': item[3]} for item in METHODS], 'results': results, 'matrix': matrix, 'catalog': catalog, 'pending_results': pending}
+    return {'schema': 'operator-ui-demo-v1', 'synthetic': True, 'notice': '合成 UI 示例，非实测或实际仿真结果', 'workload': {'operator': 'MatMul', 'm': 4096, 'n': 4096, 'k': 4096, 'dtype': 'FP16', 'flops': FLOPS, 'logical_bytes': LOGICAL_BYTES, 'boundary': 'device kernel only'}, 'hardware': hardware, 'methods': [method_config(item[0]) for item in METHODS], 'results': results, 'matrix': matrix, 'catalog': catalog, 'pending_results': pending}
 
 
 def render_page(data):

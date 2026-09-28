@@ -6,7 +6,7 @@ const hardware_by_id = id => data.hardware.find(item => item.id === id);
 const method_by_id = id => data.methods.find(item => item.id === id);
 const result_by_id = id => data.results.find(item => item.id === id);
 const escape_html = value => String(value ?? '—').replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
-const method_name = id => id === 'profile' ? 'Profiling' : method_by_id(id).name;
+const method_name = id => method_by_id(id).name;
 
 function announce(message) {
   by_id('announcement').textContent = message;
@@ -120,13 +120,13 @@ function render_chart() {
   const scope = state.scope?.hardware ? hardware_by_id(state.scope.hardware).name + ' · 比较方法' : state.scope?.method ? method_name(state.scope.method) + ' · 比较硬件' : '全局对比';
   by_id('chart-heading').textContent = scope;
   by_id('chart-description').textContent = metric === 'error' ? '参考偏差 · 左侧低估，右侧高估，越接近零越接近本次参考。' : state.scope?.hardware ? '同一硬件 · 比较各方法预测与参考的耗时差异。' : '总耗时 · 固定同一方法后，可以直观比较不同硬件。';
-  by_id('chart-footnote').textContent = no_reference ? '暂无可用参考，展示绝对耗时。' : metric === 'error' ? '每行使用该硬件的 Profiling 作为零点；缺失结果不作零值绘制。' : '统一零起点刻度 · 更短的预测不代表更准确。';
+  by_id('chart-footnote').textContent = no_reference ? '暂无可用参考，展示绝对耗时。' : metric === 'error' ? '每行使用该硬件的真机数据 作为零点；缺失结果不作零值绘制。' : '统一零起点刻度 · 更短的预测不代表更准确。';
   const methods = data.methods.filter(item => state.methods.has(item.id) && rows.some(row => row.method === item.id && row.available) && (!state.scope?.method || item.id === state.scope.method) && (metric !== 'error' || item.id !== 'profile'));
   const plotted = rows.filter(row => metric !== 'error' || row.method !== 'profile');
   by_id('chart-legend').innerHTML = methods.map(item => `<span><i class="legend-mark ${item.id}" aria-hidden="true"></i>${method_name(item.id)}</span>`).join('');
   const groups = data.hardware.filter(hw => state.hardware.has(hw.id) && (!state.scope?.hardware || hw.id === state.scope.hardware));
   const only_reference = rows.length && rows.every(row => row.method === 'profile') && metric === 'error';
-  by_id('analysis-chart').innerHTML = only_reference ? '<div class="reference-note">Profiling 是每个硬件的参考基线，偏差为 0%。切换“总耗时”比较硬件。</div>' : chart_axis(metric) + groups.map(hw => chart_group(hw, plotted.filter(row => row.hardware === hw.id), metric)).join('');
+  by_id('analysis-chart').innerHTML = only_reference ? '<div class="reference-note">真机数据是每个硬件的参考基线，偏差为 0%。切换“总耗时”比较硬件。</div>' : chart_axis(metric) + groups.map(hw => chart_group(hw, plotted.filter(row => row.hardware === hw.id), metric)).join('');
   by_id('analysis-chart').classList.toggle('focused', Boolean(state.scope));
   const has_results = rows.some(row => row.available);
   by_id('analysis-chart').hidden = !has_results;
@@ -172,8 +172,8 @@ function single_content(record) {
   return record.sections[state.tab].map(section => {
     let body = record.details[section.key];
     if (record.synthetic && section.key === 'latency') {
-      const reference = section.facts.find(item => item.label === 'Profiling 参考');
-      body = (reference ? `<p class="note">Profiling 参考：${escape_html(reference.value)}</p>` : '') + section.extra;
+      const reference = section.facts.find(item => item.label === '真机参考');
+      body = (reference ? `<p class="note">真机参考：${escape_html(reference.value)}</p>` : '') + section.extra;
     }
     return `<section class="detail-section"><h3>${section.title}</h3>${body}</section>`;
   }).join('');

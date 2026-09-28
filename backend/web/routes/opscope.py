@@ -24,7 +24,13 @@ def bootstrap_payload():
 
 
 @router.get('/bootstrap')
-def bootstrap():
+def bootstrap(request: Request):
+    runtime = getattr(request.app.state, 'opscope_runtime', None)
+    if runtime is not None and hasattr(runtime, 'bootstrap'):
+        try:
+            return runtime.bootstrap()
+        except ValueError as exc:
+            return error(str(exc), 503)
     return bootstrap_payload()
 
 
@@ -73,6 +79,17 @@ def get_job(request, job_id, since_revision=None):
 def history(request: Request):
     runtime = getattr(request.app.state, 'opscope_runtime', None)
     return runtime.history() if runtime else []
+
+
+@router.post('/evaluations/{job_id}/cancel')
+async def cancel_evaluation(request: Request, job_id: str):
+    runtime = getattr(request.app.state, 'opscope_runtime', None)
+    if runtime is None or not hasattr(runtime, 'cancel'):
+        return error('当前运行模式不支持远程取消。', 409)
+    try:
+        return await run_in_threadpool(runtime.cancel, job_id)
+    except ValueError as exc:
+        return error(str(exc), 404)
 
 
 @router.get('/evaluations/compare')

@@ -121,7 +121,7 @@ function read_configuration() {
     shape: Configuration.parse_shape(by_id(`shape-${index}`).value), dtype: by_id(`dtype-${index}`).value}));
   config.attributes = Object.fromEntries((catalog_operator(config.operator_id).parameters || []).map(field => {
     const text = by_id(`attribute-${field.name}`).value.trim();
-    const parsed = field.type === 'permutation' ? text.split(',').map(value => Number(value.trim())) : (text === '' ? null : Number(text));
+    const parsed = ['permutation', 'integer_list'].includes(field.type) ? text.split(',').map(value => Number(value.trim())) : (text === '' ? null : Number(text));
     return [field.name, parsed];
   }));
   if (config.domain === 'demo') config.options = {layout: by_id('tensor-layout').value,

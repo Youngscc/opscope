@@ -17,7 +17,12 @@ def create_app(settings=None, runtime=None):
     async def lifespan(app):
         owned = runtime is None
         if owned:
-            app.state.opscope_runtime = await run_in_threadpool(EvaluationRuntime)
+            if settings.modeling_url:
+                from opscope.evaluation.modeling_provider import ModelingRuntime, ModelingClient
+                client = ModelingClient(settings.modeling_url, headers_file=settings.modeling_headers_file)
+                app.state.opscope_runtime = await run_in_threadpool(ModelingRuntime, settings.modeling_url, client=client)
+            else:
+                app.state.opscope_runtime = await run_in_threadpool(EvaluationRuntime)
         try:
             yield
         finally:

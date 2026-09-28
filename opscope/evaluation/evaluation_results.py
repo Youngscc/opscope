@@ -33,7 +33,7 @@ def detail_fields(row):
     outputs = [(t['name'], f"{t['shape']} · {t['dtype']} · {t['bytes']} B") for t in r['outputs']]
     return {
         'overview': overview,
-        'latency': facts([('Profiling 参考', '—'), ('计算成本', time('compute_us')),
+        'latency': facts([('真机参考', '—'), ('计算成本', time('compute_us')),
                           ('访存成本', time('memory_us'))]) + '<p class="note">模型预测不等于设备实测；计算与访存成本不直接相加。</p>',
         'compute': facts([('逻辑工作量', number(r['flops'] / 1e9, ' GFLOPs')),
                           ('计算成本', time('compute_us')), ('有效算力', rate)]),
@@ -68,7 +68,7 @@ def completed_row(row, raw, request, job_id):
             'tensors': config['inputs'], 'outputs': r['outputs'], 'options': config['options'],
             'boundary': config['boundary'], 'synthetic': False}
     latency = r['latency_us']
-    throughput = r['flops'] / latency / 1e6 if latency > 0 else None
+    throughput = r['flops'] / latency / 1e6 if latency > 0 and r.get('flops') is not None else None
     calibration = r['calibration_source']
     catalog_mode = r['engine'].get('mode') == 'catalog-analytic'
     row.update(available=True, reason=None, latency_us=latency, latency=f'{latency:.3f}',
@@ -85,7 +85,17 @@ def completed_row(row, raw, request, job_id):
                           'compute_us': r['compute_us'], 'memory_us': r['memory_us'],
                           'bound': r['bound'], 'events': [], 'instances': []})
     row['task'].update(actual_backend='roofline', finished_at=raw.get('finished_at') or stamp(), wall_time_ms=r['wall_time_ms'])
-    if r['backend'] == 'tilesim':
+    if r['engine'].get('provider') == 'modeling':
+        from .modeling_details import remote_details
+        row['task']['actual_backend'] = r['backend']
+        row['provenance']['field_sources'] = r['field_sources']
+        row['provenance']['operator_hash'] = r['operator_hash']
+        if r['backend'] == 'tilesim':
+            row['source_label'] = '工程预测' if r['engine'].get('mode') == 'cost-engineering' else '理论预测'
+        row['execution'].update(kind='tile_simulation' if r['backend'] == 'tilesim' else 'analytic',
+                                source=r['backend'] + ' 模型预测', trace_view=None)
+        row['details'] = remote_details(row)
+    elif r['backend'] == 'tilesim':
         mode = r['engine'].get('mode', 'dsl-eng')
         label = '理论预测' if mode in {'dsl-theo', 'cost-theo'} else '工程预测'
         row.update(source_label=label, source_class='estimate-status generic')
@@ -98,8 +108,8 @@ def completed_row(row, raw, request, job_id):
     return row
 
 
-def evaluation_payload(request, raw, job_id):
-    payload = build_payload()
+def evaluation_payload(request, raw, job_id, base=None):
+    payload = deepcopy(base) if base is not None else build_payload()
     status = raw.get('status', 'completed')
     payload['demo_results'] = deepcopy(payload['results'])
     payload['demo_workload'] = payload['workload']
@@ -113,7 +123,8 @@ def evaluation_payload(request, raw, job_id):
                    measurement=False, workload={'operator': request['configuration']['operator'],
                                                 'tensors': request['configuration']['inputs']})
         row['task'].update(task_id=job_id, run_id=job_id, synthetic=False,
-                           source='model_prediction', status=item['status'] if item else 'not_run')
+                           source='lookup' if row['method_backend'] == 'lookup' else 'model_prediction',
+                           status=item['status'] if item else 'not_run')
         row['reason'] = item.get('reason', '尚未评估') if item else '本批次未选择此组合'
         if item and item['status'] == 'succeeded':
             completed_row(row, item, request, job_id)
@@ -128,6 +139,6 @@ def evaluation_payload(request, raw, job_id):
                                'success_count': count, 'finished_count': sum(r['status'] in {'succeeded', 'failed', 'unsupported'} for r in raw['rows']),
                                'total': len(request['hardware_ids']) * len(request['method_ids'])})
     for method in payload['methods']:
-        method['source'] = {'roofline': '解析预测', 'tilesim': '仿真预测', 'profile': '未接入参考',
-                            'method3': '未接入', 'method4': '未接入'}[method['id']]
+        method['source'] = {'roofline': '解析预测', 'tilesim': '仿真预测', 'profile': 'lookup',
+                            'method3': 'lookup', 'method4': 'lookup'}[method['id']]
     return payload

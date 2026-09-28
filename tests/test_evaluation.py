@@ -99,7 +99,7 @@ class EvaluationTest(unittest.TestCase):
         request = normalize_request(request_body())
         reason = unavailable_reason(request, 'tilesim', 'H200_Server', {'tilesim_reason': '未安装 TileSim 组件'})
         self.assertEqual(reason, '未安装 TileSim 组件')
-        self.assertEqual(unavailable_reason(request, 'profile', 'H200_Server', {}), '尚未接入实测参考')
+        self.assertEqual(unavailable_reason(request, 'profile', 'H200_Server', {}), '真机数据：未配置 lookup 数据源，暂无查表结果')
 
     def test_result_numbers_missing_and_safe_details(self):
         # Backend numbers drive all views; no virtual rows or profiler reference leak in.

@@ -14,6 +14,7 @@ export const useOpScopeStore = defineStore('opscope', () => {
   const metric = ref('latency'), chart = ref('error'), scope = ref<Fields | null>(null)
   const busy = ref(false), ready = ref(false), message = ref('正在连接本地服务…')
   const session = new EvaluationSession()
+  let remote = false, activeJob: string | undefined
   const visible = computed(() => data.value?.results.filter(r => hardware.value.includes(r.hardware) && methods.value.includes(r.method)) || [])
   const label = computed(() => data.value?.evaluation ? '模型预测 · 非实测' : data.value?.synthetic && config.value && baseline.value && Configuration.matches_demo(config.value, baseline.value.catalog.default_config) ? '示例数据' : '待评估')
   const snapshot = computed(() => data.value?.evaluation && !busy.value && data.value.evaluation.status === 'completed' ? `${api_base}/evaluations/${data.value.evaluation.id}/snapshot` : '')
@@ -21,25 +22,27 @@ export const useOpScopeStore = defineStore('opscope', () => {
   async function initialize() {
     const signal = session.begin()
     try {
-      const [payload, caps] = await Promise.all([request<Payload>('/bootstrap', undefined, signal), request<Fields>('/capabilities', undefined, signal)])
+      const payload = await request<Payload>('/bootstrap', undefined, signal)
+      const caps = await request<Fields>('/capabilities', undefined, signal)
       if (!session.current(signal)) return
       baseline.value = payload; data.value = payload
       config.value = Configuration.clone(payload.catalog.default_config)
       hardware.value = initialHardwareIds(payload.hardware, Boolean(caps.tilesim))
       methods.value = payload.methods.map(m => m.id)
       ready.value = caps.ready
+      remote = caps.provider === 'modeling'
       message.value = caps.ready ? (caps.tilesim ? 'Roofline / TileSim 已就绪 · 支持范围按算子与硬件配置判定' : 'Roofline 已就绪 · ' + caps.tilesim_reason) : caps.reason
     } catch (error) { if (!signal.aborted) message.value = String(error) }
   }
 
   function apply(next: Config) {
-    session.cancel(); busy.value = false
+    cancel()
     config.value = next
     const base = baseline.value!
     data.value = { ...base, results: Configuration.project(next, base.results, base.pending_results, base.catalog.default_config),
       workload: Configuration.workload(next) }
     selected.value = []; scope.value = null
-    message.value = Configuration.matches_demo(next, base.catalog.default_config) ? '已载入示例数据' : '配置已应用，请运行评估'
+    message.value = base.synthetic && Configuration.matches_demo(next, base.catalog.default_config) ? '已载入示例数据' : '配置已应用，请运行评估'
   }
 
   function pending() {
@@ -61,7 +64,12 @@ export const useOpScopeStore = defineStore('opscope', () => {
     busy.value = true; pending(); metric.value = 'latency'; chart.value = 'latency'
     message.value = '正在计算所选组合，结果将逐个显示…'
     try {
-      const job = await request<Fields>('/evaluations', {configuration:config.value, hardware_ids:hardware.value, method_ids:methods.value}, signal)
+      const job = await request<Fields>('/evaluations', {configuration:config.value, hardware_ids:hardware.value, method_ids:methods.value})
+      if (!session.current(signal)) {
+        if (remote) await request(`/evaluations/${job.id}/cancel`, {})
+        return
+      }
+      activeJob = job.id
       let revision = -1
       while (session.current(signal)) {
         const result = await request<Fields>(`/evaluations/${job.id}?since_revision=${revision}`, undefined, signal)
@@ -84,7 +92,7 @@ export const useOpScopeStore = defineStore('opscope', () => {
         data.value = {...data.value!, results:data.value!.results.map(row => ['queued', 'running'].includes(row.task.status)
           ? {...row, reason:message.value, task:{...row.task, status:'failed'}} : row)}
       }
-    } finally { if (session.current(signal)) busy.value = false }
+    } finally { if (session.current(signal)) { busy.value = false; activeJob = undefined } }
   }
 
   function reset() {
@@ -94,6 +102,11 @@ export const useOpScopeStore = defineStore('opscope', () => {
   function name(row: Result) {
     return `${data.value!.hardware.find(h => h.id === row.hardware)?.name} · ${data.value!.methods.find(m => m.id === row.method)?.name}`
   }
-  function cancel() { session.cancel(); busy.value = false }
+  function cancel() {
+    if (remote && activeJob && busy.value) {
+      void request(`/evaluations/${activeJob}/cancel`, {}).catch(() => { message.value = '取消请求未确认；原任务可能仍在运行' })
+    }
+    activeJob = undefined; session.cancel(); busy.value = false
+  }
   return {data, config, hardware, methods, selected, metric, chart, scope, busy, ready, message, visible, label, snapshot, initialize, apply, run, reset, name, cancel}
 })

@@ -11,11 +11,15 @@ class Settings:
     port: int = 8768
     frontend_port: int = 5173
     frontend_dist: Path = ROOT / 'frontend/dist'
+    modeling_url: str | None = None
+    modeling_headers_file: str | None = None
 
     @classmethod
     def from_env(cls):
         return cls(port=int(os.getenv('OPSCOPE_PORT', '8768')),
-                   frontend_port=int(os.getenv('OPSCOPE_FRONTEND_PORT', '5173')))
+                   frontend_port=int(os.getenv('OPSCOPE_FRONTEND_PORT', '5173')),
+                   modeling_url=os.getenv('OPSCOPE_MODELING_URL') or None,
+                   modeling_headers_file=os.getenv('OPSCOPE_MODELING_HEADERS_FILE') or None)
 
     @property
     def origins(self):

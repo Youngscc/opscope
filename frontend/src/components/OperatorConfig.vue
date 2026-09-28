@@ -26,7 +26,7 @@ async function apply() {
   next.inputs.forEach((t,i)=>t.shape=Configuration.parse_shape(shapes.value[i]!))
   next.attributes=Object.fromEntries((op.value?.parameters||[]).map((field:Fields)=>{
     const text=(attributeText.value[field.name]||'').trim()
-    return [field.name,field.type==='permutation'?text.split(',').map((part:string)=>Number(part.trim())):text===''?null:Number(text)]
+    return [field.name,['permutation','integer_list'].includes(field.type)?text.split(',').map((part:string)=>Number(part.trim())):text===''?null:Number(text)]
   }))
   errors.value=Configuration.validate(next,op.value,s.data!.catalog.dtypes)
   if(errors.value.length){await nextTick();error_box.value?.focus();return}

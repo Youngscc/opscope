@@ -791,8 +791,12 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "msopmodeling" },
     { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+local-engine = [
+    { name = "msopmodeling" },
 ]
 
 [package.dev-dependencies]
@@ -803,9 +807,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = "==0.141.1" },
-    { name = "msopmodeling", path = "vendor/msopmodeling/msopmodeling-1.0.9-py3-none-any.whl" },
+    { name = "msopmodeling", marker = "extra == 'local-engine'", path = "vendor/msopmodeling/msopmodeling-1.0.9-py3-none-any.whl" },
     { name = "uvicorn", specifier = "==0.52.4" },
 ]
+provides-extras = ["local-engine"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "httpx", specifier = "==0.28.1" }]

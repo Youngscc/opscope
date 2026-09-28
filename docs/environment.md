@@ -1,5 +1,8 @@
 # 使用 uv 创建 OpScope 开发环境
 
+本文其余步骤对应独立模式。共享 modeling 的轻量环境使用 `./setup.sh --modeling`，或 `uv sync --locked --all-groups`；无需 local-engine extra，requirements 使用 `backend/requirements-modeling.txt`。完整逐条启动和鉴权步骤见[共享模式](modeling-runtime.md)。
+
+
 本文档是 OpScope 环境配置的唯一入口，适用于从新克隆的仓库开始创建 Python 环境、安装前端依赖、启动服务和更新依赖。命令均在仓库根目录执行。
 
 ## 1. 环境与依赖文件
@@ -79,7 +82,7 @@ macOS Apple Silicon 把命令中的 `3.12` 改为 `3.11`。`uv sync` 也须使�
 
 ```bash
 uv venv --python 3.11 .venv
-uv sync --python 3.11 --locked --all-groups
+uv sync --python 3.11 --locked --all-groups --extra local-engine
 ```
 
 该命令只创建 `.venv`。删除并重建环境时执行：
@@ -100,15 +103,15 @@ source .venv/bin/activate
 开发环境安装运行依赖和 `dev` 组：
 
 ```bash
-uv sync --locked --all-groups
+uv sync --locked --all-groups --extra local-engine
 ```
 
-macOS Apple Silicon 使用 `uv sync --python 3.11 --locked --all-groups` 后，执行一次 `./setup.sh`。它检测 SciPy 是否能加载；若当前 uv 选中的 macOS wheel 在本机加载失败，脚本自动安装 `uv.lock` 中同版本、带 SHA256 校验的 macOS 12 ARM64 wheel。不要以“包已安装”代替下面的实际导入验证。
+macOS Apple Silicon 使用 `uv sync --python 3.11 --locked --all-groups --extra local-engine` 后，执行一次 `./setup.sh`。它检测 SciPy 是否能加载；若当前 uv 选中的 macOS wheel 在本机加载失败，脚本自动安装 `uv.lock` 中同版本、带 SHA256 校验的 macOS 12 ARM64 wheel。不要以“包已安装”代替下面的实际导入验证。
 
 只安装服务运行所需依赖时使用：
 
 ```bash
-uv sync --locked --no-dev
+uv sync --locked --no-dev --extra local-engine
 ```
 
 `--locked` 会在 `pyproject.toml` 与 `uv.lock` 不一致时立即报错，防止安装过程静默改写锁文件。正常开发使用 `--all-groups`。
@@ -133,7 +136,7 @@ npm --prefix frontend run build
 
 ### 2.6 评估引擎
 
-Roofline 最小后端与 `msopmodeling 1.0.9` wheel 已包含在仓库中，执行 `uv sync` 或 `setup.sh` 后会安装到 `.venv`，无需外部 modeling 仓库。
+Roofline 最小后端与 `msopmodeling 1.0.9` wheel 已包含在仓库中，执行 `uv sync --extra local-engine` 或 `setup.sh` 后会安装到 `.venv`，无需外部 modeling 仓库。
 
 启动和安装脚本不读取 `.env`；无需配置外部引擎路径。端口通过 `start.sh` 参数设置；宿主集成时可在构建命令的环境中传入 `VITE_OPSCOPE_API_BASE` 和 `VITE_OPSCOPE_BASE`。
 
@@ -227,13 +230,13 @@ uv lock --upgrade-package package-name
 
 ```bash
 uv lock
-uv sync --locked --all-groups
-uv export --locked --no-dev --no-hashes --output-file backend/requirements.txt
-uv export --locked --all-groups --no-hashes --output-file backend/requirements-dev.txt
+uv sync --locked --all-groups --extra local-engine
+uv export --locked --extra local-engine --no-dev --no-hashes --output-file backend/requirements.txt
+uv export --locked --extra local-engine --all-groups --no-hashes --output-file backend/requirements-dev.txt
 uv pip check --python .venv/bin/python
 ```
 
-最后提交 `pyproject.toml`、`uv.lock` 和两个 requirements 文件。这样 uv、pip 与 CI 使用同一组锁定版本。
+另执行 `uv export --locked --all-groups --no-hashes --output-file backend/requirements-modeling.txt` 导出轻量依赖。最后提交 `pyproject.toml`、`uv.lock` 和三个 requirements 文件。这样 uv、pip 与 CI 使用同一组锁定版本。
 
 ## 6. 验证项目
 
@@ -249,7 +252,7 @@ git diff --check
 在 Linux/WSL 上只检查 uv 环境是否与锁文件一致：
 
 ```bash
-uv sync --locked --all-groups --check
+uv sync --locked --all-groups --extra local-engine --check
 ```
 
 macOS Apple Silicon 若触发了第 2.4 节的 SciPy wheel 兼容修复，这条 `--check` 会报告需重装同版本 SciPy：uv 比较的是所选 wheel 的来源，并非导入失败。此平台请以 `./setup.sh`、SciPy 实际导入和 `uv pip check --python .venv/bin/python` 为环境验证；单独运行 `uv sync` 后需再执行 `./setup.sh`。
@@ -257,7 +260,7 @@ macOS Apple Silicon 若触发了第 2.4 节的 SciPy wheel 兼容修复，这条
 ## 7. 常见问题
 
 - `uv sync --locked` 报锁文件过期：依赖维护者执行第 5 节的更新流程；普通使用者先确认本地 `pyproject.toml` 和 `uv.lock` 来自同一个提交。
-- `.venv` 使用了错误 Python：macOS Apple Silicon 用 `uv venv --python 3.11 .venv` 和 `uv sync --python 3.11 --locked --all-groups`；Linux/WSL 使用 3.12。现有环境应先确认没有需要保留的本地安装，再重建。
+- `.venv` 使用了错误 Python：macOS Apple Silicon 用 `uv venv --python 3.11 .venv` 和 `uv sync --python 3.11 --locked --all-groups --extra local-engine`；Linux/WSL 使用 3.12。现有环境应先确认没有需要保留的本地安装，再重建。
 - `.venv` 中没有 pip：这是 uv 环境的正常情况；使用 `uv sync` 或 `uv pip install --python .venv/bin/python ...`。
 - `npm ci` 报 lock 不一致：先确认 `frontend/package.json` 与 `frontend/package-lock.json` 来自同一个提交。
 - `./start.sh` 提示环境未就绪：先执行第 3 节的首次配置命令，或执行 `./setup.sh`。

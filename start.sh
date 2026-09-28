@@ -7,7 +7,8 @@ for arg in "$@"; do
     --dev) mode=development ;;
     --port=*) export OPSCOPE_PORT="${arg#*=}" ;;
     --frontend-port=*) export OPSCOPE_FRONTEND_PORT="${arg#*=}" ;;
-    -h|--help) echo './start.sh [--dev] [--port=8768] [--frontend-port=5173]
+    --modeling-url=*) export OPSCOPE_MODELING_URL="${arg#*=}" ;;
+    -h|--help) echo './start.sh [--dev] [--port=8768] [--frontend-port=5173] [--modeling-url=http://127.0.0.1:8001]
 仅负责启动；环境配置请先运行 ./setup.sh（见 docs/environment.md）。'; exit 0 ;;
     *) echo "未知参数：$arg" >&2; exit 2 ;;
   esac

@@ -1,5 +1,11 @@
 # 项目记忆
 
+## 同步 GitHub 主线到集成分支（2026-09-28）
+
+按用户要求将 Youngscc/opscope main f04aab8 和 Youngscc/zrt-sim main 635e5558 合入各自 codex/opscope-modeling-integration。保留开发提交，四处文档冲突保留双方独立内容，未提交的个人文件不纳入。只推送集成分支，不修改远端 main 或 GitCode 镜像目标；未重启运行服务。
+
+合并后 OpScope 97 项 Python、5 项前端、5 项镜像脚本测试通过，离线重建一致。modeling 严格26项通过，E2E4/4、镜像脚本5项通过；推理扩大回归289项因本机 PostgreSQL 5432 连接拒绝而在 fixture 阶段失败，全量 pytest 仍有2个 MCP 导入收集错误，不宣称全量通过。主线自带的测试文件 EOF 空行警告保留，手工冲突解决文件的差异检查通过。
+
 ## 本轮 Git 交付范围（2026-09-28）
 
 共享接入、lookup 预设、算子补齐及覆盖文档一起按类别交付至 GitHub 两仓库的 codex/opscope-modeling-integration 分支。modeling 的 origin 仍为 GitCode，推送使用用户指定 GitHub URL，不改远端配置；main 不合并，现有 GitCode 镜像仅跟随 main。用户 trace、个人目录、原有 AGENTS/stats 与无关历史文档保留本地。提交及推送实际状态以分支历史为准。
@@ -46,6 +52,10 @@ RmsNorm FP16 x128²/gamma128、B1/S128 经轻量 OpScope→HTTP→worker：Roofl
 
 81项Python测试、3项前端测试、Vue类型检查/构建、离线生成、JS语法与差异检查通过。H200、128×128 FP16 MatMul 五方法 HTTP 实跑：前三项均缺lookup数据源，Roofline 0.0512 μs、TileSim 0.14128508391203703 μs成功。桌面检查列顺序/lookup标签、MSKPP与ESL对比、方法筛选与JSON名称/预设字段；控制台未见错误。旧8768服务无历史任务、页面处于示例状态时正常重启，当前页面已更新。
 
+
+## GitHub 到 GitCode 分支同步（2026-09-24）
+
+本项目 GitHub Youngscc/opscope 的 main 为主，GitCode YYoung_G/opscope main 为副本；单向快进同步保留 SHA，不强推，不同步额外分支/标签。工作流需 GITCODE_TOKEN，自动运行需 GITCODE_SYNC_ENABLED=true；可手动 dry-run。5项隔离 Git 测试通过，三个仓库 Actions 演练和首次正式同步成功，目标 SHA 一致，自动同步已启用；用户选择保留全部原有工作流。本地工作区与远程配置未调整。详见[配置说明](../docs/github-gitcode-sync.md)。
 
 ## 字体层级与排版细化（2026-09-23，已验证）
 

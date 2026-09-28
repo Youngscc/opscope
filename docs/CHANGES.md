@@ -4,6 +4,12 @@
 
 ## 2026-09-28
 
+### 同步 GitHub main 到集成开发分支
+
+- 合并 OpScope main `f04aab8` 的 GitCode 同步工作流及记录；同时将 modeling fork main `635e5558` 的主线更新合入其集成分支。文档冲突保留双方独立记录，接入实现保留，个人文件和原有未提交修改不纳入。
+- 验证：OpScope 97 项 Python、5 项前端、5 项同步脚本测试通过，离线重建一致；modeling 严格26项、E2E4/4、同步脚本5项通过。推理扩大回归受未启动的本机 PostgreSQL 阻断（289项 fixture 错误），全量仍有2项 MCP 导入收集错误；未把环境阻塞视为测试通过。
+- 更新仅发布至 `codex/opscope-modeling-integration`；远端 main 和 GitCode 镜像目标不变，运行服务未重启。
+
 ### 分类提交共享后端与算子覆盖改动
 
 按环境、功能、设计文档和覆盖审计组织 OpScope 提交，并将 modeling 的共享后端实现与说明分别提交。明确纳入原忽略规则漏掉的 TileSim 适配模块；用户 trace、个人设置及 modeling 原有无关修改不纳入。GitHub 集成分支为交付目标，未合入 main，不触发仅跟随 main 的 GitCode 镜像。验证沿用本轮已完成测试，并检查暂存差异及生成文件一致性；实际推送结果以 Git 远端核对为准。
@@ -16,6 +22,12 @@
 - 边界：不代表全硬件或任意输入已支持；未补造 TileSim 缺失算法/输入，不提供虚假流水或方法回退。原8768未改，隔离8803展示更新结果；未提交/推送。
 
 ## 2026-09-24
+
+### GitHub 主仓到 GitCode 指定分支同步
+
+- 新增 [同步工作流](../.github/workflows/sync-to-gitcode.yml)、分支推送脚本、隔离 Git 测试与[配置说明](github-gitcode-sync.md)。OpScope 的 main 对应 YYoung_G/opscope main；同批为 modeling、UI 的 fork 准备了 main 到原 GitCode 接入分支的映射。
+- 同步保留提交身份，只允许快进；不复制其他分支/标签，不覆盖独立提交。令牌仅从 Actions Secret 读取，自动触发需显式启用变量。
+- 验证：5 项本地真实 Git 测试通过，覆盖创建、快进、重复运行、分叉拒绝、演练无写入及其他分支/标签保留。三个仓库的 Actions 演练和首次正式同步成功，日志核对目标 SHA 一致，自动同步变量已启用；按用户选择保留全部已有工作流。本地未提交功能改动未发布。
 
 ### 实现共享建模后端接入与轻量环境
 

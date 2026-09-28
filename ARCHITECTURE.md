@@ -1,10 +1,21 @@
 # 架构
 
+## 共享后端模式（2026-09-24）
+
+设置 `OPSCOPE_MODELING_URL` 时，FastAPI 创建 ModelingRuntime，沿用本地批次/revision/详情/比较/报告协议，通过 HTTP 复用 modeling 的资产目录、单算子任务、worker 和结果。此路径不执行内置引擎，也不以本地快照补远端缺项。新增 ModelingClient 仅负责受控传输、轮询和超时取消；无新数据库、队列或模拟公式。在线目录和有效配置由共享服务提供，按资产 ID/hash 冻结；不同档案不按同名合并。
+
+未设置 URL 的独立模式和离线导出保留。`local-engine` 为可选依赖，`setup.sh --modeling` 创建轻量环境；完整迁移验收前不删除旧副本。受保护服务沿用原有加密身份头，当前是本机单用户工具，尚未作为多用户宿主模块部署。详见[当前能力/启动](docs/modeling-runtime.md)和[接入设计](docs/modeling-backend-integration-design.md)。
+
+
 ## 统一展示目录
 
 `catalog_data.operator_groups()`按名称忽略大小写/下划线归并100个内部模板为94个可见算子。MatMul、Linear、RMSNorm、SwiGLU、Embedding只有一个列表入口，不同张量契约以中性的“输入形式”保留。内部id/domain/source不变，校验与硬件档案选择继续按原契约；界面移除来源筛选、徽标及源码详情。
 
 `Configuration.public_export()`为JSON预览和下载生成中性operator_id/template_id及hardware标识，去掉仓库路径、来源域、目录revision和档案溯源；不修改内部数据，不丢失synthetic、性能数值、执行方法和校准来源。当前结构仍是展示私有契约，未增加导入能力。
+
+## 方法目录与 lookup 预设
+
+`opscope/offline/fixtures.py` 的 `METHODS` / `method_config()` 统一定义显示顺序：真机数据、MSKPP、ESL、Roofline、TileSim；对应旧 ID `profile/method3/method4/roofline/tilesim` 保留兼容。前三项 `backend=lookup`，结果带 `method_name`、`method_backend` 供导出识别；实际执行来源仍由 `task.actual_backend` 表示，未执行为空。当前未接入 lookup 数据源，不做查找/插值或计算回退，缺源时明确返回 unsupported/null。真机数据仍是唯一参考基线，合成示例保持 synthetic。见[方法预设](docs/method-lookup-presets.md)。
 
 ## 当前形态
 
@@ -111,3 +122,5 @@ worker通过逐行JSON/flush报告组合状态，worker_stream.py在进程仍运
 ## 模型覆盖补齐（2026-09-22）
 
 `tilesim_adapters.py`区分 DSL 工程、DSL 理论和工程 API，适配 BNSD FA 的输入与逻辑工作量；保留各自实际 mode，不自动回退。GPU 映射复用已审计源映射，借用配置随结果导出并进入矩阵标记和比较限制。无事件的模型允许 trace_view=null，默认占位字段不作为采集数据展示。R200 对应已有 R200_Server Roofline 规格；源头仍缺的 910B Roofline、GPU BF16、GB200/R200 带宽/存储参数明确显示原因。见[覆盖计划及验证](docs/modeling-coverage-plan.md)。
+
+共享算子的有界参数合同与模型适配由 modeling 维护，OpScope 只传递和显示；当前覆盖及限制见[算子覆盖](docs/shared-operator-coverage.md)。

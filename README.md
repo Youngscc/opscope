@@ -1,10 +1,13 @@
 # OpScope · 算子性能观察台
 
+共享后端接入已提供可选模式：`./setup.sh --modeling`，再执行 `./start.sh --modeling-url=http://127.0.0.1:8001`。复用 modeling 算子、硬件、Roofline/TileSim 与任务执行，宿主前端保持不变。启动、鉴权、支持边界见[共享模式说明](docs/modeling-runtime.md)。以下默认安装说明仍对应独立模式。
+
+
 项目目录名：`opscope`。OpScope 取 Operator + Scope，表示从不同方法和硬件视角观察算子性能。
 
 用于比较同一个算子在不同硬件、不同评估方法下性能的 PC 应用。前端 Vue 3 / TypeScript / Vite / Pinia / Vue Router，后端 FastAPI / Uvicorn，与 modeling 的技术栈对齐。保留独立离线页面。
 
-**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 已接入矩阵、Attention、归一化、激活、逐元素和固定轴查表等已验证算子族，具体支持取决于算子契约、硬件模型与 dtype；预测不等于真机实测，Profiling 尚未接入。**
+**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 已接入矩阵、Attention、归一化、激活、逐元素和固定轴查表等已验证算子族，具体支持取决于算子契约、硬件模型与 dtype；预测不等于真机实测，真机数据的 lookup 数据源尚未接入。**
 
 ## 快速使用
 
@@ -27,7 +30,7 @@
 
 - 可搜索的统一目录，共94个不重名算子，按功能分类；逐张量编辑 shape / dtype。同名算子的不同张量契约收至“输入形式”，界面不显示来源项目及训练/推理标签。6个通信条目标注为单算子入口未提供。
 - 11组硬件配置（Server / POD分开），另保留6个独立合成示例硬件。支持搜索、批量选择。
-- 硬件×方法二维矩阵；默认展示六个示例硬件，支持筛选、总耗时/参考偏差切换；方法3和方法4提供虚拟耗时。
+- 硬件×方法二维矩阵；默认展示六个示例硬件，支持筛选、总耗时/参考偏差切换；方法按真机数据、MSKPP、ESL、Roofline、TileSim排序，前三种预设为 lookup；MSKPP/ESL 的默认耗时仍为合成示例。
 - 单元格突出总耗时、参考偏差和瓶颈；下方偏差点图/耗时条形图支持行列聚焦及点击查看详情。
 - 原生浮层详情包含结果概览、计算与访存、执行过程、输入与硬件、依据与数据；支持两条结果逐项比较、仅看差异及当前详情 JSON 导出。
 - 导出当前筛选的 JSON，提供预览、文本选择和下载链接。
@@ -123,7 +126,7 @@ python3 -B build.py
 
 - 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
 - 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
-- 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无Profiling参考时偏差为空。方法3/4虚拟数据仅用于演示，运行后整批清除。
+- 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无真机参考时偏差为空。真机数据、MSKPP、ESL 尚未配置 lookup 数据源，运行时明确显示缺源原因；虚拟数据仅用于演示，运行后整批清除。
 - TileSim 使用 `.venv` 中由仓库 wheel 安装的 msopmodeling 1.0.9。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
 - TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
 - “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。

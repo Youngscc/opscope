@@ -1,5 +1,9 @@
 # 项目记忆
 
+## 静态展示入口（2026-09-29）
+
+新增可单独复制、直接打开的 [demo.html](../demo.html)，由原离线构建链路生成，内置 MatMul 4096³ FP16/FP32 的25条合成结果。固定输入、隐藏运行入口、跳过服务探测，保留矩阵筛选/详情/双结果/JSON；所有示例与缺项语义不变。`python3 -B build.py` 同时更新 index.html 和 demo.html，不手改产物。14项数据/矩阵测试、4项既有评估UI测试及静态模式无网络/不可提交定向检查通过。按用户要求未启动服务或运行评估，本轮未做浏览器视觉与交互实测。
+
 ## 同步 GitHub 主线到集成分支（2026-09-28）
 
 按用户要求将 Youngscc/opscope main f04aab8 和 Youngscc/zrt-sim main 635e5558 合入各自 codex/opscope-modeling-integration。保留开发提交，四处文档冲突保留双方独立内容，未提交的个人文件不纳入。只推送集成分支，不修改远端 main 或 GitCode 镜像目标；未重启运行服务。

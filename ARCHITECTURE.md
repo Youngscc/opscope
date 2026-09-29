@@ -1,5 +1,9 @@
 # 架构
 
+## 静态演示产物（2026-09-29）
+
+`python3 -B build.py` 同时生成通用 `index.html` 和专用 `demo.html`。后者复用原离线模板、fixture、矩阵和详情，通过页面级 presentation 标记固定预设输入并隐藏执行入口；初始化直接跳过服务探测，无 API 请求或评估任务。筛选、单项详情、双结果比较和 JSON 仍在浏览器内执行，保持 synthetic 标记与缺失语义。无需新增依赖或单独维护页面副本。
+
 ## 共享后端模式（2026-09-24）
 
 设置 `OPSCOPE_MODELING_URL` 时，FastAPI 创建 ModelingRuntime，沿用本地批次/revision/详情/比较/报告协议，通过 HTTP 复用 modeling 的资产目录、单算子任务、worker 和结果。此路径不执行内置引擎，也不以本地快照补远端缺项。新增 ModelingClient 仅负责受控传输、轮询和超时取消；无新数据库、队列或模拟公式。在线目录和有效配置由共享服务提供，按资产 ID/hash 冻结；不同档案不按同名合并。

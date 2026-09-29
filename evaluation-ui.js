@@ -99,6 +99,15 @@ async function run_evaluation() {
 
 async function initialize_evaluation() {
   state.evaluationToken = 0;
+  if (document.body.dataset.presentation === 'true') {
+    state.serviceReady = false;
+    state.serviceMessage = '静态演示 · 已内置预设结果，无需运行评估。可筛选、查看详情或选择两项对比。';
+    by_id('workload-button').disabled = true;
+    by_id('workload-status').textContent = '预设 MatMul · 输入配置已固定';
+    by_id('evaluation-message').textContent = state.serviceMessage;
+    render_evaluation_controls();
+    return;
+  }
   by_id('run-evaluation').addEventListener('click', run_evaluation);
   render_evaluation_controls();
   if (location.protocol === 'file:') {

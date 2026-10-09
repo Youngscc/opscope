@@ -75,6 +75,13 @@ class WebTest(unittest.TestCase):
         self.assertEqual(len(response.json()['catalog']['groups']), 94)
         self.assertTrue(response.json()['synthetic'])
         self.assertIn('Vue entry', self.client.get('/opscope').text)
+        # Browser refreshes on the two preview routes must return the Vue shell, not 404.
+        for path in ('/optimization', '/optimization/', '/megakernel', '/megakernel/'):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('Vue entry', response.text)
+        self.assertEqual(self.client.get('/optimization/unknown').status_code, 404)
+        self.assertIsNone(self.runtime.body)
         self.assertEqual(self.client.get('/api/unknown').status_code, 404)
         self.assertEqual(self.client.get('/.env').status_code, 404)
         self.assertEqual(self.client.get('/static/missing.js').status_code, 404)

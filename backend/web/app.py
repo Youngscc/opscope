@@ -65,7 +65,9 @@ def install_frontend(app, directory):
             return JSONResponse({'error': '未知资源。'}, status_code=404)
         if target.is_file():
             return FileResponse(target)
-        if path not in ('', 'index.html', 'opscope', 'opscope/'):
+        pages = ('', 'index.html', 'opscope', 'opscope/',
+                 'optimization', 'optimization/', 'megakernel', 'megakernel/')
+        if path not in pages:
             return JSONResponse({'error': '未知页面或资源。'}, status_code=404)
         page = directory / 'index.html'
         if not page.exists():

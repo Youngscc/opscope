@@ -1,0 +1,5079 @@
+{
+  "schema": "opscope-optimization-demo-v5",
+  "synthetic": true,
+  "diagnostic_catalog": {
+    "operators": [
+      {
+        "id": "matmul",
+        "name": "MatMul",
+        "dtype": "FP16",
+        "axes": [
+          "M",
+          "N",
+          "K"
+        ],
+        "input_template": "A [M, K] · B [K, N]",
+        "default_size": "4096",
+        "sizes": [
+          {
+            "id": "1024",
+            "dimensions": [
+              1024,
+              1024,
+              1024
+            ],
+            "shape": "1024 × 1024 × 1024",
+            "inputs": [
+              {
+                "name": "A",
+                "shape": [
+                  1024,
+                  1024
+                ],
+                "dtype": "FP16"
+              },
+              {
+                "name": "B",
+                "shape": [
+                  1024,
+                  1024
+                ],
+                "dtype": "FP16"
+              }
+            ]
+          },
+          {
+            "id": "2048",
+            "dimensions": [
+              2048,
+              2048,
+              2048
+            ],
+            "shape": "2048 × 2048 × 2048",
+            "inputs": [
+              {
+                "name": "A",
+                "shape": [
+                  2048,
+                  2048
+                ],
+                "dtype": "FP16"
+              },
+              {
+                "name": "B",
+                "shape": [
+                  2048,
+                  2048
+                ],
+                "dtype": "FP16"
+              }
+            ]
+          },
+          {
+            "id": "4096",
+            "dimensions": [
+              4096,
+              4096,
+              4096
+            ],
+            "shape": "4096 × 4096 × 4096",
+            "inputs": [
+              {
+                "name": "A",
+                "shape": [
+                  4096,
+                  4096
+                ],
+                "dtype": "FP16"
+              },
+              {
+                "name": "B",
+                "shape": [
+                  4096,
+                  4096
+                ],
+                "dtype": "FP16"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "attention",
+        "name": "Attention",
+        "dtype": "BF16",
+        "axes": [
+          "B",
+          "H",
+          "S",
+          "D"
+        ],
+        "input_template": "Q / K / V [B, H, S, D]",
+        "default_size": "2048",
+        "sizes": [
+          {
+            "id": "512",
+            "dimensions": [
+              1,
+              32,
+              512,
+              128
+            ],
+            "shape": "1 × 32 × 512 × 128",
+            "inputs": [
+              {
+                "name": "Q",
+                "shape": [
+                  1,
+                  32,
+                  512,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "K",
+                "shape": [
+                  1,
+                  32,
+                  512,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "V",
+                "shape": [
+                  1,
+                  32,
+                  512,
+                  128
+                ],
+                "dtype": "BF16"
+              }
+            ]
+          },
+          {
+            "id": "2048",
+            "dimensions": [
+              1,
+              32,
+              2048,
+              128
+            ],
+            "shape": "1 × 32 × 2048 × 128",
+            "inputs": [
+              {
+                "name": "Q",
+                "shape": [
+                  1,
+                  32,
+                  2048,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "K",
+                "shape": [
+                  1,
+                  32,
+                  2048,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "V",
+                "shape": [
+                  1,
+                  32,
+                  2048,
+                  128
+                ],
+                "dtype": "BF16"
+              }
+            ]
+          },
+          {
+            "id": "4096",
+            "dimensions": [
+              1,
+              32,
+              4096,
+              128
+            ],
+            "shape": "1 × 32 × 4096 × 128",
+            "inputs": [
+              {
+                "name": "Q",
+                "shape": [
+                  1,
+                  32,
+                  4096,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "K",
+                "shape": [
+                  1,
+                  32,
+                  4096,
+                  128
+                ],
+                "dtype": "BF16"
+              },
+              {
+                "name": "V",
+                "shape": [
+                  1,
+                  32,
+                  4096,
+                  128
+                ],
+                "dtype": "BF16"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "hardware": [
+      {
+        "id": "ascend-910b1",
+        "name": "Ascend 910B1"
+      },
+      {
+        "id": "ascend-910b4",
+        "name": "Ascend 910B4"
+      }
+    ],
+    "synthetic": true
+  },
+  "diagnostics": [
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b1",
+      "bound": "访存受限",
+      "title": "数据搬运让计算流水停了下来",
+      "summary": "优先提高数据复用，再扩大计算与搬运的重叠。",
+      "location": "数据搬入 → 矩阵计算",
+      "latency_us": 12.8,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 57,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 42,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待下一块输入",
+      "window_us": 10,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 Tile 复用",
+          "priority": "优先",
+          "detail": "调整 M / N 分块，减少对同一输入的重复搬入。",
+          "check": "验证 HBM 流量与总耗时"
+        },
+        {
+          "title": "启用双缓冲",
+          "priority": "其次",
+          "detail": "让下一块输入的搬运与当前块计算交叠。",
+          "check": "验证 MTE2 / Cube 重叠"
+        },
+        {
+          "title": "检查尾块负载",
+          "priority": "后续",
+          "detail": "缩小核间尾块差异，减少最后一轮的空闲。",
+          "check": "验证各核结束时间"
+        }
+      ],
+      "size_id": "1024",
+      "dimensions": [
+        1024,
+        1024,
+        1024
+      ],
+      "shape": "1024 × 1024 × 1024",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            1024,
+            1024
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            1024,
+            1024
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b1/1024",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B1",
+      "latency": "12.8",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "1.2 μs",
+              "detail": "0.0–1.2 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "1.6 μs",
+              "detail": "2.0–3.6 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "1.2 μs",
+              "detail": "4.8–6.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "1.2 μs",
+              "detail": "6.6–7.8 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "1.0 μs",
+              "detail": "1.3–2.3 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "1.0 μs",
+              "detail": "3.7–4.7 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "0.9 μs",
+              "detail": "6.1–7.0 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "1.2 μs",
+              "detail": "7.9–9.1 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "0.6 μs",
+              "detail": "2.4–3.0 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "0.6 μs",
+              "detail": "4.9–5.5 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "0.6 μs",
+              "detail": "7.3–7.9 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "0.7 μs",
+              "detail": "9.3–10.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 2.3,
+        "end_us": 3.7,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "2.3–3.7 μs",
+      "window": "局部窗口 · 0–10 μs",
+      "ticks": [
+        "0",
+        "2.5",
+        "5",
+        "7.5",
+        "10 μs"
+      ]
+    },
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b1",
+      "bound": "访存受限",
+      "title": "数据搬运让计算流水停了下来",
+      "summary": "优先提高数据复用，再扩大计算与搬运的重叠。",
+      "location": "数据搬入 → 矩阵计算",
+      "latency_us": 34.8,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 76,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 52,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待下一块输入",
+      "window_us": 25,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 Tile 复用",
+          "priority": "优先",
+          "detail": "调整 M / N 分块，减少对同一输入的重复搬入。",
+          "check": "验证 HBM 流量与总耗时"
+        },
+        {
+          "title": "启用双缓冲",
+          "priority": "其次",
+          "detail": "让下一块输入的搬运与当前块计算交叠。",
+          "check": "验证 MTE2 / Cube 重叠"
+        },
+        {
+          "title": "检查尾块负载",
+          "priority": "后续",
+          "detail": "缩小核间尾块差异，减少最后一轮的空闲。",
+          "check": "验证各核结束时间"
+        }
+      ],
+      "size_id": "2048",
+      "dimensions": [
+        2048,
+        2048,
+        2048
+      ],
+      "shape": "2048 × 2048 × 2048",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            2048,
+            2048
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            2048,
+            2048
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b1/2048",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B1",
+      "latency": "34.8",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "3.0 μs",
+              "detail": "0.0–3.0 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "4.0 μs",
+              "detail": "5.0–9.0 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "3.0 μs",
+              "detail": "12.0–15.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "3.0 μs",
+              "detail": "16.5–19.5 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "2.5 μs",
+              "detail": "3.2–5.8 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "2.5 μs",
+              "detail": "9.2–11.8 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "2.2 μs",
+              "detail": "15.2–17.5 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "3.0 μs",
+              "detail": "19.8–22.8 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "1.5 μs",
+              "detail": "6.0–7.5 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "1.5 μs",
+              "detail": "12.2–13.8 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "1.5 μs",
+              "detail": "18.2–19.8 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "1.8 μs",
+              "detail": "23.2–25.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 5.75,
+        "end_us": 9.25,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "5.75–9.25 μs",
+      "window": "局部窗口 · 0–25 μs",
+      "ticks": [
+        "0",
+        "6.25",
+        "12.5",
+        "18.75",
+        "25 μs"
+      ]
+    },
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b1",
+      "bound": "访存受限",
+      "title": "数据搬运让计算流水停了下来",
+      "summary": "优先提高数据复用，再扩大计算与搬运的重叠。",
+      "location": "数据搬入 → 矩阵计算",
+      "latency_us": 126.4,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 87,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 58,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待下一块输入",
+      "window_us": 100,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 Tile 复用",
+          "priority": "优先",
+          "detail": "调整 M / N 分块，减少对同一输入的重复搬入。",
+          "check": "验证 HBM 流量与总耗时"
+        },
+        {
+          "title": "启用双缓冲",
+          "priority": "其次",
+          "detail": "让下一块输入的搬运与当前块计算交叠。",
+          "check": "验证 MTE2 / Cube 重叠"
+        },
+        {
+          "title": "检查尾块负载",
+          "priority": "后续",
+          "detail": "缩小核间尾块差异，减少最后一轮的空闲。",
+          "check": "验证各核结束时间"
+        }
+      ],
+      "size_id": "4096",
+      "dimensions": [
+        4096,
+        4096,
+        4096
+      ],
+      "shape": "4096 × 4096 × 4096",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            4096,
+            4096
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            4096,
+            4096
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b1/4096",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B1",
+      "latency": "126.4",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "12.0 μs",
+              "detail": "0.0–12.0 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "16.0 μs",
+              "detail": "20.0–36.0 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "12.0 μs",
+              "detail": "48.0–60.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "12.0 μs",
+              "detail": "66.0–78.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "10.0 μs",
+              "detail": "13.0–23.0 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "10.0 μs",
+              "detail": "37.0–47.0 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "9.0 μs",
+              "detail": "61.0–70.0 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "12.0 μs",
+              "detail": "79.0–91.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "6.0 μs",
+              "detail": "24.0–30.0 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "6.0 μs",
+              "detail": "49.0–55.0 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "6.0 μs",
+              "detail": "73.0–79.0 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "7.0 μs",
+              "detail": "93.0–100.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 23,
+        "end_us": 37,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "23–37 μs",
+      "window": "局部窗口 · 0–100 μs",
+      "ticks": [
+        "0",
+        "25",
+        "50",
+        "75",
+        "100 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b1",
+      "bound": "同步等待",
+      "title": "计算与 Softmax 之间出现了空档",
+      "summary": "优先衔接 Cube 与 Vector 阶段，减少同步等待。",
+      "location": "矩阵计算 → Softmax",
+      "latency_us": 74.6,
+      "gauges": [
+        {
+          "label": "Vector 活跃比例",
+          "value": 56,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 38,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待阶段同步",
+      "window_us": 50,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "流水化 Softmax",
+          "priority": "优先",
+          "detail": "将 Softmax 与下一块矩阵计算交叠执行。",
+          "check": "验证 Cube / Vector 衔接"
+        },
+        {
+          "title": "缩短同步范围",
+          "priority": "其次",
+          "detail": "检查事件依赖，让可独立执行的块更早开始。",
+          "check": "验证关键路径等待"
+        },
+        {
+          "title": "平衡两阶段分块",
+          "priority": "后续",
+          "detail": "协调矩阵计算与 Vector 阶段的块大小。",
+          "check": "验证各阶段活跃比例"
+        }
+      ],
+      "size_id": "512",
+      "dimensions": [
+        1,
+        32,
+        512,
+        128
+      ],
+      "shape": "1 × 32 × 512 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b1/512",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B1",
+      "latency": "74.6",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "6.0 μs",
+              "detail": "0.0–6.0 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "8.0 μs",
+              "detail": "10.0–18.0 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "6.0 μs",
+              "detail": "24.0–30.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "6.0 μs",
+              "detail": "33.0–39.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "5.0 μs",
+              "detail": "6.5–11.5 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "5.0 μs",
+              "detail": "18.5–23.5 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "4.5 μs",
+              "detail": "30.5–35.0 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "6.0 μs",
+              "detail": "39.5–45.5 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "3.0 μs",
+              "detail": "12.0–15.0 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "3.0 μs",
+              "detail": "24.5–27.5 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "3.0 μs",
+              "detail": "36.5–39.5 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "3.5 μs",
+              "detail": "46.5–50.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 11.5,
+        "end_us": 18.5,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "11.5–18.5 μs",
+      "window": "局部窗口 · 0–50 μs",
+      "ticks": [
+        "0",
+        "12.5",
+        "25",
+        "37.5",
+        "50 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b1",
+      "bound": "同步等待",
+      "title": "计算与 Softmax 之间出现了空档",
+      "summary": "优先衔接 Cube 与 Vector 阶段，减少同步等待。",
+      "location": "矩阵计算 → Softmax",
+      "latency_us": 284.0,
+      "gauges": [
+        {
+          "label": "Vector 活跃比例",
+          "value": 71,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 46,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待阶段同步",
+      "window_us": 200,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "流水化 Softmax",
+          "priority": "优先",
+          "detail": "将 Softmax 与下一块矩阵计算交叠执行。",
+          "check": "验证 Cube / Vector 衔接"
+        },
+        {
+          "title": "缩短同步范围",
+          "priority": "其次",
+          "detail": "检查事件依赖，让可独立执行的块更早开始。",
+          "check": "验证关键路径等待"
+        },
+        {
+          "title": "平衡两阶段分块",
+          "priority": "后续",
+          "detail": "协调矩阵计算与 Vector 阶段的块大小。",
+          "check": "验证各阶段活跃比例"
+        }
+      ],
+      "size_id": "2048",
+      "dimensions": [
+        1,
+        32,
+        2048,
+        128
+      ],
+      "shape": "1 × 32 × 2048 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b1/2048",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B1",
+      "latency": "284.0",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "24.0 μs",
+              "detail": "0.0–24.0 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "32.0 μs",
+              "detail": "40.0–72.0 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "24.0 μs",
+              "detail": "96.0–120.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "24.0 μs",
+              "detail": "132.0–156.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "20.0 μs",
+              "detail": "26.0–46.0 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "20.0 μs",
+              "detail": "74.0–94.0 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "18.0 μs",
+              "detail": "122.0–140.0 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "24.0 μs",
+              "detail": "158.0–182.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "12.0 μs",
+              "detail": "48.0–60.0 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "12.0 μs",
+              "detail": "98.0–110.0 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "12.0 μs",
+              "detail": "146.0–158.0 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "14.0 μs",
+              "detail": "186.0–200.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 46,
+        "end_us": 74,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "46–74 μs",
+      "window": "局部窗口 · 0–200 μs",
+      "ticks": [
+        "0",
+        "50",
+        "100",
+        "150",
+        "200 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b1",
+      "bound": "同步等待",
+      "title": "计算与 Softmax 之间出现了空档",
+      "summary": "优先衔接 Cube 与 Vector 阶段，减少同步等待。",
+      "location": "矩阵计算 → Softmax",
+      "latency_us": 842.0,
+      "gauges": [
+        {
+          "label": "Vector 活跃比例",
+          "value": 84,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 62,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待阶段同步",
+      "window_us": 500,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "流水化 Softmax",
+          "priority": "优先",
+          "detail": "将 Softmax 与下一块矩阵计算交叠执行。",
+          "check": "验证 Cube / Vector 衔接"
+        },
+        {
+          "title": "缩短同步范围",
+          "priority": "其次",
+          "detail": "检查事件依赖，让可独立执行的块更早开始。",
+          "check": "验证关键路径等待"
+        },
+        {
+          "title": "平衡两阶段分块",
+          "priority": "后续",
+          "detail": "协调矩阵计算与 Vector 阶段的块大小。",
+          "check": "验证各阶段活跃比例"
+        }
+      ],
+      "size_id": "4096",
+      "dimensions": [
+        1,
+        32,
+        4096,
+        128
+      ],
+      "shape": "1 × 32 × 4096 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b1/4096",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B1",
+      "latency": "842.0",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 12,
+              "label": "60.0 μs",
+              "detail": "0.0–60.0 μs"
+            },
+            {
+              "left": 20,
+              "width": 16,
+              "label": "80.0 μs",
+              "detail": "100.0–180.0 μs"
+            },
+            {
+              "left": 48,
+              "width": 12,
+              "label": "60.0 μs",
+              "detail": "240.0–300.0 μs"
+            },
+            {
+              "left": 66,
+              "width": 12,
+              "label": "60.0 μs",
+              "detail": "330.0–390.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 13,
+              "width": 10,
+              "label": "50.0 μs",
+              "detail": "65.0–115.0 μs"
+            },
+            {
+              "left": 37,
+              "width": 10,
+              "label": "50.0 μs",
+              "detail": "185.0–235.0 μs"
+            },
+            {
+              "left": 61,
+              "width": 9,
+              "label": "45.0 μs",
+              "detail": "305.0–350.0 μs"
+            },
+            {
+              "left": 79,
+              "width": 12,
+              "label": "60.0 μs",
+              "detail": "395.0–455.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 24,
+              "width": 6,
+              "label": "30.0 μs",
+              "detail": "120.0–150.0 μs"
+            },
+            {
+              "left": 49,
+              "width": 6,
+              "label": "30.0 μs",
+              "detail": "245.0–275.0 μs"
+            },
+            {
+              "left": 73,
+              "width": 6,
+              "label": "30.0 μs",
+              "detail": "365.0–395.0 μs"
+            },
+            {
+              "left": 93,
+              "width": 7,
+              "label": "35.0 μs",
+              "detail": "465.0–500.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 115,
+        "end_us": 185,
+        "left": 23.0,
+        "width": 14.0
+      },
+      "focus_range": "115–185 μs",
+      "window": "局部窗口 · 0–500 μs",
+      "ticks": [
+        "0",
+        "125",
+        "250",
+        "375",
+        "500 μs"
+      ]
+    },
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b4",
+      "bound": "计算受限",
+      "title": "矩阵计算占据主要执行时间",
+      "summary": "优先改进分块与指令排布，提升计算吞吐。",
+      "location": "矩阵计算",
+      "latency_us": 11.4,
+      "gauges": [
+        {
+          "label": "Cube 活跃比例",
+          "value": 61,
+          "kind": "compute"
+        },
+        {
+          "label": "HBM 带宽占用",
+          "value": 38,
+          "kind": "memory"
+        }
+      ],
+      "focus": "矩阵计算密集区间",
+      "window_us": 10,
+      "timeline_title": "计算集中在哪？",
+      "actions": [
+        {
+          "title": "优化矩阵分块",
+          "priority": "优先",
+          "detail": "调整 M / N / K 分块，提高矩阵指令的有效工作量。",
+          "check": "验证 Cube 活跃比例与总耗时"
+        },
+        {
+          "title": "交错计算与搬运",
+          "priority": "其次",
+          "detail": "将后续输入预取安排到当前计算期间。",
+          "check": "验证搬运与计算重叠"
+        },
+        {
+          "title": "减少尾块计算",
+          "priority": "后续",
+          "detail": "优化尾块处理，减少无效填充和重复计算。",
+          "check": "验证有效计算比例"
+        }
+      ],
+      "size_id": "1024",
+      "dimensions": [
+        1024,
+        1024,
+        1024
+      ],
+      "shape": "1024 × 1024 × 1024",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            1024,
+            1024
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            1024,
+            1024
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b4/1024",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B4",
+      "latency": "11.4",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 9,
+              "label": "0.9 μs",
+              "detail": "0.0–0.9 μs"
+            },
+            {
+              "left": 19,
+              "width": 9,
+              "label": "0.9 μs",
+              "detail": "1.9–2.8 μs"
+            },
+            {
+              "left": 39,
+              "width": 9,
+              "label": "0.9 μs",
+              "detail": "3.9–4.8 μs"
+            },
+            {
+              "left": 59,
+              "width": 9,
+              "label": "0.9 μs",
+              "detail": "5.9–6.8 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 10,
+              "width": 22,
+              "label": "2.2 μs",
+              "detail": "1.0–3.2 μs"
+            },
+            {
+              "left": 36,
+              "width": 22,
+              "label": "2.2 μs",
+              "detail": "3.6–5.8 μs"
+            },
+            {
+              "left": 60,
+              "width": 22,
+              "label": "2.2 μs",
+              "detail": "6.0–8.2 μs"
+            },
+            {
+              "left": 86,
+              "width": 10,
+              "label": "1.0 μs",
+              "detail": "8.6–9.6 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 33,
+              "width": 5,
+              "label": "0.5 μs",
+              "detail": "3.3–3.8 μs"
+            },
+            {
+              "left": 59,
+              "width": 5,
+              "label": "0.5 μs",
+              "detail": "5.9–6.4 μs"
+            },
+            {
+              "left": 83,
+              "width": 5,
+              "label": "0.5 μs",
+              "detail": "8.3–8.8 μs"
+            },
+            {
+              "left": 96,
+              "width": 4,
+              "label": "0.4 μs",
+              "detail": "9.6–10.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 1,
+        "end_us": 3.2,
+        "left": 10.0,
+        "width": 22.0
+      },
+      "focus_range": "1–3.2 μs",
+      "window": "局部窗口 · 0–10 μs",
+      "ticks": [
+        "0",
+        "2.5",
+        "5",
+        "7.5",
+        "10 μs"
+      ]
+    },
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b4",
+      "bound": "计算受限",
+      "title": "矩阵计算占据主要执行时间",
+      "summary": "优先改进分块与指令排布，提升计算吞吐。",
+      "location": "矩阵计算",
+      "latency_us": 30.2,
+      "gauges": [
+        {
+          "label": "Cube 活跃比例",
+          "value": 79,
+          "kind": "compute"
+        },
+        {
+          "label": "HBM 带宽占用",
+          "value": 47,
+          "kind": "memory"
+        }
+      ],
+      "focus": "矩阵计算密集区间",
+      "window_us": 25,
+      "timeline_title": "计算集中在哪？",
+      "actions": [
+        {
+          "title": "优化矩阵分块",
+          "priority": "优先",
+          "detail": "调整 M / N / K 分块，提高矩阵指令的有效工作量。",
+          "check": "验证 Cube 活跃比例与总耗时"
+        },
+        {
+          "title": "交错计算与搬运",
+          "priority": "其次",
+          "detail": "将后续输入预取安排到当前计算期间。",
+          "check": "验证搬运与计算重叠"
+        },
+        {
+          "title": "减少尾块计算",
+          "priority": "后续",
+          "detail": "优化尾块处理，减少无效填充和重复计算。",
+          "check": "验证有效计算比例"
+        }
+      ],
+      "size_id": "2048",
+      "dimensions": [
+        2048,
+        2048,
+        2048
+      ],
+      "shape": "2048 × 2048 × 2048",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            2048,
+            2048
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            2048,
+            2048
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b4/2048",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B4",
+      "latency": "30.2",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 9,
+              "label": "2.2 μs",
+              "detail": "0.0–2.2 μs"
+            },
+            {
+              "left": 19,
+              "width": 9,
+              "label": "2.2 μs",
+              "detail": "4.8–7.0 μs"
+            },
+            {
+              "left": 39,
+              "width": 9,
+              "label": "2.2 μs",
+              "detail": "9.8–12.0 μs"
+            },
+            {
+              "left": 59,
+              "width": 9,
+              "label": "2.2 μs",
+              "detail": "14.8–17.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 10,
+              "width": 22,
+              "label": "5.5 μs",
+              "detail": "2.5–8.0 μs"
+            },
+            {
+              "left": 36,
+              "width": 22,
+              "label": "5.5 μs",
+              "detail": "9.0–14.5 μs"
+            },
+            {
+              "left": 60,
+              "width": 22,
+              "label": "5.5 μs",
+              "detail": "15.0–20.5 μs"
+            },
+            {
+              "left": 86,
+              "width": 10,
+              "label": "2.5 μs",
+              "detail": "21.5–24.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 33,
+              "width": 5,
+              "label": "1.2 μs",
+              "detail": "8.2–9.5 μs"
+            },
+            {
+              "left": 59,
+              "width": 5,
+              "label": "1.2 μs",
+              "detail": "14.8–16.0 μs"
+            },
+            {
+              "left": 83,
+              "width": 5,
+              "label": "1.2 μs",
+              "detail": "20.8–22.0 μs"
+            },
+            {
+              "left": 96,
+              "width": 4,
+              "label": "1.0 μs",
+              "detail": "24.0–25.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 2.5,
+        "end_us": 8,
+        "left": 10.0,
+        "width": 22.0
+      },
+      "focus_range": "2.5–8 μs",
+      "window": "局部窗口 · 0–25 μs",
+      "ticks": [
+        "0",
+        "6.25",
+        "12.5",
+        "18.75",
+        "25 μs"
+      ]
+    },
+    {
+      "operator_id": "matmul",
+      "hardware_id": "ascend-910b4",
+      "bound": "计算受限",
+      "title": "矩阵计算占据主要执行时间",
+      "summary": "优先改进分块与指令排布，提升计算吞吐。",
+      "location": "矩阵计算",
+      "latency_us": 112.6,
+      "gauges": [
+        {
+          "label": "Cube 活跃比例",
+          "value": 88,
+          "kind": "compute"
+        },
+        {
+          "label": "HBM 带宽占用",
+          "value": 54,
+          "kind": "memory"
+        }
+      ],
+      "focus": "矩阵计算密集区间",
+      "window_us": 100,
+      "timeline_title": "计算集中在哪？",
+      "actions": [
+        {
+          "title": "优化矩阵分块",
+          "priority": "优先",
+          "detail": "调整 M / N / K 分块，提高矩阵指令的有效工作量。",
+          "check": "验证 Cube 活跃比例与总耗时"
+        },
+        {
+          "title": "交错计算与搬运",
+          "priority": "其次",
+          "detail": "将后续输入预取安排到当前计算期间。",
+          "check": "验证搬运与计算重叠"
+        },
+        {
+          "title": "减少尾块计算",
+          "priority": "后续",
+          "detail": "优化尾块处理，减少无效填充和重复计算。",
+          "check": "验证有效计算比例"
+        }
+      ],
+      "size_id": "4096",
+      "dimensions": [
+        4096,
+        4096,
+        4096
+      ],
+      "shape": "4096 × 4096 × 4096",
+      "inputs": [
+        {
+          "name": "A",
+          "shape": [
+            4096,
+            4096
+          ],
+          "dtype": "FP16"
+        },
+        {
+          "name": "B",
+          "shape": [
+            4096,
+            4096
+          ],
+          "dtype": "FP16"
+        }
+      ],
+      "id": "matmul/ascend-910b4/4096",
+      "synthetic": true,
+      "operator": "MatMul",
+      "dtype": "FP16",
+      "hardware": "Ascend 910B4",
+      "latency": "112.6",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 9,
+              "label": "9.0 μs",
+              "detail": "0.0–9.0 μs"
+            },
+            {
+              "left": 19,
+              "width": 9,
+              "label": "9.0 μs",
+              "detail": "19.0–28.0 μs"
+            },
+            {
+              "left": 39,
+              "width": 9,
+              "label": "9.0 μs",
+              "detail": "39.0–48.0 μs"
+            },
+            {
+              "left": 59,
+              "width": 9,
+              "label": "9.0 μs",
+              "detail": "59.0–68.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 10,
+              "width": 22,
+              "label": "22.0 μs",
+              "detail": "10.0–32.0 μs"
+            },
+            {
+              "left": 36,
+              "width": 22,
+              "label": "22.0 μs",
+              "detail": "36.0–58.0 μs"
+            },
+            {
+              "left": 60,
+              "width": 22,
+              "label": "22.0 μs",
+              "detail": "60.0–82.0 μs"
+            },
+            {
+              "left": 86,
+              "width": 10,
+              "label": "10.0 μs",
+              "detail": "86.0–96.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "MTE3",
+          "label": "结果写回",
+          "kind": "store",
+          "segments": [
+            {
+              "left": 33,
+              "width": 5,
+              "label": "5.0 μs",
+              "detail": "33.0–38.0 μs"
+            },
+            {
+              "left": 59,
+              "width": 5,
+              "label": "5.0 μs",
+              "detail": "59.0–64.0 μs"
+            },
+            {
+              "left": 83,
+              "width": 5,
+              "label": "5.0 μs",
+              "detail": "83.0–88.0 μs"
+            },
+            {
+              "left": 96,
+              "width": 4,
+              "label": "4.0 μs",
+              "detail": "96.0–100.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 10,
+        "end_us": 32,
+        "left": 10.0,
+        "width": 22.0
+      },
+      "focus_range": "10–32 μs",
+      "window": "局部窗口 · 0–100 μs",
+      "ticks": [
+        "0",
+        "25",
+        "50",
+        "75",
+        "100 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b4",
+      "bound": "访存受限",
+      "title": "K / V 重复搬入拖慢了执行",
+      "summary": "优先复用 K / V 分块，减少中间结果落存。",
+      "location": "K / V 搬入 → 矩阵计算",
+      "latency_us": 63.2,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 68,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 49,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待 K / V 分块",
+      "window_us": 50,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 K / V 复用",
+          "priority": "优先",
+          "detail": "让相邻 Query 分块共享已搬入的 K / V 数据。",
+          "check": "验证重复读取量与总耗时"
+        },
+        {
+          "title": "减少中间结果落存",
+          "priority": "其次",
+          "detail": "将矩阵计算与 Softmax 中间结果保留在片上。",
+          "check": "验证中间结果访存量"
+        },
+        {
+          "title": "调整预取时机",
+          "priority": "后续",
+          "detail": "在当前分块计算期间提前搬入下一块 K / V。",
+          "check": "验证关键路径等待"
+        }
+      ],
+      "size_id": "512",
+      "dimensions": [
+        1,
+        32,
+        512,
+        128
+      ],
+      "shape": "1 × 32 × 512 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            512,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b4/512",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B4",
+      "latency": "63.2",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 10,
+              "label": "5.0 μs",
+              "detail": "0.0–5.0 μs"
+            },
+            {
+              "left": 24,
+              "width": 19,
+              "label": "9.5 μs",
+              "detail": "12.0–21.5 μs"
+            },
+            {
+              "left": 52,
+              "width": 12,
+              "label": "6.0 μs",
+              "detail": "26.0–32.0 μs"
+            },
+            {
+              "left": 76,
+              "width": 10,
+              "label": "5.0 μs",
+              "detail": "38.0–43.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 11,
+              "width": 17,
+              "label": "8.5 μs",
+              "detail": "5.5–14.0 μs"
+            },
+            {
+              "left": 44,
+              "width": 13,
+              "label": "6.5 μs",
+              "detail": "22.0–28.5 μs"
+            },
+            {
+              "left": 65,
+              "width": 11,
+              "label": "5.5 μs",
+              "detail": "32.5–38.0 μs"
+            },
+            {
+              "left": 87,
+              "width": 10,
+              "label": "5.0 μs",
+              "detail": "43.5–48.5 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 29,
+              "width": 7,
+              "label": "3.5 μs",
+              "detail": "14.5–18.0 μs"
+            },
+            {
+              "left": 58,
+              "width": 6,
+              "label": "3.0 μs",
+              "detail": "29.0–32.0 μs"
+            },
+            {
+              "left": 77,
+              "width": 8,
+              "label": "4.0 μs",
+              "detail": "38.5–42.5 μs"
+            },
+            {
+              "left": 97,
+              "width": 3,
+              "label": "1.5 μs",
+              "detail": "48.5–50.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 14,
+        "end_us": 22,
+        "left": 28.0,
+        "width": 16.0
+      },
+      "focus_range": "14–22 μs",
+      "window": "局部窗口 · 0–50 μs",
+      "ticks": [
+        "0",
+        "12.5",
+        "25",
+        "37.5",
+        "50 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b4",
+      "bound": "访存受限",
+      "title": "K / V 重复搬入拖慢了执行",
+      "summary": "优先复用 K / V 分块，减少中间结果落存。",
+      "location": "K / V 搬入 → 矩阵计算",
+      "latency_us": 238.8,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 82,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 64,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待 K / V 分块",
+      "window_us": 200,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 K / V 复用",
+          "priority": "优先",
+          "detail": "让相邻 Query 分块共享已搬入的 K / V 数据。",
+          "check": "验证重复读取量与总耗时"
+        },
+        {
+          "title": "减少中间结果落存",
+          "priority": "其次",
+          "detail": "将矩阵计算与 Softmax 中间结果保留在片上。",
+          "check": "验证中间结果访存量"
+        },
+        {
+          "title": "调整预取时机",
+          "priority": "后续",
+          "detail": "在当前分块计算期间提前搬入下一块 K / V。",
+          "check": "验证关键路径等待"
+        }
+      ],
+      "size_id": "2048",
+      "dimensions": [
+        1,
+        32,
+        2048,
+        128
+      ],
+      "shape": "1 × 32 × 2048 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            2048,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b4/2048",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B4",
+      "latency": "238.8",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 10,
+              "label": "20.0 μs",
+              "detail": "0.0–20.0 μs"
+            },
+            {
+              "left": 24,
+              "width": 19,
+              "label": "38.0 μs",
+              "detail": "48.0–86.0 μs"
+            },
+            {
+              "left": 52,
+              "width": 12,
+              "label": "24.0 μs",
+              "detail": "104.0–128.0 μs"
+            },
+            {
+              "left": 76,
+              "width": 10,
+              "label": "20.0 μs",
+              "detail": "152.0–172.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 11,
+              "width": 17,
+              "label": "34.0 μs",
+              "detail": "22.0–56.0 μs"
+            },
+            {
+              "left": 44,
+              "width": 13,
+              "label": "26.0 μs",
+              "detail": "88.0–114.0 μs"
+            },
+            {
+              "left": 65,
+              "width": 11,
+              "label": "22.0 μs",
+              "detail": "130.0–152.0 μs"
+            },
+            {
+              "left": 87,
+              "width": 10,
+              "label": "20.0 μs",
+              "detail": "174.0–194.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 29,
+              "width": 7,
+              "label": "14.0 μs",
+              "detail": "58.0–72.0 μs"
+            },
+            {
+              "left": 58,
+              "width": 6,
+              "label": "12.0 μs",
+              "detail": "116.0–128.0 μs"
+            },
+            {
+              "left": 77,
+              "width": 8,
+              "label": "16.0 μs",
+              "detail": "154.0–170.0 μs"
+            },
+            {
+              "left": 97,
+              "width": 3,
+              "label": "6.0 μs",
+              "detail": "194.0–200.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 56,
+        "end_us": 88,
+        "left": 28.0,
+        "width": 16.0
+      },
+      "focus_range": "56–88 μs",
+      "window": "局部窗口 · 0–200 μs",
+      "ticks": [
+        "0",
+        "50",
+        "100",
+        "150",
+        "200 μs"
+      ]
+    },
+    {
+      "operator_id": "attention",
+      "hardware_id": "ascend-910b4",
+      "bound": "访存受限",
+      "title": "K / V 重复搬入拖慢了执行",
+      "summary": "优先复用 K / V 分块，减少中间结果落存。",
+      "location": "K / V 搬入 → 矩阵计算",
+      "latency_us": 716.4,
+      "gauges": [
+        {
+          "label": "HBM 带宽占用",
+          "value": 91,
+          "kind": "memory"
+        },
+        {
+          "label": "Cube 活跃比例",
+          "value": 61,
+          "kind": "compute"
+        }
+      ],
+      "focus": "等待 K / V 分块",
+      "window_us": 500,
+      "timeline_title": "计算在等什么？",
+      "actions": [
+        {
+          "title": "提高 K / V 复用",
+          "priority": "优先",
+          "detail": "让相邻 Query 分块共享已搬入的 K / V 数据。",
+          "check": "验证重复读取量与总耗时"
+        },
+        {
+          "title": "减少中间结果落存",
+          "priority": "其次",
+          "detail": "将矩阵计算与 Softmax 中间结果保留在片上。",
+          "check": "验证中间结果访存量"
+        },
+        {
+          "title": "调整预取时机",
+          "priority": "后续",
+          "detail": "在当前分块计算期间提前搬入下一块 K / V。",
+          "check": "验证关键路径等待"
+        }
+      ],
+      "size_id": "4096",
+      "dimensions": [
+        1,
+        32,
+        4096,
+        128
+      ],
+      "shape": "1 × 32 × 4096 × 128",
+      "inputs": [
+        {
+          "name": "Q",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "K",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        },
+        {
+          "name": "V",
+          "shape": [
+            1,
+            32,
+            4096,
+            128
+          ],
+          "dtype": "BF16"
+        }
+      ],
+      "id": "attention/ascend-910b4/4096",
+      "synthetic": true,
+      "operator": "Attention",
+      "dtype": "BF16",
+      "hardware": "Ascend 910B4",
+      "latency": "716.4",
+      "timeline": [
+        {
+          "name": "MTE2",
+          "label": "数据搬入",
+          "kind": "memory",
+          "segments": [
+            {
+              "left": 0,
+              "width": 10,
+              "label": "50.0 μs",
+              "detail": "0.0–50.0 μs"
+            },
+            {
+              "left": 24,
+              "width": 19,
+              "label": "95.0 μs",
+              "detail": "120.0–215.0 μs"
+            },
+            {
+              "left": 52,
+              "width": 12,
+              "label": "60.0 μs",
+              "detail": "260.0–320.0 μs"
+            },
+            {
+              "left": 76,
+              "width": 10,
+              "label": "50.0 μs",
+              "detail": "380.0–430.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "CUBE",
+          "label": "矩阵计算",
+          "kind": "compute",
+          "segments": [
+            {
+              "left": 11,
+              "width": 17,
+              "label": "85.0 μs",
+              "detail": "55.0–140.0 μs"
+            },
+            {
+              "left": 44,
+              "width": 13,
+              "label": "65.0 μs",
+              "detail": "220.0–285.0 μs"
+            },
+            {
+              "left": 65,
+              "width": 11,
+              "label": "55.0 μs",
+              "detail": "325.0–380.0 μs"
+            },
+            {
+              "left": 87,
+              "width": 10,
+              "label": "50.0 μs",
+              "detail": "435.0–485.0 μs"
+            }
+          ]
+        },
+        {
+          "name": "VECTOR",
+          "label": "Softmax",
+          "kind": "vector",
+          "segments": [
+            {
+              "left": 29,
+              "width": 7,
+              "label": "35.0 μs",
+              "detail": "145.0–180.0 μs"
+            },
+            {
+              "left": 58,
+              "width": 6,
+              "label": "30.0 μs",
+              "detail": "290.0–320.0 μs"
+            },
+            {
+              "left": 77,
+              "width": 8,
+              "label": "40.0 μs",
+              "detail": "385.0–425.0 μs"
+            },
+            {
+              "left": 97,
+              "width": 3,
+              "label": "15.0 μs",
+              "detail": "485.0–500.0 μs"
+            }
+          ]
+        }
+      ],
+      "focus_region": {
+        "start_us": 140,
+        "end_us": 220,
+        "left": 28.0,
+        "width": 16.0
+      },
+      "focus_range": "140–220 μs",
+      "window": "局部窗口 · 0–500 μs",
+      "ticks": [
+        "0",
+        "125",
+        "250",
+        "375",
+        "500 μs"
+      ]
+    }
+  ],
+  "families": [
+    {
+      "id": "matmul-family",
+      "name": "MatMul",
+      "definition": "manual",
+      "synthetic": true,
+      "default_size": "4096",
+      "member_count": 9,
+      "members": [
+        {
+          "id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "matmul"
+        },
+        {
+          "id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "matmul"
+        },
+        {
+          "id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "matmul"
+        },
+        {
+          "id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "matmul"
+        },
+        {
+          "id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "matmul"
+        },
+        {
+          "id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "scope_id": "fused"
+        },
+        {
+          "id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "scope_id": "fused"
+        },
+        {
+          "id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "scope_id": "fused"
+        },
+        {
+          "id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "scope_id": "fused"
+        }
+      ],
+      "scopes": [
+        {
+          "id": "matmul",
+          "name": "矩阵乘",
+          "member_count": 5,
+          "sizes": [
+            {
+              "id": "1024",
+              "label": "1024³"
+            },
+            {
+              "id": "4096",
+              "label": "4096³"
+            }
+          ]
+        },
+        {
+          "id": "fused",
+          "name": "Linear + GELU",
+          "member_count": 4,
+          "sizes": [
+            {
+              "id": "1024",
+              "label": "1024³"
+            },
+            {
+              "id": "4096",
+              "label": "4096³"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attention-family",
+      "name": "Attention",
+      "definition": "manual",
+      "synthetic": true,
+      "default_size": "4096",
+      "member_count": 4,
+      "members": [
+        {
+          "id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "scope_id": "attention"
+        },
+        {
+          "id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "scope_id": "attention"
+        },
+        {
+          "id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "scope_id": "attention"
+        },
+        {
+          "id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "scope_id": "attention"
+        }
+      ],
+      "scopes": [
+        {
+          "id": "attention",
+          "name": "标准 Attention",
+          "member_count": 4,
+          "sizes": [
+            {
+              "id": "1024",
+              "label": "S = 1024"
+            },
+            {
+              "id": "4096",
+              "label": "S = 4096"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mega": [
+    {
+      "id": "matmul-large",
+      "family_id": "matmul-family",
+      "scope_id": "matmul",
+      "size": "4096",
+      "shape": "4096 × 4096 × 4096",
+      "shape_label": "M × N × K",
+      "semantic": "A × B · Linear 无 bias",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "v1",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "多阶段流水",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 76.8,
+          "latency": "76.8",
+          "traffic_mib": 96.0,
+          "width": 60.759,
+          "synthetic": true
+        },
+        {
+          "id": "v3",
+          "member_id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "Tile 复用",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 88.6,
+          "latency": "88.6",
+          "traffic_mib": 96.0,
+          "width": 70.095,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "无 bias",
+          "launches": 1,
+          "chain": [
+            "Linear · bias=false"
+          ],
+          "latency_us": 97.2,
+          "latency": "97.2",
+          "traffic_mib": 104.0,
+          "width": 76.899,
+          "synthetic": true
+        },
+        {
+          "id": "v2",
+          "member_id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "双缓冲",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 104.8,
+          "latency": "104.8",
+          "traffic_mib": 120.0,
+          "width": 82.911,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 126.4,
+          "latency": "126.4",
+          "traffic_mib": 144.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "v3": {
+            "speedup": 0.867,
+            "speedup_label": "0.87×",
+            "reduction": "-15.4%",
+            "saved_label": "-11.8 μs",
+            "speed_width": 86.682,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.79,
+            "speedup_label": "0.79×",
+            "reduction": "-26.6%",
+            "saved_label": "-20.4 μs",
+            "speed_width": 79.012,
+            "traffic_label": "-8 MiB"
+          },
+          "v2": {
+            "speedup": 0.733,
+            "speedup_label": "0.73×",
+            "reduction": "-36.5%",
+            "saved_label": "-28.0 μs",
+            "speed_width": 73.282,
+            "traffic_label": "-24 MiB"
+          },
+          "v1": {
+            "speedup": 0.608,
+            "speedup_label": "0.61×",
+            "reduction": "-64.6%",
+            "saved_label": "-49.6 μs",
+            "speed_width": 60.759,
+            "traffic_label": "-48 MiB"
+          }
+        },
+        "v3": {
+          "mega": {
+            "speedup": 1.154,
+            "speedup_label": "1.15×",
+            "reduction": "+13.3%",
+            "saved_label": "+11.8 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "v3": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 86.682,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.912,
+            "speedup_label": "0.91×",
+            "reduction": "-9.7%",
+            "saved_label": "-8.6 μs",
+            "speed_width": 79.012,
+            "traffic_label": "-8 MiB"
+          },
+          "v2": {
+            "speedup": 0.845,
+            "speedup_label": "0.85×",
+            "reduction": "-18.3%",
+            "saved_label": "-16.2 μs",
+            "speed_width": 73.282,
+            "traffic_label": "-24 MiB"
+          },
+          "v1": {
+            "speedup": 0.701,
+            "speedup_label": "0.70×",
+            "reduction": "-42.7%",
+            "saved_label": "-37.8 μs",
+            "speed_width": 60.759,
+            "traffic_label": "-48 MiB"
+          }
+        },
+        "linear": {
+          "mega": {
+            "speedup": 1.266,
+            "speedup_label": "1.27×",
+            "reduction": "+21.0%",
+            "saved_label": "+20.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+8 MiB"
+          },
+          "v3": {
+            "speedup": 1.097,
+            "speedup_label": "1.10×",
+            "reduction": "+8.8%",
+            "saved_label": "+8.6 μs",
+            "speed_width": 86.682,
+            "traffic_label": "+8 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 79.012,
+            "traffic_label": "+0 MiB"
+          },
+          "v2": {
+            "speedup": 0.927,
+            "speedup_label": "0.93×",
+            "reduction": "-7.8%",
+            "saved_label": "-7.6 μs",
+            "speed_width": 73.282,
+            "traffic_label": "-16 MiB"
+          },
+          "v1": {
+            "speedup": 0.769,
+            "speedup_label": "0.77×",
+            "reduction": "-30.0%",
+            "saved_label": "-29.2 μs",
+            "speed_width": 60.759,
+            "traffic_label": "-40 MiB"
+          }
+        },
+        "v2": {
+          "mega": {
+            "speedup": 1.365,
+            "speedup_label": "1.36×",
+            "reduction": "+26.7%",
+            "saved_label": "+28.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+24 MiB"
+          },
+          "v3": {
+            "speedup": 1.183,
+            "speedup_label": "1.18×",
+            "reduction": "+15.5%",
+            "saved_label": "+16.2 μs",
+            "speed_width": 86.682,
+            "traffic_label": "+24 MiB"
+          },
+          "linear": {
+            "speedup": 1.078,
+            "speedup_label": "1.08×",
+            "reduction": "+7.3%",
+            "saved_label": "+7.6 μs",
+            "speed_width": 79.012,
+            "traffic_label": "+16 MiB"
+          },
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 73.282,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.829,
+            "speedup_label": "0.83×",
+            "reduction": "-20.6%",
+            "saved_label": "-21.6 μs",
+            "speed_width": 60.759,
+            "traffic_label": "-24 MiB"
+          }
+        },
+        "v1": {
+          "mega": {
+            "speedup": 1.646,
+            "speedup_label": "1.65×",
+            "reduction": "+39.2%",
+            "saved_label": "+49.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+48 MiB"
+          },
+          "v3": {
+            "speedup": 1.427,
+            "speedup_label": "1.43×",
+            "reduction": "+29.9%",
+            "saved_label": "+37.8 μs",
+            "speed_width": 86.682,
+            "traffic_label": "+48 MiB"
+          },
+          "linear": {
+            "speedup": 1.3,
+            "speedup_label": "1.30×",
+            "reduction": "+23.1%",
+            "saved_label": "+29.2 μs",
+            "speed_width": 79.012,
+            "traffic_label": "+40 MiB"
+          },
+          "v2": {
+            "speedup": 1.206,
+            "speedup_label": "1.21×",
+            "reduction": "+17.1%",
+            "saved_label": "+21.6 μs",
+            "speed_width": 73.282,
+            "traffic_label": "+24 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 60.759,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "126.4",
+          "63.2",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "v1",
+            "name": "matmul_v1",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.684,
+                "value": "4.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.823,
+                "value": "12.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.816,
+                "value": "42.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "126.4 μs"
+              }
+            ],
+            "path": "40,159.684 200,150.823 360,117.816 520,25.000"
+          },
+          {
+            "id": "v2",
+            "name": "matmul_v2",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.791,
+                "value": "3.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 154.367,
+                "value": "9.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 128.671,
+                "value": "32.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.924,
+                "value": "104.8 μs"
+              }
+            ],
+            "path": "40,160.791 200,154.367 360,128.671 520,48.924"
+          },
+          {
+            "id": "v3",
+            "name": "matmul_v3",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.456,
+                "value": "3.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.804,
+                "value": "7.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.089,
+                "value": "25.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 66.867,
+                "value": "88.6 μs"
+              }
+            ],
+            "path": "40,161.456 200,156.804 360,137.089 520,66.867"
+          },
+          {
+            "id": "linear",
+            "name": "linear",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.013,
+                "value": "3.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 155.475,
+                "value": "8.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 132.437,
+                "value": "29.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 57.342,
+                "value": "97.2 μs"
+              }
+            ],
+            "path": "40,161.013 200,155.475 360,132.437 520,57.342"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_mm",
+            "kind": "compute",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.902,
+                "value": "3.7 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.028,
+                "value": "8.1 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.532,
+                "value": "24.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 79.937,
+                "value": "76.8 μs"
+              }
+            ],
+            "path": "40,160.902 200,156.028 360,137.532 520,79.937"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "matmul-small",
+      "family_id": "matmul-family",
+      "scope_id": "matmul",
+      "size": "1024",
+      "shape": "1024 × 1024 × 1024",
+      "shape_label": "M × N × K",
+      "semantic": "A × B · Linear 无 bias",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "v1",
+      "winner": "v3",
+      "candidates": [
+        {
+          "id": "v3",
+          "member_id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "Tile 复用",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 7.4,
+          "latency": "7.4",
+          "traffic_mib": 6.0,
+          "width": 57.812,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "多阶段流水",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 8.1,
+          "latency": "8.1",
+          "traffic_mib": 6.0,
+          "width": 63.281,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "无 bias",
+          "launches": 1,
+          "chain": [
+            "Linear · bias=false"
+          ],
+          "latency_us": 8.6,
+          "latency": "8.6",
+          "traffic_mib": 6.5,
+          "width": 67.187,
+          "synthetic": true
+        },
+        {
+          "id": "v2",
+          "member_id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "双缓冲",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 9.6,
+          "latency": "9.6",
+          "traffic_mib": 7.5,
+          "width": 75.0,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 12.8,
+          "latency": "12.8",
+          "traffic_mib": 9.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v3": {
+          "v3": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.914,
+            "speedup_label": "0.91×",
+            "reduction": "-9.5%",
+            "saved_label": "-0.7 μs",
+            "speed_width": 91.358,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.86,
+            "speedup_label": "0.86×",
+            "reduction": "-16.2%",
+            "saved_label": "-1.2 μs",
+            "speed_width": 86.047,
+            "traffic_label": "-0.5 MiB"
+          },
+          "v2": {
+            "speedup": 0.771,
+            "speedup_label": "0.77×",
+            "reduction": "-29.7%",
+            "saved_label": "-2.2 μs",
+            "speed_width": 77.083,
+            "traffic_label": "-1.5 MiB"
+          },
+          "v1": {
+            "speedup": 0.578,
+            "speedup_label": "0.58×",
+            "reduction": "-73.0%",
+            "saved_label": "-5.4 μs",
+            "speed_width": 57.812,
+            "traffic_label": "-3 MiB"
+          }
+        },
+        "mega": {
+          "v3": {
+            "speedup": 1.095,
+            "speedup_label": "1.09×",
+            "reduction": "+8.6%",
+            "saved_label": "+0.7 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 91.358,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.942,
+            "speedup_label": "0.94×",
+            "reduction": "-6.2%",
+            "saved_label": "-0.5 μs",
+            "speed_width": 86.047,
+            "traffic_label": "-0.5 MiB"
+          },
+          "v2": {
+            "speedup": 0.844,
+            "speedup_label": "0.84×",
+            "reduction": "-18.5%",
+            "saved_label": "-1.5 μs",
+            "speed_width": 77.083,
+            "traffic_label": "-1.5 MiB"
+          },
+          "v1": {
+            "speedup": 0.633,
+            "speedup_label": "0.63×",
+            "reduction": "-58.0%",
+            "saved_label": "-4.7 μs",
+            "speed_width": 57.812,
+            "traffic_label": "-3 MiB"
+          }
+        },
+        "linear": {
+          "v3": {
+            "speedup": 1.162,
+            "speedup_label": "1.16×",
+            "reduction": "+14.0%",
+            "saved_label": "+1.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0.5 MiB"
+          },
+          "mega": {
+            "speedup": 1.062,
+            "speedup_label": "1.06×",
+            "reduction": "+5.8%",
+            "saved_label": "+0.5 μs",
+            "speed_width": 91.358,
+            "traffic_label": "+0.5 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 86.047,
+            "traffic_label": "+0 MiB"
+          },
+          "v2": {
+            "speedup": 0.896,
+            "speedup_label": "0.90×",
+            "reduction": "-11.6%",
+            "saved_label": "-1.0 μs",
+            "speed_width": 77.083,
+            "traffic_label": "-1 MiB"
+          },
+          "v1": {
+            "speedup": 0.672,
+            "speedup_label": "0.67×",
+            "reduction": "-48.8%",
+            "saved_label": "-4.2 μs",
+            "speed_width": 57.812,
+            "traffic_label": "-2.5 MiB"
+          }
+        },
+        "v2": {
+          "v3": {
+            "speedup": 1.297,
+            "speedup_label": "1.30×",
+            "reduction": "+22.9%",
+            "saved_label": "+2.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+1.5 MiB"
+          },
+          "mega": {
+            "speedup": 1.185,
+            "speedup_label": "1.19×",
+            "reduction": "+15.6%",
+            "saved_label": "+1.5 μs",
+            "speed_width": 91.358,
+            "traffic_label": "+1.5 MiB"
+          },
+          "linear": {
+            "speedup": 1.116,
+            "speedup_label": "1.12×",
+            "reduction": "+10.4%",
+            "saved_label": "+1.0 μs",
+            "speed_width": 86.047,
+            "traffic_label": "+1 MiB"
+          },
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 77.083,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.75,
+            "speedup_label": "0.75×",
+            "reduction": "-33.3%",
+            "saved_label": "-3.2 μs",
+            "speed_width": 57.812,
+            "traffic_label": "-1.5 MiB"
+          }
+        },
+        "v1": {
+          "v3": {
+            "speedup": 1.73,
+            "speedup_label": "1.73×",
+            "reduction": "+42.2%",
+            "saved_label": "+5.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+3 MiB"
+          },
+          "mega": {
+            "speedup": 1.58,
+            "speedup_label": "1.58×",
+            "reduction": "+36.7%",
+            "saved_label": "+4.7 μs",
+            "speed_width": 91.358,
+            "traffic_label": "+3 MiB"
+          },
+          "linear": {
+            "speedup": 1.488,
+            "speedup_label": "1.49×",
+            "reduction": "+32.8%",
+            "saved_label": "+4.2 μs",
+            "speed_width": 86.047,
+            "traffic_label": "+2.5 MiB"
+          },
+          "v2": {
+            "speedup": 1.333,
+            "speedup_label": "1.33×",
+            "reduction": "+25.0%",
+            "saved_label": "+3.2 μs",
+            "speed_width": 77.083,
+            "traffic_label": "+1.5 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 57.812,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "126.4",
+          "63.2",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "v1",
+            "name": "matmul_v1",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.684,
+                "value": "4.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.823,
+                "value": "12.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.816,
+                "value": "42.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "126.4 μs"
+              }
+            ],
+            "path": "40,159.684 200,150.823 360,117.816 520,25.000"
+          },
+          {
+            "id": "v2",
+            "name": "matmul_v2",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.791,
+                "value": "3.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 154.367,
+                "value": "9.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 128.671,
+                "value": "32.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.924,
+                "value": "104.8 μs"
+              }
+            ],
+            "path": "40,160.791 200,154.367 360,128.671 520,48.924"
+          },
+          {
+            "id": "v3",
+            "name": "matmul_v3",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.456,
+                "value": "3.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.804,
+                "value": "7.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.089,
+                "value": "25.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 66.867,
+                "value": "88.6 μs"
+              }
+            ],
+            "path": "40,161.456 200,156.804 360,137.089 520,66.867"
+          },
+          {
+            "id": "linear",
+            "name": "linear",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.013,
+                "value": "3.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 155.475,
+                "value": "8.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 132.437,
+                "value": "29.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 57.342,
+                "value": "97.2 μs"
+              }
+            ],
+            "path": "40,161.013 200,155.475 360,132.437 520,57.342"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_mm",
+            "kind": "compute",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.902,
+                "value": "3.7 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.028,
+                "value": "8.1 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.532,
+                "value": "24.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 79.937,
+                "value": "76.8 μs"
+              }
+            ],
+            "path": "40,160.902 200,156.028 360,137.532 520,79.937"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "fused-large",
+      "family_id": "matmul-family",
+      "scope_id": "fused",
+      "size": "4096",
+      "shape": "4096 × 4096 × 4096",
+      "shape_label": "M × N × K",
+      "semantic": "GELU(XW + b)",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "MegaKernel",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 92.8,
+          "latency": "92.8",
+          "traffic_mib": 96.0,
+          "width": 50.877,
+          "synthetic": true
+        },
+        {
+          "id": "epilogue",
+          "member_id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "Epilogue 融合",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 109.6,
+          "latency": "109.6",
+          "traffic_mib": 96.0,
+          "width": 60.088,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "部分融合",
+          "launches": 2,
+          "chain": [
+            "Linear",
+            "GELU"
+          ],
+          "latency_us": 151.2,
+          "latency": "151.2",
+          "traffic_mib": 128.0,
+          "width": 82.895,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "MatMul",
+            "Bias",
+            "GELU"
+          ],
+          "latency_us": 182.4,
+          "latency": "182.4",
+          "traffic_mib": 192.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 0.847,
+            "speedup_label": "0.85×",
+            "reduction": "-18.1%",
+            "saved_label": "-16.8 μs",
+            "speed_width": 84.672,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.614,
+            "speedup_label": "0.61×",
+            "reduction": "-62.9%",
+            "saved_label": "-58.4 μs",
+            "speed_width": 61.376,
+            "traffic_label": "-32 MiB"
+          },
+          "separate": {
+            "speedup": 0.509,
+            "speedup_label": "0.51×",
+            "reduction": "-96.6%",
+            "saved_label": "-89.6 μs",
+            "speed_width": 50.877,
+            "traffic_label": "-96 MiB"
+          }
+        },
+        "epilogue": {
+          "mega": {
+            "speedup": 1.181,
+            "speedup_label": "1.18×",
+            "reduction": "+15.3%",
+            "saved_label": "+16.8 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 84.672,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.725,
+            "speedup_label": "0.72×",
+            "reduction": "-38.0%",
+            "saved_label": "-41.6 μs",
+            "speed_width": 61.376,
+            "traffic_label": "-32 MiB"
+          },
+          "separate": {
+            "speedup": 0.601,
+            "speedup_label": "0.60×",
+            "reduction": "-66.4%",
+            "saved_label": "-72.8 μs",
+            "speed_width": 50.877,
+            "traffic_label": "-96 MiB"
+          }
+        },
+        "linear": {
+          "mega": {
+            "speedup": 1.629,
+            "speedup_label": "1.63×",
+            "reduction": "+38.6%",
+            "saved_label": "+58.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+32 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.38,
+            "speedup_label": "1.38×",
+            "reduction": "+27.5%",
+            "saved_label": "+41.6 μs",
+            "speed_width": 84.672,
+            "traffic_label": "+32 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 61.376,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.829,
+            "speedup_label": "0.83×",
+            "reduction": "-20.6%",
+            "saved_label": "-31.2 μs",
+            "speed_width": 50.877,
+            "traffic_label": "-64 MiB"
+          }
+        },
+        "separate": {
+          "mega": {
+            "speedup": 1.966,
+            "speedup_label": "1.97×",
+            "reduction": "+49.1%",
+            "saved_label": "+89.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+96 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.664,
+            "speedup_label": "1.66×",
+            "reduction": "+39.9%",
+            "saved_label": "+72.8 μs",
+            "speed_width": 84.672,
+            "traffic_label": "+96 MiB"
+          },
+          "linear": {
+            "speedup": 1.206,
+            "speedup_label": "1.21×",
+            "reduction": "+17.1%",
+            "saved_label": "+31.2 μs",
+            "speed_width": 61.376,
+            "traffic_label": "+64 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 50.877,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "182.4",
+          "91.2",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "MatMul + Bias + GELU",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 158.553,
+                "value": "8.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 147.807,
+                "value": "22.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 115.263,
+                "value": "64.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "182.4 μs"
+              }
+            ],
+            "path": "40,158.553 200,147.807 360,115.263 520,25.000"
+          },
+          {
+            "id": "linear",
+            "name": "linear + gelu",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.781,
+                "value": "6.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 151.491,
+                "value": "17.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 124.781,
+                "value": "52.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.947,
+                "value": "151.2 μs"
+              }
+            ],
+            "path": "40,159.781 200,151.491 360,124.781 520,48.947"
+          },
+          {
+            "id": "epilogue",
+            "name": "epilogue_fused",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.776,
+                "value": "4.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.478,
+                "value": "9.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.75,
+                "value": "34.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 80.877,
+                "value": "109.6 μs"
+              }
+            ],
+            "path": "40,161.776 200,157.478 360,138.750 520,80.877"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_fused",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.316,
+                "value": "4.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.553,
+                "value": "8.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 143.048,
+                "value": "28.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 93.772,
+                "value": "92.8 μs"
+              }
+            ],
+            "path": "40,161.316 200,158.553 360,143.048 520,93.772"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "fused-small",
+      "family_id": "matmul-family",
+      "scope_id": "fused",
+      "size": "1024",
+      "shape": "1024 × 1024 × 1024",
+      "shape_label": "M × N × K",
+      "semantic": "GELU(XW + b)",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "MegaKernel",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 8.4,
+          "latency": "8.4",
+          "traffic_mib": 6.0,
+          "width": 37.5,
+          "synthetic": true
+        },
+        {
+          "id": "epilogue",
+          "member_id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "Epilogue 融合",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 9.8,
+          "latency": "9.8",
+          "traffic_mib": 6.0,
+          "width": 43.75,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "部分融合",
+          "launches": 2,
+          "chain": [
+            "Linear",
+            "GELU"
+          ],
+          "latency_us": 17.6,
+          "latency": "17.6",
+          "traffic_mib": 8.0,
+          "width": 78.571,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "MatMul",
+            "Bias",
+            "GELU"
+          ],
+          "latency_us": 22.4,
+          "latency": "22.4",
+          "traffic_mib": 12.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 0.857,
+            "speedup_label": "0.86×",
+            "reduction": "-16.7%",
+            "saved_label": "-1.4 μs",
+            "speed_width": 85.714,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.477,
+            "speedup_label": "0.48×",
+            "reduction": "-109.5%",
+            "saved_label": "-9.2 μs",
+            "speed_width": 47.727,
+            "traffic_label": "-2 MiB"
+          },
+          "separate": {
+            "speedup": 0.375,
+            "speedup_label": "0.38×",
+            "reduction": "-166.7%",
+            "saved_label": "-14.0 μs",
+            "speed_width": 37.5,
+            "traffic_label": "-6 MiB"
+          }
+        },
+        "epilogue": {
+          "mega": {
+            "speedup": 1.167,
+            "speedup_label": "1.17×",
+            "reduction": "+14.3%",
+            "saved_label": "+1.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 85.714,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.557,
+            "speedup_label": "0.56×",
+            "reduction": "-79.6%",
+            "saved_label": "-7.8 μs",
+            "speed_width": 47.727,
+            "traffic_label": "-2 MiB"
+          },
+          "separate": {
+            "speedup": 0.438,
+            "speedup_label": "0.44×",
+            "reduction": "-128.6%",
+            "saved_label": "-12.6 μs",
+            "speed_width": 37.5,
+            "traffic_label": "-6 MiB"
+          }
+        },
+        "linear": {
+          "mega": {
+            "speedup": 2.095,
+            "speedup_label": "2.10×",
+            "reduction": "+52.3%",
+            "saved_label": "+9.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+2 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.796,
+            "speedup_label": "1.80×",
+            "reduction": "+44.3%",
+            "saved_label": "+7.8 μs",
+            "speed_width": 85.714,
+            "traffic_label": "+2 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 47.727,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.786,
+            "speedup_label": "0.79×",
+            "reduction": "-27.3%",
+            "saved_label": "-4.8 μs",
+            "speed_width": 37.5,
+            "traffic_label": "-4 MiB"
+          }
+        },
+        "separate": {
+          "mega": {
+            "speedup": 2.667,
+            "speedup_label": "2.67×",
+            "reduction": "+62.5%",
+            "saved_label": "+14.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+6 MiB"
+          },
+          "epilogue": {
+            "speedup": 2.286,
+            "speedup_label": "2.29×",
+            "reduction": "+56.2%",
+            "saved_label": "+12.6 μs",
+            "speed_width": 85.714,
+            "traffic_label": "+6 MiB"
+          },
+          "linear": {
+            "speedup": 1.273,
+            "speedup_label": "1.27×",
+            "reduction": "+21.4%",
+            "saved_label": "+4.8 μs",
+            "speed_width": 47.727,
+            "traffic_label": "+4 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 37.5,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "182.4",
+          "91.2",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "MatMul + Bias + GELU",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 158.553,
+                "value": "8.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 147.807,
+                "value": "22.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 115.263,
+                "value": "64.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "182.4 μs"
+              }
+            ],
+            "path": "40,158.553 200,147.807 360,115.263 520,25.000"
+          },
+          {
+            "id": "linear",
+            "name": "linear + gelu",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.781,
+                "value": "6.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 151.491,
+                "value": "17.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 124.781,
+                "value": "52.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.947,
+                "value": "151.2 μs"
+              }
+            ],
+            "path": "40,159.781 200,151.491 360,124.781 520,48.947"
+          },
+          {
+            "id": "epilogue",
+            "name": "epilogue_fused",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.776,
+                "value": "4.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.478,
+                "value": "9.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.75,
+                "value": "34.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 80.877,
+                "value": "109.6 μs"
+              }
+            ],
+            "path": "40,161.776 200,157.478 360,138.750 520,80.877"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_fused",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.316,
+                "value": "4.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.553,
+                "value": "8.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 143.048,
+                "value": "28.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 93.772,
+                "value": "92.8 μs"
+              }
+            ],
+            "path": "40,161.316 200,158.553 360,143.048 520,93.772"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "attention-large",
+      "family_id": "attention-family",
+      "scope_id": "attention",
+      "size": "4096",
+      "shape": "1 × 32 × 4096 × 128",
+      "shape_label": "B × H × S × D",
+      "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "流水融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 462.4,
+          "latency": "462.4",
+          "traffic_mib": 640.0,
+          "width": 38.026,
+          "synthetic": true
+        },
+        {
+          "id": "v2",
+          "member_id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "分块融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 508.8,
+          "latency": "508.8",
+          "traffic_mib": 768.0,
+          "width": 41.842,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "Attention"
+          ],
+          "latency_us": 672.0,
+          "latency": "672.0",
+          "traffic_mib": 2048.0,
+          "width": 55.263,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "QKᵀ / √d",
+            "Softmax",
+            "PV"
+          ],
+          "latency_us": 1216.0,
+          "latency": "1216.0",
+          "traffic_mib": 4096.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "v2": {
+            "speedup": 0.909,
+            "speedup_label": "0.91×",
+            "reduction": "-10.0%",
+            "saved_label": "-46.4 μs",
+            "speed_width": 90.881,
+            "traffic_label": "-128 MiB"
+          },
+          "v1": {
+            "speedup": 0.688,
+            "speedup_label": "0.69×",
+            "reduction": "-45.3%",
+            "saved_label": "-209.6 μs",
+            "speed_width": 68.81,
+            "traffic_label": "-1408 MiB"
+          },
+          "separate": {
+            "speedup": 0.38,
+            "speedup_label": "0.38×",
+            "reduction": "-163.0%",
+            "saved_label": "-753.6 μs",
+            "speed_width": 38.026,
+            "traffic_label": "-3456 MiB"
+          }
+        },
+        "v2": {
+          "mega": {
+            "speedup": 1.1,
+            "speedup_label": "1.10×",
+            "reduction": "+9.1%",
+            "saved_label": "+46.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+128 MiB"
+          },
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 90.881,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.757,
+            "speedup_label": "0.76×",
+            "reduction": "-32.1%",
+            "saved_label": "-163.2 μs",
+            "speed_width": 68.81,
+            "traffic_label": "-1280 MiB"
+          },
+          "separate": {
+            "speedup": 0.418,
+            "speedup_label": "0.42×",
+            "reduction": "-139.0%",
+            "saved_label": "-707.2 μs",
+            "speed_width": 38.026,
+            "traffic_label": "-3328 MiB"
+          }
+        },
+        "v1": {
+          "mega": {
+            "speedup": 1.453,
+            "speedup_label": "1.45×",
+            "reduction": "+31.2%",
+            "saved_label": "+209.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+1408 MiB"
+          },
+          "v2": {
+            "speedup": 1.321,
+            "speedup_label": "1.32×",
+            "reduction": "+24.3%",
+            "saved_label": "+163.2 μs",
+            "speed_width": 90.881,
+            "traffic_label": "+1280 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 68.81,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.553,
+            "speedup_label": "0.55×",
+            "reduction": "-81.0%",
+            "saved_label": "-544.0 μs",
+            "speed_width": 38.026,
+            "traffic_label": "-2048 MiB"
+          }
+        },
+        "separate": {
+          "mega": {
+            "speedup": 2.63,
+            "speedup_label": "2.63×",
+            "reduction": "+62.0%",
+            "saved_label": "+753.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+3456 MiB"
+          },
+          "v2": {
+            "speedup": 2.39,
+            "speedup_label": "2.39×",
+            "reduction": "+58.2%",
+            "saved_label": "+707.2 μs",
+            "speed_width": 90.881,
+            "traffic_label": "+3328 MiB"
+          },
+          "v1": {
+            "speedup": 1.81,
+            "speedup_label": "1.81×",
+            "reduction": "+44.7%",
+            "saved_label": "+544.0 μs",
+            "speed_width": 68.81,
+            "traffic_label": "+2048 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 38.026,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "1216",
+          "608",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "QK + Softmax + PV",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 157.125,
+                "value": "68.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.401,
+                "value": "126.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.566,
+                "value": "412 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "1216 μs"
+              }
+            ],
+            "path": "40,157.125 200,150.401 360,117.566 520,25.000"
+          },
+          {
+            "id": "v1",
+            "name": "attention_v1",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.487,
+                "value": "39.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.618,
+                "value": "72.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.474,
+                "value": "230.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 87.632,
+                "value": "672 μs"
+              }
+            ],
+            "path": "40,160.487 200,156.618 360,138.474 520,87.632"
+          },
+          {
+            "id": "v2",
+            "name": "flash_attention_v2",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.132,
+                "value": "33.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.276,
+                "value": "58.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 144.438,
+                "value": "178.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 106.421,
+                "value": "508.8 μs"
+              }
+            ],
+            "path": "40,161.132 200,158.276 360,144.438 520,106.421"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_attention",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.924,
+                "value": "35.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.816,
+                "value": "62.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 146.026,
+                "value": "164.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 111.763,
+                "value": "462.4 μs"
+              }
+            ],
+            "path": "40,160.924 200,157.816 360,146.026 520,111.763"
+          }
+        ],
+        "axis_label": "序列长度 S"
+      }
+    },
+    {
+      "id": "attention-small",
+      "family_id": "attention-family",
+      "scope_id": "attention",
+      "size": "1024",
+      "shape": "1 × 32 × 1024 × 128",
+      "shape_label": "B × H × S × D",
+      "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
+      "synthetic": true,
+      "hardware": "Ascend 910B1",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "v2",
+      "candidates": [
+        {
+          "id": "v2",
+          "member_id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "分块融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 58.4,
+          "latency": "58.4",
+          "traffic_mib": 48.0,
+          "width": 46.057,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "流水融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 62.4,
+          "latency": "62.4",
+          "traffic_mib": 40.0,
+          "width": 49.211,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "Attention"
+          ],
+          "latency_us": 72.8,
+          "latency": "72.8",
+          "traffic_mib": 128.0,
+          "width": 57.413,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "QKᵀ / √d",
+            "Softmax",
+            "PV"
+          ],
+          "latency_us": 126.8,
+          "latency": "126.8",
+          "traffic_mib": 256.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v2": {
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.936,
+            "speedup_label": "0.94×",
+            "reduction": "-6.8%",
+            "saved_label": "-4.0 μs",
+            "speed_width": 93.59,
+            "traffic_label": "+8 MiB"
+          },
+          "v1": {
+            "speedup": 0.802,
+            "speedup_label": "0.80×",
+            "reduction": "-24.7%",
+            "saved_label": "-14.4 μs",
+            "speed_width": 80.22,
+            "traffic_label": "-80 MiB"
+          },
+          "separate": {
+            "speedup": 0.461,
+            "speedup_label": "0.46×",
+            "reduction": "-117.1%",
+            "saved_label": "-68.4 μs",
+            "speed_width": 46.057,
+            "traffic_label": "-208 MiB"
+          }
+        },
+        "mega": {
+          "v2": {
+            "speedup": 1.068,
+            "speedup_label": "1.07×",
+            "reduction": "+6.4%",
+            "saved_label": "+4.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "-8 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 93.59,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.857,
+            "speedup_label": "0.86×",
+            "reduction": "-16.7%",
+            "saved_label": "-10.4 μs",
+            "speed_width": 80.22,
+            "traffic_label": "-88 MiB"
+          },
+          "separate": {
+            "speedup": 0.492,
+            "speedup_label": "0.49×",
+            "reduction": "-103.2%",
+            "saved_label": "-64.4 μs",
+            "speed_width": 46.057,
+            "traffic_label": "-216 MiB"
+          }
+        },
+        "v1": {
+          "v2": {
+            "speedup": 1.247,
+            "speedup_label": "1.25×",
+            "reduction": "+19.8%",
+            "saved_label": "+14.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+80 MiB"
+          },
+          "mega": {
+            "speedup": 1.167,
+            "speedup_label": "1.17×",
+            "reduction": "+14.3%",
+            "saved_label": "+10.4 μs",
+            "speed_width": 93.59,
+            "traffic_label": "+88 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 80.22,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.574,
+            "speedup_label": "0.57×",
+            "reduction": "-74.2%",
+            "saved_label": "-54.0 μs",
+            "speed_width": 46.057,
+            "traffic_label": "-128 MiB"
+          }
+        },
+        "separate": {
+          "v2": {
+            "speedup": 2.171,
+            "speedup_label": "2.17×",
+            "reduction": "+53.9%",
+            "saved_label": "+68.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+208 MiB"
+          },
+          "mega": {
+            "speedup": 2.032,
+            "speedup_label": "2.03×",
+            "reduction": "+50.8%",
+            "saved_label": "+64.4 μs",
+            "speed_width": 93.59,
+            "traffic_label": "+216 MiB"
+          },
+          "v1": {
+            "speedup": 1.742,
+            "speedup_label": "1.74×",
+            "reduction": "+42.6%",
+            "saved_label": "+54.0 μs",
+            "speed_width": 80.22,
+            "traffic_label": "+128 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 46.057,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "1216",
+          "608",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "QK + Softmax + PV",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 157.125,
+                "value": "68.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.401,
+                "value": "126.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.566,
+                "value": "412 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "1216 μs"
+              }
+            ],
+            "path": "40,157.125 200,150.401 360,117.566 520,25.000"
+          },
+          {
+            "id": "v1",
+            "name": "attention_v1",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.487,
+                "value": "39.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.618,
+                "value": "72.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.474,
+                "value": "230.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 87.632,
+                "value": "672 μs"
+              }
+            ],
+            "path": "40,160.487 200,156.618 360,138.474 520,87.632"
+          },
+          {
+            "id": "v2",
+            "name": "flash_attention_v2",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.132,
+                "value": "33.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.276,
+                "value": "58.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 144.438,
+                "value": "178.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 106.421,
+                "value": "508.8 μs"
+              }
+            ],
+            "path": "40,161.132 200,158.276 360,144.438 520,106.421"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_attention",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.924,
+                "value": "35.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.816,
+                "value": "62.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 146.026,
+                "value": "164.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 111.763,
+                "value": "462.4 μs"
+              }
+            ],
+            "path": "40,160.924 200,157.816 360,146.026 520,111.763"
+          }
+        ],
+        "axis_label": "序列长度 S"
+      }
+    }
+  ]
+}

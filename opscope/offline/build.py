@@ -268,6 +268,8 @@ def render_page(data, presentation=False):
 
 
 def build():
+    from .optimization_demo import write_optimization_demo
+    write_optimization_demo(ROOT)
     data = build_payload()
     for name, presentation in [('index.html', False), ('demo.html', True)]:
         output = render_page(data, presentation=presentation)

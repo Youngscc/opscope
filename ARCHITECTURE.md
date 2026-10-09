@@ -1,5 +1,11 @@
 # 架构
 
+## 独立优化工作台（2026-10-08）
+
+Vue 增加 `/optimization` 与 `/megakernel`，通过 `WorkspaceHeader` 与性能矩阵并列。两页只消费本地展示 fixture，不初始化评估 store、不请求 API。`opscope/offline/optimization_demo.py` 预处理示例比值、排序、图宽和趋势坐标；`build.py` 同步生成 `frontend/src/data/optimization-demo.json`，Vue 只执行选择、展示和导出。原矩阵在路由返回时保留已有配置。独立 FastAPI 仅为两个新路由提供静态 Vue 壳的刷新入口，计算层没有变化。
+
+诊断页提供算子、硬件与 Size 选择，以 `operator_id + hardware_id + dimensions` 精确匹配耗时、最终瓶颈结论、资源压力和关键流水；没有结果时展示空状态，不跨组合回退。`DiagnosisSizeConfig` 复用现有 Modal，管理维度草稿、正整数校验和应用/取消；输入张量元数据由Python生成，前端不按尺寸推导性能。MegaKernel 页先选择人工定义的族，再比较族内算子/融合算子。族目录显式配置成员及类型，`family_id + scope_id + size` 定位结果；同族内不同计算语义用对比范围隔离。支持基线、规模和指标切换，以及融合边界与趋势。两页及JSON导出仅含人工配置与结果层信息，不公开方法身份、数量或来源选择；展示资产版本为 `opscope-optimization-demo-v5`。全部标为示例，JSON 保留 synthetic；族编辑和持久化尚未接入。原离线 `demo.html` / `index.html` 仍是矩阵导出，此轮未增加离线优化页。具体边界和验收见[优化工作台](docs/optimization-workspaces.md)。
+
 ## 静态演示产物（2026-09-29）
 
 `python3 -B build.py` 同时生成通用 `index.html` 和专用 `demo.html`。后者复用原离线模板、fixture、矩阵和详情，通过页面级 presentation 标记固定预设输入并隐藏执行入口；初始化直接跳过服务探测，无 API 请求或评估任务。筛选、单项详情、双结果比较和 JSON 仍在浏览器内执行，保持 synthetic 标记与缺失语义。无需新增依赖或单独维护页面副本。

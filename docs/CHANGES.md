@@ -1,5 +1,47 @@
 # OpScope 变更记录
 
+## 2026-10-09 · 优化工作台分类交付
+
+将本轮改动按预设数据与结果匹配（`3b39505`）、前端界面与路由（`d15978f`）、设计文档与维护记录分类提交，推送目标为既有origin/main。[优化工作台设计](optimization-workspaces.md)、[架构](../ARCHITECTURE.md)、[数据口径](../.agent/data-semantics.md)与使用说明覆盖最终实现。此前宿主记录、Profiling调研、个人设置和临时trace不纳入此次交付，原文件保留。
+
+验证：35项Python检查、9项前端测试、Vue类型检查/生产构建通过，生成的两份离线HTML与基线一致，暂存差异格式检查通过。沿用实现阶段的浏览器验证，本轮未重复运行实际评估或部署宿主。
+
+## 2026-10-09 · 性能优化支持 Size 选择与输入配置
+
+[诊断页](../frontend/src/pages/OptimizationPage.vue)增加 Size 快捷选择，强化算子/硬件/尺寸选择框和蓝色主按钮；[输入弹窗](../frontend/src/components/optimization/DiagnosisSizeConfig.vue)支持逐维编辑、校验与应用/取消。[预设生成器](../opscope/offline/optimization_demo.py)扩展为12组结果并升级v5，完整维度参与精确匹配；自定义尺寸无结果时显示空状态，导出包含尺寸和输入张量。同步[设计](optimization-workspaces.md)、架构、数据口径与项目记忆，保持synthetic标记和最终结论展示。
+
+验证：10项预设、9项前端测试、Vue类型检查/生产构建、离线生成与差异格式检查通过。浏览器检查Size/硬件/算子联动、草稿取消、Escape焦点回归、非法维度提示、自定义尺寸空状态、桌面与390px弹窗布局；实际导出Attention/910B4/S512核对63.2μs、完整维度、Q/K/V与synthetic，控制台无错误。原矩阵筛选/详情/双结果比较未重复实测。预览已更新并恢复默认桌面视口，未执行实际评估、部署宿主或提交推送。
+
+## 2026-10-09 · 性能优化支持算子与硬件选择
+
+[诊断页](../frontend/src/pages/OptimizationPage.vue)将算子与硬件选择并列，切换时保留另一项并精确匹配完整结果。[预设生成器](../opscope/offline/optimization_demo.py)提供MatMul/Attention与910B1/910B4四组独立示例；[流水组件](../frontend/src/components/optimization/PipelineChart.vue)按对应结果绘制重点区间。未知组合返回null、显示空状态并禁用导出；JSON升级v4，包含两项选择身份与synthetic。同步设计、架构和数据口径，不修改真实硬件规格、模型映射或后端计算。
+
+验证：9项预设不变量、7项前端测试、Vue类型检查/生产构建、离线生成通过。浏览器检查四组切换、键盘选择、1440px/390px无溢出、MegaKernel往返及导出状态重置；实际下载Attention/910B4 JSON并核对238.8μs、重点区间、身份与synthetic。刷新后控制台无错误。缺失组合null经过单元测试，空状态未通过浏览器构造缺失数据实测；原矩阵筛选/详情/双结果比较未重复实测。预览已更新，未提交推送或部署宿主。
+
+## 2026-10-08 · MegaKernel 按人工定义的族组织成员
+
+[MegaKernel页](../frontend/src/pages/MegaKernelPage.vue)增加算子族选择、族内成员数量和算子/融合算子/算子组合标签；以MatMul、Attention两个预设族展示人工归属，同族不同计算用对比范围隔离。族切换同步重置结果选择，输入形状和趋势轴随族更新。[预设生成器](../opscope/offline/optimization_demo.py)与JSON导出升级v3，显式携带族和成员身份，保留synthetic与最终结果展示约定。同步[设计](optimization-workspaces.md)、架构和数据口径；不接入族编辑持久化或后端计算。
+
+验证：7项预设不变量、5项前端测试、Vue类型检查/生产构建、离线生成通过；浏览器检查桌面及390px无溢出、键盘族切换、范围/规模/基线联动、自比1.00×和不同规模排名，实际导出核对Attention族、成员上下文、synthetic和2.17×。刷新后控制台无错误。原矩阵筛选/详情/双结果比较未重复实测；5173预览已更新，未提交推送或部署宿主。
+
+## 2026-10-08 · 移除流水重播
+
+移除[关键流水](../frontend/src/components/optimization/PipelineChart.vue)的重播按钮、状态和扫描动画，保留静态等待区间与片段时间提示；清理对应图标和样式，同步[交互说明](optimization-workspaces.md)。
+
+验证：Vue类型检查/生产构建、离线生成通过；浏览器确认1440px桌面布局、MatMul/Attention切换及区间标记正常，重播按钮已移除，控制台无错误。此次为定向展示调整，未重复运行原矩阵筛选、双结果比较和JSON检查；5173预览已更新，未部署宿主或提交推送。
+
+## 2026-10-08 · 优化界面聚焦最终结论
+
+按用户要求，[性能优化页](../frontend/src/pages/OptimizationPage.vue)删除多方法证据卡、数量和来源选择，资源压力与[关键流水](../frontend/src/components/optimization/PipelineChart.vue)不再标注方法；页面直接显示任务耗时、瓶颈位置和优化方向。MegaKernel维持实现级比较，确认无评估方法信息。同步清理[预设生成器](../opscope/offline/optimization_demo.py)中的方法记录与失效样式，展示/导出资产升级到v2，仅包含结果层字段，保留synthetic；原性能矩阵不受影响。
+
+验证：5项预设测试、Vue类型检查/生产构建、离线生成及差异格式检查通过。浏览器检查两页无方法信息、诊断切换、键盘流水重播、融合排名及390px窄屏无溢出；控制台无错误。实际下载Attention诊断JSON，确认只有工作负载选择与最终结果，无source/evidence字段，示例标记保留。预览已更新，宿主未部署。当前产品约定见[优化工作台](optimization-workspaces.md)。
+
+## 2026-10-08 · 性能优化与 MegaKernel 界面预览
+
+在 Vue 前端加入两个与性能矩阵并列的页面：[性能优化](../frontend/src/pages/OptimizationPage.vue)展示统一瓶颈、资源压力、多方法证据、局部流水和优化方向；[MegaKernel](../frontend/src/pages/MegaKernelPage.vue)展示同一功能族内的实现排名、可选基线、规模趋势与融合边界。使用简洁的图表和展开交互，预设数据和导出始终标记 synthetic；不实现后端性能计算。共享导航、独立样式与图表组件位于 frontend/src；[预设生成器](../opscope/offline/optimization_demo.py)由 build.py 调用，图宽和比值在Python生成。静态路由增加两个页面的刷新入口，原矩阵配置在导航返回后保留。
+
+验证：5项新预设、14项构建/矩阵、1项HTTP静态路由及5项前端测试通过；Vue类型检查、生产构建、离线生成和差异格式检查通过。浏览器检查桌面与390px窄屏、筛选、缺失流水、重播、键盘、基线自比、规模排名变化和融合边界；两页JSON下载检查synthetic与上下文正确，控制台无错误。原矩阵可读取宿主目录，未运行评估。当前只更新本仓Vue源码；原单文件demo仍为矩阵，宿主zrt-sim未同步。减少动态效果仅静态样式核对。设计边界见[优化工作台](optimization-workspaces.md)。
+
 ## 静态展示页（2026-09-29）
 
 新增单文件 [demo.html](../demo.html)，内置现有 MatMul 预设结果，无需安装或启动服务即可演示。复用[离线生成器](../opscope/offline/build.py)、共享样式与交互，固定输入并隐藏执行入口，[初始化](../evaluation-ui.js)跳过服务探测；支持筛选、详情、双结果比较和 JSON，保留合成标记与缺项原因。[使用说明](../README.md)和[架构](../ARCHITECTURE.md)同步更新。

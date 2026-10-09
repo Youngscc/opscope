@@ -1,5 +1,5 @@
 {
-  "schema": "opscope-optimization-demo-v5",
+  "schema": "opscope-optimization-demo-v6",
   "synthetic": true,
   "diagnostic_catalog": {
     "operators": [
@@ -2728,10 +2728,11 @@
   ],
   "mega": [
     {
-      "id": "matmul-large",
+      "id": "matmul-large/ascend-910b1",
       "family_id": "matmul-family",
       "scope_id": "matmul",
       "size": "4096",
+      "hardware_id": "ascend-910b1",
       "shape": "4096 × 4096 × 4096",
       "shape_label": "M × N × K",
       "semantic": "A × B · Linear 无 bias",
@@ -3197,10 +3198,11 @@
       }
     },
     {
-      "id": "matmul-small",
+      "id": "matmul-small/ascend-910b1",
       "family_id": "matmul-family",
       "scope_id": "matmul",
       "size": "1024",
+      "hardware_id": "ascend-910b1",
       "shape": "1024 × 1024 × 1024",
       "shape_label": "M × N × K",
       "semantic": "A × B · Linear 无 bias",
@@ -3666,10 +3668,951 @@
       }
     },
     {
-      "id": "fused-large",
+      "id": "matmul-large/ascend-910b4",
+      "family_id": "matmul-family",
+      "scope_id": "matmul",
+      "size": "4096",
+      "hardware_id": "ascend-910b4",
+      "shape": "4096 × 4096 × 4096",
+      "shape_label": "M × N × K",
+      "semantic": "A × B · Linear 无 bias",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "v1",
+      "winner": "v3",
+      "candidates": [
+        {
+          "id": "v3",
+          "member_id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "Tile 复用",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 68.2,
+          "latency": "68.2",
+          "traffic_mib": 96.0,
+          "width": 60.568,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "多阶段流水",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 70.4,
+          "latency": "70.4",
+          "traffic_mib": 96.0,
+          "width": 62.522,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "无 bias",
+          "launches": 1,
+          "chain": [
+            "Linear · bias=false"
+          ],
+          "latency_us": 86.8,
+          "latency": "86.8",
+          "traffic_mib": 104.0,
+          "width": 77.087,
+          "synthetic": true
+        },
+        {
+          "id": "v2",
+          "member_id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "双缓冲",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 92.4,
+          "latency": "92.4",
+          "traffic_mib": 120.0,
+          "width": 82.06,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 112.6,
+          "latency": "112.6",
+          "traffic_mib": 144.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v3": {
+          "v3": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.969,
+            "speedup_label": "0.97×",
+            "reduction": "-3.2%",
+            "saved_label": "-2.2 μs",
+            "speed_width": 96.875,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.786,
+            "speedup_label": "0.79×",
+            "reduction": "-27.3%",
+            "saved_label": "-18.6 μs",
+            "speed_width": 78.571,
+            "traffic_label": "-8 MiB"
+          },
+          "v2": {
+            "speedup": 0.738,
+            "speedup_label": "0.74×",
+            "reduction": "-35.5%",
+            "saved_label": "-24.2 μs",
+            "speed_width": 73.81,
+            "traffic_label": "-24 MiB"
+          },
+          "v1": {
+            "speedup": 0.606,
+            "speedup_label": "0.61×",
+            "reduction": "-65.1%",
+            "saved_label": "-44.4 μs",
+            "speed_width": 60.568,
+            "traffic_label": "-48 MiB"
+          }
+        },
+        "mega": {
+          "v3": {
+            "speedup": 1.032,
+            "speedup_label": "1.03×",
+            "reduction": "+3.1%",
+            "saved_label": "+2.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 96.875,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.811,
+            "speedup_label": "0.81×",
+            "reduction": "-23.3%",
+            "saved_label": "-16.4 μs",
+            "speed_width": 78.571,
+            "traffic_label": "-8 MiB"
+          },
+          "v2": {
+            "speedup": 0.762,
+            "speedup_label": "0.76×",
+            "reduction": "-31.2%",
+            "saved_label": "-22.0 μs",
+            "speed_width": 73.81,
+            "traffic_label": "-24 MiB"
+          },
+          "v1": {
+            "speedup": 0.625,
+            "speedup_label": "0.63×",
+            "reduction": "-59.9%",
+            "saved_label": "-42.2 μs",
+            "speed_width": 60.568,
+            "traffic_label": "-48 MiB"
+          }
+        },
+        "linear": {
+          "v3": {
+            "speedup": 1.273,
+            "speedup_label": "1.27×",
+            "reduction": "+21.4%",
+            "saved_label": "+18.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+8 MiB"
+          },
+          "mega": {
+            "speedup": 1.233,
+            "speedup_label": "1.23×",
+            "reduction": "+18.9%",
+            "saved_label": "+16.4 μs",
+            "speed_width": 96.875,
+            "traffic_label": "+8 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 78.571,
+            "traffic_label": "+0 MiB"
+          },
+          "v2": {
+            "speedup": 0.939,
+            "speedup_label": "0.94×",
+            "reduction": "-6.5%",
+            "saved_label": "-5.6 μs",
+            "speed_width": 73.81,
+            "traffic_label": "-16 MiB"
+          },
+          "v1": {
+            "speedup": 0.771,
+            "speedup_label": "0.77×",
+            "reduction": "-29.7%",
+            "saved_label": "-25.8 μs",
+            "speed_width": 60.568,
+            "traffic_label": "-40 MiB"
+          }
+        },
+        "v2": {
+          "v3": {
+            "speedup": 1.355,
+            "speedup_label": "1.35×",
+            "reduction": "+26.2%",
+            "saved_label": "+24.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+24 MiB"
+          },
+          "mega": {
+            "speedup": 1.312,
+            "speedup_label": "1.31×",
+            "reduction": "+23.8%",
+            "saved_label": "+22.0 μs",
+            "speed_width": 96.875,
+            "traffic_label": "+24 MiB"
+          },
+          "linear": {
+            "speedup": 1.065,
+            "speedup_label": "1.06×",
+            "reduction": "+6.1%",
+            "saved_label": "+5.6 μs",
+            "speed_width": 78.571,
+            "traffic_label": "+16 MiB"
+          },
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 73.81,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.821,
+            "speedup_label": "0.82×",
+            "reduction": "-21.9%",
+            "saved_label": "-20.2 μs",
+            "speed_width": 60.568,
+            "traffic_label": "-24 MiB"
+          }
+        },
+        "v1": {
+          "v3": {
+            "speedup": 1.651,
+            "speedup_label": "1.65×",
+            "reduction": "+39.4%",
+            "saved_label": "+44.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+48 MiB"
+          },
+          "mega": {
+            "speedup": 1.599,
+            "speedup_label": "1.60×",
+            "reduction": "+37.5%",
+            "saved_label": "+42.2 μs",
+            "speed_width": 96.875,
+            "traffic_label": "+48 MiB"
+          },
+          "linear": {
+            "speedup": 1.297,
+            "speedup_label": "1.30×",
+            "reduction": "+22.9%",
+            "saved_label": "+25.8 μs",
+            "speed_width": 78.571,
+            "traffic_label": "+40 MiB"
+          },
+          "v2": {
+            "speedup": 1.219,
+            "speedup_label": "1.22×",
+            "reduction": "+17.9%",
+            "saved_label": "+20.2 μs",
+            "speed_width": 73.81,
+            "traffic_label": "+24 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 60.568,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "112.6",
+          "56.3",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "v1",
+            "name": "matmul_v1",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.529,
+                "value": "4.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.826,
+                "value": "11.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 127.451,
+                "value": "30.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "112.6 μs"
+              }
+            ],
+            "path": "40,159.529 200,150.826 360,127.451 520,25.000"
+          },
+          {
+            "id": "v2",
+            "name": "matmul_v2",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.773,
+                "value": "3.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 154.183,
+                "value": "8.7 μs"
+              },
+              {
+                "x": 360,
+                "y": 131.927,
+                "value": "26.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 50.115,
+                "value": "92.4 μs"
+              }
+            ],
+            "path": "40,160.773 200,154.183 360,131.927 520,50.115"
+          },
+          {
+            "id": "v3",
+            "name": "matmul_v3",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.394,
+                "value": "2.9 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.545,
+                "value": "6.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 139.885,
+                "value": "20.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 80.204,
+                "value": "68.2 μs"
+              }
+            ],
+            "path": "40,161.394 200,156.545 360,139.885 520,80.204"
+          },
+          {
+            "id": "linear",
+            "name": "linear",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.146,
+                "value": "3.1 μs"
+              },
+              {
+                "x": 200,
+                "y": 155.178,
+                "value": "7.9 μs"
+              },
+              {
+                "x": 360,
+                "y": 133.917,
+                "value": "25 μs"
+              },
+              {
+                "x": 520,
+                "y": 57.078,
+                "value": "86.8 μs"
+              }
+            ],
+            "path": "40,161.146 200,155.178 360,133.917 520,57.078"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_mm",
+            "kind": "compute",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.648,
+                "value": "3.5 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.048,
+                "value": "7.2 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.144,
+                "value": "21.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 77.469,
+                "value": "70.4 μs"
+              }
+            ],
+            "path": "40,160.648 200,156.048 360,138.144 520,77.469"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "matmul-small/ascend-910b4",
+      "family_id": "matmul-family",
+      "scope_id": "matmul",
+      "size": "1024",
+      "hardware_id": "ascend-910b4",
+      "shape": "1024 × 1024 × 1024",
+      "shape_label": "M × N × K",
+      "semantic": "A × B · Linear 无 bias",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "v1",
+      "winner": "v3",
+      "candidates": [
+        {
+          "id": "v3",
+          "member_id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "Tile 复用",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 6.8,
+          "latency": "6.8",
+          "traffic_mib": 6.0,
+          "width": 59.649,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "多阶段流水",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 7.2,
+          "latency": "7.2",
+          "traffic_mib": 6.0,
+          "width": 63.158,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "无 bias",
+          "launches": 1,
+          "chain": [
+            "Linear · bias=false"
+          ],
+          "latency_us": 7.9,
+          "latency": "7.9",
+          "traffic_mib": 6.5,
+          "width": 69.298,
+          "synthetic": true
+        },
+        {
+          "id": "v2",
+          "member_id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "双缓冲",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 8.7,
+          "latency": "8.7",
+          "traffic_mib": 7.5,
+          "width": 76.316,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "MatMul"
+          ],
+          "latency_us": 11.4,
+          "latency": "11.4",
+          "traffic_mib": 9.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v3": {
+          "v3": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.944,
+            "speedup_label": "0.94×",
+            "reduction": "-5.9%",
+            "saved_label": "-0.4 μs",
+            "speed_width": 94.444,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.861,
+            "speedup_label": "0.86×",
+            "reduction": "-16.2%",
+            "saved_label": "-1.1 μs",
+            "speed_width": 86.076,
+            "traffic_label": "-0.5 MiB"
+          },
+          "v2": {
+            "speedup": 0.782,
+            "speedup_label": "0.78×",
+            "reduction": "-27.9%",
+            "saved_label": "-1.9 μs",
+            "speed_width": 78.161,
+            "traffic_label": "-1.5 MiB"
+          },
+          "v1": {
+            "speedup": 0.596,
+            "speedup_label": "0.60×",
+            "reduction": "-67.6%",
+            "saved_label": "-4.6 μs",
+            "speed_width": 59.649,
+            "traffic_label": "-3 MiB"
+          }
+        },
+        "mega": {
+          "v3": {
+            "speedup": 1.059,
+            "speedup_label": "1.06×",
+            "reduction": "+5.6%",
+            "saved_label": "+0.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 94.444,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.911,
+            "speedup_label": "0.91×",
+            "reduction": "-9.7%",
+            "saved_label": "-0.7 μs",
+            "speed_width": 86.076,
+            "traffic_label": "-0.5 MiB"
+          },
+          "v2": {
+            "speedup": 0.828,
+            "speedup_label": "0.83×",
+            "reduction": "-20.8%",
+            "saved_label": "-1.5 μs",
+            "speed_width": 78.161,
+            "traffic_label": "-1.5 MiB"
+          },
+          "v1": {
+            "speedup": 0.632,
+            "speedup_label": "0.63×",
+            "reduction": "-58.3%",
+            "saved_label": "-4.2 μs",
+            "speed_width": 59.649,
+            "traffic_label": "-3 MiB"
+          }
+        },
+        "linear": {
+          "v3": {
+            "speedup": 1.162,
+            "speedup_label": "1.16×",
+            "reduction": "+13.9%",
+            "saved_label": "+1.1 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0.5 MiB"
+          },
+          "mega": {
+            "speedup": 1.097,
+            "speedup_label": "1.10×",
+            "reduction": "+8.9%",
+            "saved_label": "+0.7 μs",
+            "speed_width": 94.444,
+            "traffic_label": "+0.5 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 86.076,
+            "traffic_label": "+0 MiB"
+          },
+          "v2": {
+            "speedup": 0.908,
+            "speedup_label": "0.91×",
+            "reduction": "-10.1%",
+            "saved_label": "-0.8 μs",
+            "speed_width": 78.161,
+            "traffic_label": "-1 MiB"
+          },
+          "v1": {
+            "speedup": 0.693,
+            "speedup_label": "0.69×",
+            "reduction": "-44.3%",
+            "saved_label": "-3.5 μs",
+            "speed_width": 59.649,
+            "traffic_label": "-2.5 MiB"
+          }
+        },
+        "v2": {
+          "v3": {
+            "speedup": 1.279,
+            "speedup_label": "1.28×",
+            "reduction": "+21.8%",
+            "saved_label": "+1.9 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+1.5 MiB"
+          },
+          "mega": {
+            "speedup": 1.208,
+            "speedup_label": "1.21×",
+            "reduction": "+17.2%",
+            "saved_label": "+1.5 μs",
+            "speed_width": 94.444,
+            "traffic_label": "+1.5 MiB"
+          },
+          "linear": {
+            "speedup": 1.101,
+            "speedup_label": "1.10×",
+            "reduction": "+9.2%",
+            "saved_label": "+0.8 μs",
+            "speed_width": 86.076,
+            "traffic_label": "+1 MiB"
+          },
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 78.161,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.763,
+            "speedup_label": "0.76×",
+            "reduction": "-31.0%",
+            "saved_label": "-2.7 μs",
+            "speed_width": 59.649,
+            "traffic_label": "-1.5 MiB"
+          }
+        },
+        "v1": {
+          "v3": {
+            "speedup": 1.676,
+            "speedup_label": "1.68×",
+            "reduction": "+40.4%",
+            "saved_label": "+4.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+3 MiB"
+          },
+          "mega": {
+            "speedup": 1.583,
+            "speedup_label": "1.58×",
+            "reduction": "+36.8%",
+            "saved_label": "+4.2 μs",
+            "speed_width": 94.444,
+            "traffic_label": "+3 MiB"
+          },
+          "linear": {
+            "speedup": 1.443,
+            "speedup_label": "1.44×",
+            "reduction": "+30.7%",
+            "saved_label": "+3.5 μs",
+            "speed_width": 86.076,
+            "traffic_label": "+2.5 MiB"
+          },
+          "v2": {
+            "speedup": 1.31,
+            "speedup_label": "1.31×",
+            "reduction": "+23.7%",
+            "saved_label": "+2.7 μs",
+            "speed_width": 78.161,
+            "traffic_label": "+1.5 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 59.649,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "112.6",
+          "56.3",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "v1",
+            "name": "matmul_v1",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.529,
+                "value": "4.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 150.826,
+                "value": "11.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 127.451,
+                "value": "30.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "112.6 μs"
+              }
+            ],
+            "path": "40,159.529 200,150.826 360,127.451 520,25.000"
+          },
+          {
+            "id": "v2",
+            "name": "matmul_v2",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.773,
+                "value": "3.4 μs"
+              },
+              {
+                "x": 200,
+                "y": 154.183,
+                "value": "8.7 μs"
+              },
+              {
+                "x": 360,
+                "y": 131.927,
+                "value": "26.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 50.115,
+                "value": "92.4 μs"
+              }
+            ],
+            "path": "40,160.773 200,154.183 360,131.927 520,50.115"
+          },
+          {
+            "id": "v3",
+            "name": "matmul_v3",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.394,
+                "value": "2.9 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.545,
+                "value": "6.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 139.885,
+                "value": "20.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 80.204,
+                "value": "68.2 μs"
+              }
+            ],
+            "path": "40,161.394 200,156.545 360,139.885 520,80.204"
+          },
+          {
+            "id": "linear",
+            "name": "linear",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.146,
+                "value": "3.1 μs"
+              },
+              {
+                "x": 200,
+                "y": 155.178,
+                "value": "7.9 μs"
+              },
+              {
+                "x": 360,
+                "y": 133.917,
+                "value": "25 μs"
+              },
+              {
+                "x": 520,
+                "y": 57.078,
+                "value": "86.8 μs"
+              }
+            ],
+            "path": "40,161.146 200,155.178 360,133.917 520,57.078"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_mm",
+            "kind": "compute",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.648,
+                "value": "3.5 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.048,
+                "value": "7.2 μs"
+              },
+              {
+                "x": 360,
+                "y": 138.144,
+                "value": "21.6 μs"
+              },
+              {
+                "x": 520,
+                "y": 77.469,
+                "value": "70.4 μs"
+              }
+            ],
+            "path": "40,160.648 200,156.048 360,138.144 520,77.469"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "fused-large/ascend-910b1",
       "family_id": "matmul-family",
       "scope_id": "fused",
       "size": "4096",
+      "hardware_id": "ascend-910b1",
       "shape": "4096 × 4096 × 4096",
       "shape_label": "M × N × K",
       "semantic": "GELU(XW + b)",
@@ -4019,10 +4962,11 @@
       }
     },
     {
-      "id": "fused-small",
+      "id": "fused-small/ascend-910b1",
       "family_id": "matmul-family",
       "scope_id": "fused",
       "size": "1024",
+      "hardware_id": "ascend-910b1",
       "shape": "1024 × 1024 × 1024",
       "shape_label": "M × N × K",
       "semantic": "GELU(XW + b)",
@@ -4372,10 +5316,719 @@
       }
     },
     {
-      "id": "attention-large",
+      "id": "fused-large/ascend-910b4",
+      "family_id": "matmul-family",
+      "scope_id": "fused",
+      "size": "4096",
+      "hardware_id": "ascend-910b4",
+      "shape": "4096 × 4096 × 4096",
+      "shape_label": "M × N × K",
+      "semantic": "GELU(XW + b)",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "MegaKernel",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 84.6,
+          "latency": "84.6",
+          "traffic_mib": 96.0,
+          "width": 52.351,
+          "synthetic": true
+        },
+        {
+          "id": "epilogue",
+          "member_id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "Epilogue 融合",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 88.2,
+          "latency": "88.2",
+          "traffic_mib": 96.0,
+          "width": 54.579,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "部分融合",
+          "launches": 2,
+          "chain": [
+            "Linear",
+            "GELU"
+          ],
+          "latency_us": 134.4,
+          "latency": "134.4",
+          "traffic_mib": 128.0,
+          "width": 83.168,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "MatMul",
+            "Bias",
+            "GELU"
+          ],
+          "latency_us": 161.6,
+          "latency": "161.6",
+          "traffic_mib": 192.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 0.959,
+            "speedup_label": "0.96×",
+            "reduction": "-4.3%",
+            "saved_label": "-3.6 μs",
+            "speed_width": 95.918,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.629,
+            "speedup_label": "0.63×",
+            "reduction": "-58.9%",
+            "saved_label": "-49.8 μs",
+            "speed_width": 62.946,
+            "traffic_label": "-32 MiB"
+          },
+          "separate": {
+            "speedup": 0.524,
+            "speedup_label": "0.52×",
+            "reduction": "-91.0%",
+            "saved_label": "-77.0 μs",
+            "speed_width": 52.351,
+            "traffic_label": "-96 MiB"
+          }
+        },
+        "epilogue": {
+          "mega": {
+            "speedup": 1.043,
+            "speedup_label": "1.04×",
+            "reduction": "+4.1%",
+            "saved_label": "+3.6 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 95.918,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.656,
+            "speedup_label": "0.66×",
+            "reduction": "-52.4%",
+            "saved_label": "-46.2 μs",
+            "speed_width": 62.946,
+            "traffic_label": "-32 MiB"
+          },
+          "separate": {
+            "speedup": 0.546,
+            "speedup_label": "0.55×",
+            "reduction": "-83.2%",
+            "saved_label": "-73.4 μs",
+            "speed_width": 52.351,
+            "traffic_label": "-96 MiB"
+          }
+        },
+        "linear": {
+          "mega": {
+            "speedup": 1.589,
+            "speedup_label": "1.59×",
+            "reduction": "+37.1%",
+            "saved_label": "+49.8 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+32 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.524,
+            "speedup_label": "1.52×",
+            "reduction": "+34.4%",
+            "saved_label": "+46.2 μs",
+            "speed_width": 95.918,
+            "traffic_label": "+32 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 62.946,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.832,
+            "speedup_label": "0.83×",
+            "reduction": "-20.2%",
+            "saved_label": "-27.2 μs",
+            "speed_width": 52.351,
+            "traffic_label": "-64 MiB"
+          }
+        },
+        "separate": {
+          "mega": {
+            "speedup": 1.91,
+            "speedup_label": "1.91×",
+            "reduction": "+47.6%",
+            "saved_label": "+77.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+96 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.832,
+            "speedup_label": "1.83×",
+            "reduction": "+45.4%",
+            "saved_label": "+73.4 μs",
+            "speed_width": 95.918,
+            "traffic_label": "+96 MiB"
+          },
+          "linear": {
+            "speedup": 1.202,
+            "speedup_label": "1.20×",
+            "reduction": "+16.8%",
+            "saved_label": "+27.2 μs",
+            "speed_width": 62.946,
+            "traffic_label": "+64 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 52.351,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "161.6",
+          "80.8",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "MatMul + Bias + GELU",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 158.416,
+                "value": "7.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 147.847,
+                "value": "19.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 116.312,
+                "value": "56.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "161.6 μs"
+              }
+            ],
+            "path": "40,158.416 200,147.847 360,116.312 520,25.000"
+          },
+          {
+            "id": "linear",
+            "name": "linear + gelu",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.629,
+                "value": "6.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 151.658,
+                "value": "15.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 124.455,
+                "value": "46.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.564,
+                "value": "134.4 μs"
+              }
+            ],
+            "path": "40,159.629 200,151.658 360,124.455 520,48.564"
+          },
+          {
+            "id": "epilogue",
+            "name": "epilogue_fused",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.708,
+                "value": "3.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.55,
+                "value": "8.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 142.129,
+                "value": "26.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 88.589,
+                "value": "88.2 μs"
+              }
+            ],
+            "path": "40,161.708 200,157.550 360,142.129 520,88.589"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_fused",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.275,
+                "value": "4.3 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.416,
+                "value": "7.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 142.649,
+                "value": "25.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 91.708,
+                "value": "84.6 μs"
+              }
+            ],
+            "path": "40,161.275 200,158.416 360,142.649 520,91.708"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "fused-small/ascend-910b4",
+      "family_id": "matmul-family",
+      "scope_id": "fused",
+      "size": "1024",
+      "hardware_id": "ascend-910b4",
+      "shape": "1024 × 1024 × 1024",
+      "shape_label": "M × N × K",
+      "semantic": "GELU(XW + b)",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "mega",
+      "candidates": [
+        {
+          "id": "mega",
+          "member_id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "MegaKernel",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 7.6,
+          "latency": "7.6",
+          "traffic_mib": 6.0,
+          "width": 38.384,
+          "synthetic": true
+        },
+        {
+          "id": "epilogue",
+          "member_id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "Epilogue 融合",
+          "launches": 1,
+          "chain": [
+            "MatMul · Bias · GELU"
+          ],
+          "latency_us": 8.6,
+          "latency": "8.6",
+          "traffic_mib": 6.0,
+          "width": 43.434,
+          "synthetic": true
+        },
+        {
+          "id": "linear",
+          "member_id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "部分融合",
+          "launches": 2,
+          "chain": [
+            "Linear",
+            "GELU"
+          ],
+          "latency_us": 15.4,
+          "latency": "15.4",
+          "traffic_mib": 8.0,
+          "width": 77.778,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "MatMul",
+            "Bias",
+            "GELU"
+          ],
+          "latency_us": 19.8,
+          "latency": "19.8",
+          "traffic_mib": 12.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "mega": {
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 0.884,
+            "speedup_label": "0.88×",
+            "reduction": "-13.2%",
+            "saved_label": "-1.0 μs",
+            "speed_width": 88.372,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.494,
+            "speedup_label": "0.49×",
+            "reduction": "-102.6%",
+            "saved_label": "-7.8 μs",
+            "speed_width": 49.351,
+            "traffic_label": "-2 MiB"
+          },
+          "separate": {
+            "speedup": 0.384,
+            "speedup_label": "0.38×",
+            "reduction": "-160.5%",
+            "saved_label": "-12.2 μs",
+            "speed_width": 38.384,
+            "traffic_label": "-6 MiB"
+          }
+        },
+        "epilogue": {
+          "mega": {
+            "speedup": 1.132,
+            "speedup_label": "1.13×",
+            "reduction": "+11.6%",
+            "saved_label": "+1.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 88.372,
+            "traffic_label": "+0 MiB"
+          },
+          "linear": {
+            "speedup": 0.558,
+            "speedup_label": "0.56×",
+            "reduction": "-79.1%",
+            "saved_label": "-6.8 μs",
+            "speed_width": 49.351,
+            "traffic_label": "-2 MiB"
+          },
+          "separate": {
+            "speedup": 0.434,
+            "speedup_label": "0.43×",
+            "reduction": "-130.2%",
+            "saved_label": "-11.2 μs",
+            "speed_width": 38.384,
+            "traffic_label": "-6 MiB"
+          }
+        },
+        "linear": {
+          "mega": {
+            "speedup": 2.026,
+            "speedup_label": "2.03×",
+            "reduction": "+50.6%",
+            "saved_label": "+7.8 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+2 MiB"
+          },
+          "epilogue": {
+            "speedup": 1.791,
+            "speedup_label": "1.79×",
+            "reduction": "+44.2%",
+            "saved_label": "+6.8 μs",
+            "speed_width": 88.372,
+            "traffic_label": "+2 MiB"
+          },
+          "linear": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 49.351,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.778,
+            "speedup_label": "0.78×",
+            "reduction": "-28.6%",
+            "saved_label": "-4.4 μs",
+            "speed_width": 38.384,
+            "traffic_label": "-4 MiB"
+          }
+        },
+        "separate": {
+          "mega": {
+            "speedup": 2.605,
+            "speedup_label": "2.61×",
+            "reduction": "+61.6%",
+            "saved_label": "+12.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+6 MiB"
+          },
+          "epilogue": {
+            "speedup": 2.302,
+            "speedup_label": "2.30×",
+            "reduction": "+56.6%",
+            "saved_label": "+11.2 μs",
+            "speed_width": 88.372,
+            "traffic_label": "+6 MiB"
+          },
+          "linear": {
+            "speedup": 1.286,
+            "speedup_label": "1.29×",
+            "reduction": "+22.2%",
+            "saved_label": "+4.4 μs",
+            "speed_width": 49.351,
+            "traffic_label": "+4 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 38.384,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "161.6",
+          "80.8",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "MatMul + Bias + GELU",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 158.416,
+                "value": "7.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 147.847,
+                "value": "19.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 116.312,
+                "value": "56.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "161.6 μs"
+              }
+            ],
+            "path": "40,158.416 200,147.847 360,116.312 520,25.000"
+          },
+          {
+            "id": "linear",
+            "name": "linear + gelu",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 159.629,
+                "value": "6.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 151.658,
+                "value": "15.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 124.455,
+                "value": "46.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 48.564,
+                "value": "134.4 μs"
+              }
+            ],
+            "path": "40,159.629 200,151.658 360,124.455 520,48.564"
+          },
+          {
+            "id": "epilogue",
+            "name": "epilogue_fused",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.708,
+                "value": "3.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.55,
+                "value": "8.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 142.129,
+                "value": "26.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 88.589,
+                "value": "88.2 μs"
+              }
+            ],
+            "path": "40,161.708 200,157.550 360,142.129 520,88.589"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_fused",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 161.275,
+                "value": "4.3 μs"
+              },
+              {
+                "x": 200,
+                "y": 158.416,
+                "value": "7.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 142.649,
+                "value": "25.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 91.708,
+                "value": "84.6 μs"
+              }
+            ],
+            "path": "40,161.275 200,158.416 360,142.649 520,91.708"
+          }
+        ],
+        "axis_label": "M = N = K"
+      }
+    },
+    {
+      "id": "attention-large/ascend-910b1",
       "family_id": "attention-family",
       "scope_id": "attention",
       "size": "4096",
+      "hardware_id": "ascend-910b1",
       "shape": "1 × 32 × 4096 × 128",
       "shape_label": "B × H × S × D",
       "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
@@ -4724,10 +6377,11 @@
       }
     },
     {
-      "id": "attention-small",
+      "id": "attention-small/ascend-910b1",
       "family_id": "attention-family",
       "scope_id": "attention",
       "size": "1024",
+      "hardware_id": "ascend-910b1",
       "shape": "1 × 32 × 1024 × 128",
       "shape_label": "B × H × S × D",
       "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
@@ -5070,6 +6724,712 @@
               }
             ],
             "path": "40,160.924 200,157.816 360,146.026 520,111.763"
+          }
+        ],
+        "axis_label": "序列长度 S"
+      }
+    },
+    {
+      "id": "attention-large/ascend-910b4",
+      "family_id": "attention-family",
+      "scope_id": "attention",
+      "size": "4096",
+      "hardware_id": "ascend-910b4",
+      "shape": "1 × 32 × 4096 × 128",
+      "shape_label": "B × H × S × D",
+      "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "v2",
+      "candidates": [
+        {
+          "id": "v2",
+          "member_id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "分块融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 414.8,
+          "latency": "414.8",
+          "traffic_mib": 768.0,
+          "width": 40.35,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "流水融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 428.0,
+          "latency": "428.0",
+          "traffic_mib": 640.0,
+          "width": 41.634,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "Attention"
+          ],
+          "latency_us": 591.2,
+          "latency": "591.2",
+          "traffic_mib": 2048.0,
+          "width": 57.51,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "QKᵀ / √d",
+            "Softmax",
+            "PV"
+          ],
+          "latency_us": 1028.0,
+          "latency": "1028.0",
+          "traffic_mib": 4096.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v2": {
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.969,
+            "speedup_label": "0.97×",
+            "reduction": "-3.2%",
+            "saved_label": "-13.2 μs",
+            "speed_width": 96.916,
+            "traffic_label": "+128 MiB"
+          },
+          "v1": {
+            "speedup": 0.702,
+            "speedup_label": "0.70×",
+            "reduction": "-42.5%",
+            "saved_label": "-176.4 μs",
+            "speed_width": 70.162,
+            "traffic_label": "-1280 MiB"
+          },
+          "separate": {
+            "speedup": 0.404,
+            "speedup_label": "0.40×",
+            "reduction": "-147.8%",
+            "saved_label": "-613.2 μs",
+            "speed_width": 40.35,
+            "traffic_label": "-3328 MiB"
+          }
+        },
+        "mega": {
+          "v2": {
+            "speedup": 1.032,
+            "speedup_label": "1.03×",
+            "reduction": "+3.1%",
+            "saved_label": "+13.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "-128 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 96.916,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.724,
+            "speedup_label": "0.72×",
+            "reduction": "-38.1%",
+            "saved_label": "-163.2 μs",
+            "speed_width": 70.162,
+            "traffic_label": "-1408 MiB"
+          },
+          "separate": {
+            "speedup": 0.416,
+            "speedup_label": "0.42×",
+            "reduction": "-140.2%",
+            "saved_label": "-600.0 μs",
+            "speed_width": 40.35,
+            "traffic_label": "-3456 MiB"
+          }
+        },
+        "v1": {
+          "v2": {
+            "speedup": 1.425,
+            "speedup_label": "1.43×",
+            "reduction": "+29.8%",
+            "saved_label": "+176.4 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+1280 MiB"
+          },
+          "mega": {
+            "speedup": 1.381,
+            "speedup_label": "1.38×",
+            "reduction": "+27.6%",
+            "saved_label": "+163.2 μs",
+            "speed_width": 96.916,
+            "traffic_label": "+1408 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 70.162,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.575,
+            "speedup_label": "0.58×",
+            "reduction": "-73.9%",
+            "saved_label": "-436.8 μs",
+            "speed_width": 40.35,
+            "traffic_label": "-2048 MiB"
+          }
+        },
+        "separate": {
+          "v2": {
+            "speedup": 2.478,
+            "speedup_label": "2.48×",
+            "reduction": "+59.6%",
+            "saved_label": "+613.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+3328 MiB"
+          },
+          "mega": {
+            "speedup": 2.402,
+            "speedup_label": "2.40×",
+            "reduction": "+58.4%",
+            "saved_label": "+600.0 μs",
+            "speed_width": 96.916,
+            "traffic_label": "+3456 MiB"
+          },
+          "v1": {
+            "speedup": 1.739,
+            "speedup_label": "1.74×",
+            "reduction": "+42.5%",
+            "saved_label": "+436.8 μs",
+            "speed_width": 70.162,
+            "traffic_label": "+2048 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 40.35,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "1028",
+          "514",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "QK + Softmax + PV",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 156.938,
+                "value": "59.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 149.965,
+                "value": "110.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.226,
+                "value": "350.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "1028 μs"
+              }
+            ],
+            "path": "40,156.938 200,149.965 360,117.226 520,25.000"
+          },
+          {
+            "id": "v1",
+            "name": "attention_v1",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.206,
+                "value": "35.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.066,
+                "value": "65.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.572,
+                "value": "201.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 84.486,
+                "value": "591.2 μs"
+              }
+            ],
+            "path": "40,160.206 200,156.066 360,137.572 520,84.486"
+          },
+          {
+            "id": "v2",
+            "name": "flash_attention_v2",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.942,
+                "value": "29.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.837,
+                "value": "52.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 145.089,
+                "value": "146.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 108.51,
+                "value": "414.8 μs"
+              }
+            ],
+            "path": "40,160.942 200,157.837 360,145.089 520,108.510"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_attention",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.696,
+                "value": "31.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.401,
+                "value": "55.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 144.191,
+                "value": "152.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 106.712,
+                "value": "428 μs"
+              }
+            ],
+            "path": "40,160.696 200,157.401 360,144.191 520,106.712"
+          }
+        ],
+        "axis_label": "序列长度 S"
+      }
+    },
+    {
+      "id": "attention-small/ascend-910b4",
+      "family_id": "attention-family",
+      "scope_id": "attention",
+      "size": "1024",
+      "hardware_id": "ascend-910b4",
+      "shape": "1 × 32 × 1024 × 128",
+      "shape_label": "B × H × S × D",
+      "semantic": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout",
+      "synthetic": true,
+      "hardware": "Ascend 910B4",
+      "dtype": "FP16",
+      "baseline": "separate",
+      "winner": "v2",
+      "candidates": [
+        {
+          "id": "v2",
+          "member_id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "分块融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 52.6,
+          "latency": "52.6",
+          "traffic_mib": 48.0,
+          "width": 47.645,
+          "synthetic": true
+        },
+        {
+          "id": "mega",
+          "member_id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion",
+          "kind_label": "融合算子",
+          "tag": "流水融合",
+          "launches": 1,
+          "chain": [
+            "QK · Softmax · PV"
+          ],
+          "latency_us": 55.8,
+          "latency": "55.8",
+          "traffic_mib": 40.0,
+          "width": 50.543,
+          "synthetic": true
+        },
+        {
+          "id": "v1",
+          "member_id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator",
+          "kind_label": "算子",
+          "tag": "基础实现",
+          "launches": 1,
+          "chain": [
+            "Attention"
+          ],
+          "latency_us": 65.6,
+          "latency": "65.6",
+          "traffic_mib": 128.0,
+          "width": 59.42,
+          "synthetic": true
+        },
+        {
+          "id": "separate",
+          "member_id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence",
+          "kind_label": "算子组合",
+          "tag": "分算子",
+          "launches": 3,
+          "chain": [
+            "QKᵀ / √d",
+            "Softmax",
+            "PV"
+          ],
+          "latency_us": 110.4,
+          "latency": "110.4",
+          "traffic_mib": 256.0,
+          "width": 100.0,
+          "synthetic": true
+        }
+      ],
+      "comparisons": {
+        "v2": {
+          "v2": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+0 MiB"
+          },
+          "mega": {
+            "speedup": 0.943,
+            "speedup_label": "0.94×",
+            "reduction": "-6.1%",
+            "saved_label": "-3.2 μs",
+            "speed_width": 94.265,
+            "traffic_label": "+8 MiB"
+          },
+          "v1": {
+            "speedup": 0.802,
+            "speedup_label": "0.80×",
+            "reduction": "-24.7%",
+            "saved_label": "-13.0 μs",
+            "speed_width": 80.183,
+            "traffic_label": "-80 MiB"
+          },
+          "separate": {
+            "speedup": 0.476,
+            "speedup_label": "0.48×",
+            "reduction": "-109.9%",
+            "saved_label": "-57.8 μs",
+            "speed_width": 47.645,
+            "traffic_label": "-208 MiB"
+          }
+        },
+        "mega": {
+          "v2": {
+            "speedup": 1.061,
+            "speedup_label": "1.06×",
+            "reduction": "+5.7%",
+            "saved_label": "+3.2 μs",
+            "speed_width": 100.0,
+            "traffic_label": "-8 MiB"
+          },
+          "mega": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 94.265,
+            "traffic_label": "+0 MiB"
+          },
+          "v1": {
+            "speedup": 0.851,
+            "speedup_label": "0.85×",
+            "reduction": "-17.6%",
+            "saved_label": "-9.8 μs",
+            "speed_width": 80.183,
+            "traffic_label": "-88 MiB"
+          },
+          "separate": {
+            "speedup": 0.505,
+            "speedup_label": "0.51×",
+            "reduction": "-97.8%",
+            "saved_label": "-54.6 μs",
+            "speed_width": 47.645,
+            "traffic_label": "-216 MiB"
+          }
+        },
+        "v1": {
+          "v2": {
+            "speedup": 1.247,
+            "speedup_label": "1.25×",
+            "reduction": "+19.8%",
+            "saved_label": "+13.0 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+80 MiB"
+          },
+          "mega": {
+            "speedup": 1.176,
+            "speedup_label": "1.18×",
+            "reduction": "+14.9%",
+            "saved_label": "+9.8 μs",
+            "speed_width": 94.265,
+            "traffic_label": "+88 MiB"
+          },
+          "v1": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 80.183,
+            "traffic_label": "+0 MiB"
+          },
+          "separate": {
+            "speedup": 0.594,
+            "speedup_label": "0.59×",
+            "reduction": "-68.3%",
+            "saved_label": "-44.8 μs",
+            "speed_width": 47.645,
+            "traffic_label": "-128 MiB"
+          }
+        },
+        "separate": {
+          "v2": {
+            "speedup": 2.099,
+            "speedup_label": "2.10×",
+            "reduction": "+52.4%",
+            "saved_label": "+57.8 μs",
+            "speed_width": 100.0,
+            "traffic_label": "+208 MiB"
+          },
+          "mega": {
+            "speedup": 1.978,
+            "speedup_label": "1.98×",
+            "reduction": "+49.5%",
+            "saved_label": "+54.6 μs",
+            "speed_width": 94.265,
+            "traffic_label": "+216 MiB"
+          },
+          "v1": {
+            "speedup": 1.683,
+            "speedup_label": "1.68×",
+            "reduction": "+40.6%",
+            "saved_label": "+44.8 μs",
+            "speed_width": 80.183,
+            "traffic_label": "+128 MiB"
+          },
+          "separate": {
+            "speedup": 1.0,
+            "speedup_label": "1.00×",
+            "reduction": "+0.0%",
+            "saved_label": "+0.0 μs",
+            "speed_width": 47.645,
+            "traffic_label": "+0 MiB"
+          }
+        }
+      },
+      "trend": {
+        "ticks": [
+          "1028",
+          "514",
+          "0"
+        ],
+        "labels": [
+          "512",
+          "1024",
+          "2048",
+          "4096"
+        ],
+        "series": [
+          {
+            "id": "separate",
+            "name": "QK + Softmax + PV",
+            "kind": "muted",
+            "points": [
+              {
+                "x": 40,
+                "y": 156.938,
+                "value": "59.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 149.965,
+                "value": "110.4 μs"
+              },
+              {
+                "x": 360,
+                "y": 117.226,
+                "value": "350.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 25.0,
+                "value": "1028 μs"
+              }
+            ],
+            "path": "40,156.938 200,149.965 360,117.226 520,25.000"
+          },
+          {
+            "id": "v1",
+            "name": "attention_v1",
+            "kind": "vector",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.206,
+                "value": "35.2 μs"
+              },
+              {
+                "x": 200,
+                "y": 156.066,
+                "value": "65.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 137.572,
+                "value": "201.4 μs"
+              },
+              {
+                "x": 520,
+                "y": 84.486,
+                "value": "591.2 μs"
+              }
+            ],
+            "path": "40,160.206 200,156.066 360,137.572 520,84.486"
+          },
+          {
+            "id": "v2",
+            "name": "flash_attention_v2",
+            "kind": "store",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.942,
+                "value": "29.8 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.837,
+                "value": "52.6 μs"
+              },
+              {
+                "x": 360,
+                "y": 145.089,
+                "value": "146.2 μs"
+              },
+              {
+                "x": 520,
+                "y": 108.51,
+                "value": "414.8 μs"
+              }
+            ],
+            "path": "40,160.942 200,157.837 360,145.089 520,108.510"
+          },
+          {
+            "id": "mega",
+            "name": "megakernel_attention",
+            "kind": "memory",
+            "points": [
+              {
+                "x": 40,
+                "y": 160.696,
+                "value": "31.6 μs"
+              },
+              {
+                "x": 200,
+                "y": 157.401,
+                "value": "55.8 μs"
+              },
+              {
+                "x": 360,
+                "y": 144.191,
+                "value": "152.8 μs"
+              },
+              {
+                "x": 520,
+                "y": 106.712,
+                "value": "428 μs"
+              }
+            ],
+            "path": "40,160.696 200,157.401 360,144.191 520,106.712"
           }
         ],
         "axis_label": "序列长度 S"

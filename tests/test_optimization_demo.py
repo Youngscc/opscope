@@ -31,7 +31,7 @@ class OptimizationDemoTests(unittest.TestCase):
         self.assertEqual(case['latency'], '126.4')
         self.assertEqual(case['bound'], '访存受限')
         self.assertEqual(case['location'], '数据搬入 → 矩阵计算')
-        self.assertEqual(self.data['schema'], 'opscope-optimization-demo-v5')
+        self.assertEqual(self.data['schema'], 'opscope-optimization-demo-v6')
 
     def test_diagnosis_is_specific_to_operator_and_hardware(self):
         # Switching a SKU must select a complete preset, not relabel the previous result.
@@ -123,7 +123,7 @@ class OptimizationDemoTests(unittest.TestCase):
     def test_family_membership_does_not_merge_comparison_scopes(self):
         # Shared family and repeated local IDs do not imply equivalent computation.
         cases = {case['id']: case for case in self.data['mega']}
-        mm, fused, attention = (cases[key] for key in ('matmul-large', 'fused-large', 'attention-large'))
+        mm, fused, attention = (cases[f'{key}/ascend-910b1'] for key in ('matmul-large', 'fused-large', 'attention-large'))
         self.assertEqual(mm['family_id'], fused['family_id'])
         self.assertNotEqual(mm['scope_id'], fused['scope_id'])
         self.assertFalse({r['member_id'] for r in mm['candidates']} &
@@ -131,8 +131,28 @@ class OptimizationDemoTests(unittest.TestCase):
         self.assertEqual(attention['comparisons']['separate']['mega']['speedup_label'], '2.63×')
         self.assertEqual(attention['shape'], '1 × 32 × 4096 × 128')
         self.assertEqual(attention['trend']['axis_label'], '序列长度 S')
-        self.assertEqual(cases['attention-small']['winner'], 'v2')
+        self.assertEqual(cases['attention-small/ascend-910b1']['winner'], 'v2')
         self.assertEqual(attention['winner'], 'mega')
+
+    def test_mega_hardware_presets_have_distinct_results_and_complete_coverage(self):
+        # SKU switches must select their own full ranking and trend, not relabel or scale B1.
+        cases = {(c['scope_id'], c['size'], c['hardware_id']): c for c in self.data['mega']}
+        hardware = {h['id']: h['name'] for h in self.data['diagnostic_catalog']['hardware']}
+        expected = {(scope['id'], size['id'], hw) for family in self.data['families']
+                    for scope in family['scopes'] for size in scope['sizes'] for hw in hardware}
+        self.assertEqual(set(cases), expected)
+        self.assertEqual(len(self.data['mega']), 12)
+        self.assertEqual(len({c['id'] for c in self.data['mega']}), 12)
+        for case in cases.values():
+            self.assertEqual(case['hardware'], hardware[case['hardware_id']])
+        b1, b4 = (cases[('matmul', '4096', hw)] for hw in hardware)
+        self.assertEqual((b1['winner'], b4['winner']), ('mega', 'v3'))
+        self.assertEqual(b4['candidates'][0]['latency_us'], 68.2)
+        self.assertNotEqual(b1['trend'], b4['trend'])
+        self.assertEqual(cases[('fused', '4096', 'ascend-910b4')]['comparisons']['separate']['mega']['speedup_label'], '1.91×')
+        attention = cases[('attention', '4096', 'ascend-910b4')]
+        self.assertEqual(attention['winner'], 'v2')
+        self.assertEqual(attention['candidates'][0]['latency_us'], 414.8)
 
     def test_comparisons_are_task_local_and_baseline_reversible(self):
         # Changing baseline must preserve identity = 1 and reciprocal pair ratios.
@@ -153,9 +173,9 @@ class OptimizationDemoTests(unittest.TestCase):
     def test_shape_switch_changes_winner_and_fusion_semantics(self):
         # The small-shape fixture deliberately reverses two implementations' ranking.
         cases = {case['id']: case for case in self.data['mega']}
-        self.assertEqual(cases['matmul-large']['winner'], 'mega')
-        self.assertEqual(cases['matmul-small']['winner'], 'v3')
-        fused = cases['fused-large']
+        self.assertEqual(cases['matmul-large/ascend-910b1']['winner'], 'mega')
+        self.assertEqual(cases['matmul-small/ascend-910b1']['winner'], 'v3')
+        fused = cases['fused-large/ascend-910b1']
         self.assertEqual(fused['semantic'], 'GELU(XW + b)')
         rows = {r['id']: r for r in fused['candidates']}
         self.assertEqual((rows['separate']['launches'], rows['mega']['launches']), (3, 1))

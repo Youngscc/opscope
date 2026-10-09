@@ -33,7 +33,7 @@ function download() {
       <button class="button" :disabled="!scenario" @click="download"><OptIcon name="download"/>导出诊断</button>
     </section>
     <section class="diagnosis-configuration" aria-label="诊断配置">
-      <div class="diagnosis-control-grid">
+      <div class="opt-control-grid">
         <label>算子<select v-model="operatorId" aria-label="诊断算子"><option v-for="item in diagnosticOperators" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
         <label>硬件<select v-model="hardwareId" aria-label="诊断硬件"><option v-for="item in diagnosticHardware" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
         <label>输入 Size<select :value="selectedSize?.id ?? 'custom'" aria-label="诊断 Size" @change="selectSize(($event.target as HTMLSelectElement).value)"><option v-for="item in workload.sizes" :key="item.id" :value="item.id">{{item.shape}}</option><option v-if="!selectedSize" value="custom">自定义 · {{dimensions.join(' × ')}}</option></select></label>
@@ -47,7 +47,7 @@ function download() {
         <div class="verdict-tag"><OptIcon name="target"/>诊断结论</div>
         <h2>{{scenario.bound}}<span class="verdict-rule"></span></h2>
         <h3>{{scenario.title}}</h3><p>{{scenario.summary}}</p>
-        <div class="verdict-bottom"><span><OptIcon name="target" :size="15"/>{{scenario.location}}</span><a href="#optimization-actions">查看优化方向 <OptIcon name="arrow" :size="16"/></a></div>
+        <div class="verdict-bottom"><span><OptIcon name="target" :size="15"/>{{scenario.location}}</span></div>
       </section>
       <section class="diagnosis-pressure" aria-label="资源压力示例">
         <div class="pressure-heading"><span>资源压力</span></div>

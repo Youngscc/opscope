@@ -6,7 +6,7 @@ const series = computed(()=>props.scenario.trend.series.filter(row=>row.id===pro
 </script>
 <template>
   <section class="opt-panel scale-panel" aria-labelledby="scale-title">
-    <div class="opt-panel-heading"><div><span class="opt-kicker">规模敏感性</span><h2 id="scale-title">换个规模，还快吗？</h2></div><span class="opt-subtle">耗时 / μs</span></div>
+    <div class="opt-panel-heading"><h2 id="scale-title">规模趋势</h2><span class="opt-subtle">耗时 / μs</span></div>
     <svg class="scale-chart" viewBox="0 0 570 202" role="img" :aria-label="`${scenario.semantic} 不同输入规模的耗时趋势`">
       <g v-for="(tick,i) in scenario.trend.ticks" :key="i"><line x1="40" x2="520" :y1="25+i*70" :y2="25+i*70" class="trend-grid"/><text x="28" :y="29+i*70" text-anchor="end" class="trend-label">{{tick}}</text></g>
       <text v-for="(label,i) in scenario.trend.labels" :key="label" :x="40+i*160" y="191" text-anchor="middle" class="trend-label">{{label}}</text>

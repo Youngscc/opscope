@@ -4,13 +4,19 @@ export type DiagnosticOperator = typeof fixture.diagnostic_catalog.operators[num
 export type MegaFamily = typeof fixture.families[number]
 export type Pair = {speedup:number; speedup_label:string; reduction:string; saved_label:string; speed_width:number; traffic_label:string}
 export type MegaCase = Omit<typeof fixture.mega[number], 'comparisons'> & {comparisons:Record<string,Record<string,Pair>>}
+export type MegaSelection = {family:string; scope:string; size:string; hardware:string}
 export type Candidate = MegaCase['candidates'][number]
 export const diagnostics:Diagnosis[] = fixture.diagnostics
 export const diagnosticOperators = fixture.diagnostic_catalog.operators
-export const diagnosticHardware = fixture.diagnostic_catalog.hardware
+export const optimizationHardware = fixture.diagnostic_catalog.hardware
+export const diagnosticHardware = optimizationHardware
 export const megaFamilies:MegaFamily[] = fixture.families
 // The generated JSON has different keys per task; all pairs are validated at build time.
 export const megaCases = fixture.mega as unknown as MegaCase[]
+export function findMegaCase(selection:MegaSelection):MegaCase | null {
+  return megaCases.find(row=>row.family_id===selection.family && row.scope_id===selection.scope &&
+    row.size===selection.size && row.hardware_id===selection.hardware) ?? null
+}
 export function findDiagnosis(operatorId:string, hardwareId:string, dimensions:readonly number[]):Diagnosis | null {
   return diagnostics.find(row=>row.operator_id===operatorId && row.hardware_id===hardwareId &&
     row.dimensions.length===dimensions.length && row.dimensions.every((value,index)=>value===dimensions[index])) ?? null

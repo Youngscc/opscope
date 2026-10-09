@@ -225,20 +225,31 @@ def trends(specs, values):
         for i, (spec, series) in enumerate(zip(specs, values))]}
 
 
-def performance_samples(scope):
+def performance_samples(scope, hardware_id):
+    # Hardware samples are authored independently; they do not predict relative SKU speed.
     return {
-        "matmul": [[4.8, 12.8, 42.6, 126.4], [3.8, 9.6, 32.8, 104.8],
-                   [3.2, 7.4, 25.2, 88.6], [3.6, 8.6, 29.4, 97.2], [3.7, 8.1, 24.8, 76.8]],
-        "fused": [[8.4, 22.4, 64.8, 182.4], [6.8, 17.6, 52.4, 151.2],
-                  [4.2, 9.8, 34.2, 109.6], [4.8, 8.4, 28.6, 92.8]],
-        "attention": [[68.4, 126.8, 412.0, 1216.0], [39.2, 72.8, 230.4, 672.0],
-                      [33.6, 58.4, 178.6, 508.8], [35.4, 62.4, 164.8, 462.4]],
-    }[scope]
+        "ascend-910b1": {
+            "matmul": [[4.8, 12.8, 42.6, 126.4], [3.8, 9.6, 32.8, 104.8],
+                       [3.2, 7.4, 25.2, 88.6], [3.6, 8.6, 29.4, 97.2], [3.7, 8.1, 24.8, 76.8]],
+            "fused": [[8.4, 22.4, 64.8, 182.4], [6.8, 17.6, 52.4, 151.2],
+                      [4.2, 9.8, 34.2, 109.6], [4.8, 8.4, 28.6, 92.8]],
+            "attention": [[68.4, 126.8, 412.0, 1216.0], [39.2, 72.8, 230.4, 672.0],
+                          [33.6, 58.4, 178.6, 508.8], [35.4, 62.4, 164.8, 462.4]],
+        },
+        "ascend-910b4": {
+            "matmul": [[4.4, 11.4, 30.2, 112.6], [3.4, 8.7, 26.6, 92.4],
+                       [2.9, 6.8, 20.2, 68.2], [3.1, 7.9, 25.0, 86.8], [3.5, 7.2, 21.6, 70.4]],
+            "fused": [[7.6, 19.8, 56.2, 161.6], [6.2, 15.4, 46.8, 134.4],
+                      [3.8, 8.6, 26.4, 88.2], [4.3, 7.6, 25.8, 84.6]],
+            "attention": [[59.2, 110.4, 350.8, 1028.0], [35.2, 65.6, 201.4, 591.2],
+                          [29.8, 52.6, 146.2, 414.8], [31.6, 55.8, 152.8, 428.0]],
+        },
+    }[hardware_id][scope]
 
 
-def mega_case(family, scope, small):
+def mega_case(family, scope, small, hardware):
     specs = implementation_specs(scope)
-    trend_values = performance_samples(scope)
+    trend_values = performance_samples(scope, hardware["id"])
     values = [series[1 if small else 3] for series in trend_values]
     members = {row["id"]: row for row in family["members"]}
     rows = []
@@ -255,22 +266,23 @@ def mega_case(family, scope, small):
                 "attention": "softmax(QKᵀ / √d) V · 非因果 · 无 dropout"}[scope]
     trend = trends(specs, trend_values)
     trend["axis_label"] = "序列长度 S" if scope == "attention" else "M = N = K"
-    return dict(id=f'{scope}-{"small" if small else "large"}',
-                family_id=family["id"], scope_id=scope, size=size,
+    return dict(id=f'{scope}-{"small" if small else "large"}/{hardware["id"]}',
+                family_id=family["id"], scope_id=scope, size=size, hardware_id=hardware["id"],
                 shape=f"1 × 32 × {size} × 128" if scope == "attention" else " × ".join([size] * 3),
                 shape_label="B × H × S × D" if scope == "attention" else "M × N × K",
                 semantic=semantic,
-                synthetic=True, hardware="Ascend 910B1", dtype="FP16",
+                synthetic=True, hardware=hardware["name"], dtype="FP16",
                 baseline="v1" if scope == "matmul" else "separate", winner=rows[0]["id"],
                 candidates=rows, comparisons=comparisons(rows), trend=trend)
 
 
 def build_optimization_demo():
     families = mega_families()
-    return {"schema": "opscope-optimization-demo-v5", "synthetic": True,
-            "diagnostic_catalog": diagnostic_catalog(), "diagnostics": diagnostic_cases(), "families": families,
-            "mega": [mega_case(family, scope["id"], small) for family in families
-                     for scope in family["scopes"] for small in (False, True)]}
+    catalog = diagnostic_catalog()
+    return {"schema": "opscope-optimization-demo-v6", "synthetic": True,
+            "diagnostic_catalog": catalog, "diagnostics": diagnostic_cases(), "families": families,
+            "mega": [mega_case(family, scope["id"], small, hardware) for family in families
+                     for scope in family["scopes"] for hardware in catalog["hardware"] for small in (False, True)]}
 
 
 def write_optimization_demo(root):

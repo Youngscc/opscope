@@ -4,6 +4,8 @@ import Configuration from 'virtual:opscope-configuration'
 import { request, api_base } from '../api/client'
 import { EvaluationSession } from './evaluation-session'
 import { initialHardwareIds } from './hardware-selection'
+import demoPayload from 'virtual:opscope-demo'
+import { STATIC_DEMO } from '../demo-mode'
 import type { Payload, Configuration as Config, Fields, Result } from '../types'
 
 export const useOpScopeStore = defineStore('opscope', () => {
@@ -20,6 +22,15 @@ export const useOpScopeStore = defineStore('opscope', () => {
   const snapshot = computed(() => data.value?.evaluation && !busy.value && data.value.evaluation.status === 'completed' ? `${api_base}/evaluations/${data.value.evaluation.id}/snapshot` : '')
 
   async function initialize() {
+    if (STATIC_DEMO && demoPayload) {
+      baseline.value = demoPayload; data.value = demoPayload
+      config.value = Configuration.clone(demoPayload.catalog.default_config)
+      hardware.value = demoPayload.hardware.map(h => h.id)
+      methods.value = demoPayload.methods.map(m => m.id)
+      chart.value = 'latency'
+      message.value = '示例数据 · MatMul 4096 × 4096 × 4096 · FP16 / FP32'
+      return
+    }
     const signal = session.begin()
     try {
       const payload = await request<Payload>('/bootstrap', undefined, signal)
@@ -36,6 +47,7 @@ export const useOpScopeStore = defineStore('opscope', () => {
   }
 
   function apply(next: Config) {
+    if (STATIC_DEMO) return
     cancel()
     config.value = next
     const base = baseline.value!
@@ -59,6 +71,7 @@ export const useOpScopeStore = defineStore('opscope', () => {
   }
 
   async function run() {
+    if (STATIC_DEMO) return
     if (busy.value || !ready.value || !hardware.value.length || !methods.value.length) return
     const signal = session.begin()
     busy.value = true; pending(); metric.value = 'latency'; chart.value = 'latency'

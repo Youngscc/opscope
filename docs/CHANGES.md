@@ -1,5 +1,11 @@
 # OpScope 变更记录
 
+## 2026-10-09 · 三页单文件静态演示
+
+新增[opscope-demo.html](../opscope-demo.html)，包含填满25条虚拟结果的矩阵、性能优化和MegaKernel。[Python预设选择](../opscope/offline/workspace_demo.py)保留原数值/缺失语义；[构建脚本](../frontend/build-demo.mjs)内嵌Vue、CSS与数据，使用hash路由。静态模式固定矩阵输入、隐藏服务入口，禁止API请求；仍支持筛选、单项详情、双比较、JSON及另两页配置联动。共享页内跳转组件避免覆盖hash路由，在线构建保持服务流程。同步[说明](static-workspace-demo.md)、README、架构、数据口径及记忆。
+
+验证：28项Python检查、11项前端测试、类型检查、在线/单文件构建、脚本语法和差异检查通过。浏览器核对25/25及20/20筛选、详情/比较/流水、JSON下载及synthetic、三页导航/刷新、键盘与配置切换，桌面无横向溢出；修复首次库构建的process引用后无新增控制台错误。内置浏览器限制file协议，file://直接打开未实测，HTTP预览只服务该单文件。未运行评估或提交推送部署。
+
 ## 2026-10-09 · 移除优化方向跳转按钮
 
 [性能优化页](../frontend/src/pages/OptimizationPage.vue)移除“查看优化方向”页内跳转链接，避免重复指向已经展示的卡片；清理[对应样式](../frontend/src/optimization.css)，保留卡片和建议展开交互。

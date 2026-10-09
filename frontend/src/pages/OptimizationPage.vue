@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import WorkspaceHeader from '../components/WorkspaceHeader.vue'
+import SkipLink from '../components/SkipLink.vue'
 import OptIcon from '../components/optimization/OptIcon.vue'
 import PipelineChart from '../components/optimization/PipelineChart.vue'
 import DiagnosisSizeConfig from '../components/optimization/DiagnosisSizeConfig.vue'
@@ -25,7 +26,7 @@ function download() {
 }
 </script>
 <template>
-  <a class="skip" href="#optimization-main">跳到性能诊断</a>
+  <SkipLink target="optimization-main">跳到性能诊断</SkipLink>
   <WorkspaceHeader />
   <main id="optimization-main" class="optimization-workspace" tabindex="-1">
     <section class="opt-page-heading">

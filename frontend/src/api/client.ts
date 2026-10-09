@@ -1,5 +1,7 @@
+import { STATIC_DEMO } from '../demo-mode'
 export const api_base = (import.meta.env.VITE_OPSCOPE_API_BASE || '/api/opscope').replace(/\/$/, '')
 export async function request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  if (STATIC_DEMO) throw new Error('静态演示不连接评估服务')
   const response = await fetch(api_base + path, { method: body === undefined ? 'GET' : 'POST',
     headers: body === undefined ? {} : {'Content-Type': 'application/json'},
     body: body === undefined ? undefined : JSON.stringify(body), signal })

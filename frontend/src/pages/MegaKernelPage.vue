@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import WorkspaceHeader from '../components/WorkspaceHeader.vue'
+import SkipLink from '../components/SkipLink.vue'
 import OptIcon from '../components/optimization/OptIcon.vue'
 import ScaleTrend from '../components/optimization/ScaleTrend.vue'
 import ImplementationFlow from '../components/optimization/ImplementationFlow.vue'
@@ -29,7 +30,7 @@ function download() {
 }
 </script>
 <template>
-  <a class="skip" href="#megakernel-main">跳到实现对比</a>
+  <SkipLink target="megakernel-main">跳到实现对比</SkipLink>
   <WorkspaceHeader />
   <main id="megakernel-main" class="optimization-workspace" tabindex="-1">
     <section class="opt-page-heading">

@@ -1,5 +1,9 @@
 # 架构
 
+## 三页静态工作台（2026-10-09）
+
+`opscope-demo.html` 复用 Vue 三页，通过独立 demo 模式将 IIFE 脚本、CSS、矩阵及优化预设内嵌为单文件。hash 路由支持离线页面切换；共享 SkipLink 在页内聚焦，不覆盖路由。`workspace_demo.py` 从原预设中选取五种完整示例硬件，在25条结果上重新预处理图表及比较；`build.py` 写入 workspace-demo.json。虚拟模块仅在 demo 构建中加载此资产，在线构建返回null。静态 store 直接初始化，固定矩阵输入、隐藏运行与服务报告，API边界及HTML CSP禁止连接。生成命令及验证边界见[静态工作台](docs/static-workspace-demo.md)。
+
 ## 独立优化工作台（2026-10-08）
 
 Vue 增加 `/optimization` 与 `/megakernel`，通过 `WorkspaceHeader` 与性能矩阵并列。两页只消费本地展示 fixture，不初始化评估 store、不请求 API。`opscope/offline/optimization_demo.py` 预处理示例比值、排序、图宽和趋势坐标；`build.py` 同步生成 `frontend/src/data/optimization-demo.json`，Vue 只执行选择、展示和导出。原矩阵在路由返回时保留已有配置。独立 FastAPI 仅为两个新路由提供静态 Vue 壳的刷新入口，计算层没有变化。

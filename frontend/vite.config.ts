@@ -2,10 +2,20 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-export default defineConfig(() => {
+export default defineConfig(({mode}) => {
   const env = process.env
   return {
     plugins: [vue(), {
+      name: 'static-workspace-data',
+      resolveId(id) { if (id === 'virtual:opscope-demo') return '\0opscope-demo' },
+      load(id) {
+        if (id !== '\0opscope-demo') return
+        if (mode !== 'demo') return 'export default null;'
+        const path = resolve(import.meta.dirname, 'src/data/workspace-demo.json')
+        this.addWatchFile(path)
+        return `export default ${readFileSync(path, 'utf8')};`
+      }
+    }, {
       name: 'shared-configuration',
       resolveId(id) { if (id === 'virtual:opscope-configuration') return '\0opscope-configuration' },
       load(id) {

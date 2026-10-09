@@ -271,6 +271,8 @@ def build():
     from .optimization_demo import write_optimization_demo
     write_optimization_demo(ROOT)
     data = build_payload()
+    from .workspace_demo import write_workspace_demo
+    write_workspace_demo(ROOT, data)
     for name, presentation in [('index.html', False), ('demo.html', True)]:
         output = render_page(data, presentation=presentation)
         ROOT.joinpath(name).write_text(output)

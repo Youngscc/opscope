@@ -11,6 +11,8 @@
 
 ## 快速使用
 
+完整三页展示使用根目录 [opscope-demo.html](opscope-demo.html)：一个文件包含性能矩阵、性能优化和 MegaKernel，内嵌脚本、样式及虚拟数据，无需联网或后端。矩阵固定为 MatMul 4096³ FP16，五种硬件 × 五种方法共25条结果；另两页保留硬件、规模和场景选择。可筛选、查看详情、双结果比较和导出JSON，全部标记为示例。重新生成执行 `python3 -B build.py` 和 `npm --prefix frontend run build:demo`，详见[静态工作台说明](docs/static-workspace-demo.md)。
+
 只需展示时，直接双击根目录 [demo.html](demo.html)，无需安装依赖、启动服务或运行评估。单文件已内嵌 MatMul 4096×4096×4096 的预设结果、样式和脚本，支持硬件/方法筛选、详情、双结果对比及 JSON 导出。配置固定，所有数据保留合成示例标识；可单独复制该文件用于离线演示。更新产物使用 `python3 -B build.py`，同时生成通用 `index.html` 与专用 `demo.html`。
 
 安装 Python 3.10+、Node.js 22.12+（推荐 Node.js 24），在项目根目录执行：

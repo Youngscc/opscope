@@ -5,6 +5,7 @@ import type { Fact, Result, Section } from '../types'
 import Modal from './Modal.vue'
 import TraceView from './TraceView.vue'
 import { api_base } from '../api/client'
+import { STATIC_DEMO } from '../demo-mode'
 const props = defineProps<{ids:string[]}>()
 const emit = defineEmits<{close:[]; export:[rows:Result[]]; change:[ids:string[]]}>()
 const s = useOpScopeStore(), tab = ref('overview'), differences = ref(false)
@@ -15,7 +16,7 @@ const available = computed(() => records.value.every(r=>r.available))
 const sections = computed(() => available.value ? records.value[0]?.sections[tab.value] || [] : [])
 const notice = computed(() => s.data!.matrix.pairs[props.ids.join('|')])
 const pair_report = computed(() => {
-  if (!paired.value || !available.value) return ''
+  if (STATIC_DEMO || !paired.value || !available.value) return ''
   const query = new URLSearchParams({left:props.ids[0]!, right:props.ids[1]!})
   if (s.data?.evaluation?.id) query.set('job', s.data.evaluation.id)
   return `${api_base}/results/compare/report?${query}`

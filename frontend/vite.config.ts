@@ -10,7 +10,7 @@ export default defineConfig(({mode}) => {
       resolveId(id) { if (id === 'virtual:opscope-demo') return '\0opscope-demo' },
       load(id) {
         if (id !== '\0opscope-demo') return
-        if (mode !== 'demo') return 'export default null;'
+        if (mode === 'integration') return 'export default null;'
         const path = resolve(import.meta.dirname, 'src/data/workspace-demo.json')
         this.addWatchFile(path)
         return `export default ${readFileSync(path, 'utf8')};`
@@ -24,9 +24,9 @@ export default defineConfig(({mode}) => {
         this.addWatchFile(path)
         return readFileSync(path, 'utf8').replace(/^if \(typeof module.*$/m, '') + '\nexport default Configuration;'
       }
-    }], base: env.VITE_OPSCOPE_BASE || '/',
+    }], base: env.VITE_OPSCOPE_BASE || (mode === 'integration' ? '/' : './'),
     server: { host: '127.0.0.1', port: Number(env.OPSCOPE_FRONTEND_PORT || 5173), strictPort: true,
-      proxy: { '/api': { target: `http://127.0.0.1:${env.OPSCOPE_PORT || 8768}`, changeOrigin: true } } },
+      proxy: mode === 'integration' ? { '/api': { target: `http://127.0.0.1:${env.OPSCOPE_PORT || 8768}`, changeOrigin: true } } : undefined },
     build: { assetsDir: 'static' }
   }
 })

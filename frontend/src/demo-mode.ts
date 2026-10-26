@@ -1,2 +1,2 @@
-// Replaced at build time; the online bundle never initializes the demo dataset.
-export const STATIC_DEMO = import.meta.env.MODE === 'demo'
+// Default development/build is frontend-only; legacy API mode is explicit.
+export const STATIC_DEMO = import.meta.env.MODE !== 'integration'

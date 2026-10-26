@@ -1,5 +1,9 @@
 # OpScope Agent 工作指引
 
+## 当前项目边界
+
+当前交付为纯前端三页应用，默认开发、构建使用本地 JSON，无需后端。Python 是可选离线数据工具；历史集成入口保存在 tools/legacy/，仅显式 integration 模式启用 API。不要把历史后端安装恢复为默认流程。见[仓库分层](docs/repository-layout.md)。
+
 ## 开始工作
 
 1. 阅读本文件、[项目记忆](.agent/MEMORY.md)和 [ARCHITECTURE.md](ARCHITECTURE.md)。

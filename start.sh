@@ -1,36 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-mode=production
+mode=dev
+port=5173
 for arg in "$@"; do
   case "$arg" in
-    --dev) mode=development ;;
-    --port=*) export OPSCOPE_PORT="${arg#*=}" ;;
-    --frontend-port=*) export OPSCOPE_FRONTEND_PORT="${arg#*=}" ;;
-    --modeling-url=*) export OPSCOPE_MODELING_URL="${arg#*=}" ;;
-    -h|--help) echo './start.sh [--dev] [--port=8768] [--frontend-port=5173] [--modeling-url=http://127.0.0.1:8001]
-仅负责启动；环境配置请先运行 ./setup.sh（见 docs/environment.md）。'; exit 0 ;;
-    *) echo "未知参数：$arg" >&2; exit 2 ;;
+    --dev) mode=dev ;;
+    --preview) mode=preview ;;
+    --port=*) port="${arg#*=}" ;;
+    -h|--help) echo './start.sh [--dev|--preview] [--port=5173]
+默认启动纯前端开发服务；--preview 构建并预览静态产物。首次先执行 ./setup.sh。'; exit 0 ;;
+    *) echo "未知参数：$arg，使用 --help 查看用法。" >&2; exit 2 ;;
   esac
 done
-if [[ ! -x .venv/bin/python || ! -d frontend/node_modules ]]; then
-  echo '环境未就绪：请先运行 ./setup.sh 安装 Python 与前端依赖。' >&2
-  exit 1
+if [[ ! "$port" =~ ^[0-9]+$ ]] || ((10#$port < 1 || 10#$port > 65535)); then
+  echo '端口必须为 1–65535 的整数。' >&2; exit 2
 fi
-if [[ "$mode" == production ]]; then
+if [[ ! -d frontend/node_modules ]]; then
+  echo '请先执行 ./setup.sh 安装前端依赖。' >&2; exit 1
+fi
+if [[ "$mode" == preview ]]; then
   npm --prefix frontend run build
-  exec .venv/bin/python -B -m backend.web
+  exec npm --prefix frontend run preview -- --host 127.0.0.1 --port "$port" --strictPort
 fi
-backend_pid=''
-frontend_pid=''
-cleanup() {
-  trap - EXIT INT TERM
-  [[ -z "$frontend_pid" ]] || kill "$frontend_pid" 2>/dev/null || true
-  [[ -z "$backend_pid" ]] || kill "$backend_pid" 2>/dev/null || true
-  wait 2>/dev/null || true
-}
-trap cleanup EXIT INT TERM
-.venv/bin/python -B -m backend.web & backend_pid=$!
-(cd frontend && exec node node_modules/vite/bin/vite.js) & frontend_pid=$!
-while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null; do sleep 1; done
-exit 1
+exec npm --prefix frontend run dev -- --port "$port" --strictPort

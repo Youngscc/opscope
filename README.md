@@ -1,142 +1,117 @@
 # OpScope · 算子性能观察台
 
-共享后端接入已提供可选模式：`./setup.sh --modeling`，再执行 `./start.sh --modeling-url=http://127.0.0.1:8001`。复用 modeling 算子、硬件、Roofline/TileSim 与任务执行，宿主前端保持不变。启动、鉴权、支持边界见[共享模式说明](docs/modeling-runtime.md)。以下默认安装说明仍对应独立模式。
+OpScope 是面向 PC 的**纯前端性能展示与交互项目**，使用 Vue 3、TypeScript、Vite、Pinia 和 Vue Router。页面读取仓库内的预设 JSON，在浏览器内完成配置、筛选、对比和导出，无需启动后端服务。
 
+目前所有性能结果均为合成示例，页面及导出保留 `synthetic` 标记。修改输入后，只展示精确匹配的预设结果；未预设的组合显示暂无数据。
 
-项目目录名：`opscope`。OpScope 取 Operator + Scope，表示从不同方法和硬件视角观察算子性能。
+## 三个工作台
 
-用于比较同一个算子在不同硬件、不同评估方法下性能的 PC 应用。前端 Vue 3 / TypeScript / Vite / Pinia / Vue Router，后端 FastAPI / Uvicorn，与 modeling 的技术栈对齐。保留独立离线页面。
+| 页面 | 主要功能 |
+| --- | --- |
+| 性能评估 | 选择算子、形状和精度；按平台与方法筛选矩阵；查看总耗时或参考偏差；双向柱状图、单项详情和双结果比较 |
+| 性能分析 | 选择算子、平台与输入规模；展示瓶颈结论、资源指标、执行流水和优化方向 |
+| MegaKernel 优化 | 按算子族比较实现；选择硬件、维度与基线；展示排名、时间/空间开销和规模趋势；支持 JSON 导入族定义 |
 
-**默认离线页面展示合成示例；通过本地评估服务运行后展示 Roofline / TileSim 模型预测。TileSim 已接入矩阵、Attention、归一化、激活、逐元素和固定轴查表等已验证算子族，具体支持取决于算子契约、硬件模型与 dtype；预测不等于真机实测，真机数据的 lookup 数据源尚未接入。**
+默认评估数据为 MatMul 4096 × 4096 × 4096，FP16 输入、FP32 累加，五种平台 × 五种方法共25组结果。方法顺序为真机数据、MSKPP、CAModel、TileSim、Roofline；“真机数据”也是示例列名，并非已连接设备实测。
 
-## 快速使用
+## 直接查看或交付
 
-交给UI设计师重新设计时，发送根目录 [opscope-ui-design.html](opscope-ui-design.html)：三个页面、弹窗、交互、样式和示例数据均在一个文件内。模板、CSS和JSON有独立编辑区，修改后刷新即可预览；回传后按源文件映射迁回Vue并恢复接口读取。生成命令为 `python3 -B build.py` 与 `npm --prefix frontend run build:design`，详见[设计交接说明](docs/ui-design-handoff.md)。
+| 文件 | 用途 |
+| --- | --- |
+| [opscope-demo.html](opscope-demo.html) | 三页完整展示版，脚本、样式与数据全部内嵌，可单文件发送 |
+| [opscope-ui-design.html](opscope-ui-design.html) | UI 设计交接版，可直接编辑其中的模板、CSS 和 JSON |
+| [算子族 JSON 模板](data/opscope-families.example.json) | 在 MegaKernel 左侧导入，配置族名称、成员归属及类型 |
 
-完整三页展示使用根目录 [opscope-demo.html](opscope-demo.html)：一个文件包含性能矩阵、性能优化和 MegaKernel，内嵌脚本、样式及虚拟数据，无需联网或后端。矩阵默认展示 MatMul 4096³ FP16，五种硬件 × 五种方法共25条结果；点击标题中的“选择算子”可浏览目录和配置输入，未预设的配置显示空结果，载入 MatMul 示例后恢复原数据。另两页保留硬件、规模和场景选择。可筛选、查看详情、双结果比较和导出JSON，全部标记为示例。重新生成执行 `python3 -B build.py` 和 `npm --prefix frontend run build:demo`，详见[静态工作台说明](docs/static-workspace-demo.md)。
+两个 HTML 均可直接用浏览器打开，不需要另外发送资源文件。设计师修改交接版后，应按模板的 `data-source` 标注迁回 Vue 源码，再重新生成文件。详见[交接说明](docs/ui-design-handoff.md)和[族导入说明](docs/family-json-import.md)。
 
-只需展示时，直接双击根目录 [demo.html](demo.html)，无需安装依赖、启动服务或运行评估。单文件已内嵌 MatMul 4096×4096×4096 的预设结果、样式和脚本，支持硬件/方法筛选、详情、双结果对比及 JSON 导出。配置固定，所有数据保留合成示例标识；可单独复制该文件用于离线演示。更新产物使用 `python3 -B build.py`，同时生成通用 `index.html` 与专用 `demo.html`。
+## 本地开发
 
-安装 Python 3.10+、Node.js 22.12+（推荐 Node.js 24），在项目根目录执行：
+需要 **Node.js 22.12+**，推荐 Node.js 24。所有命令从仓库根目录执行：
 
 ```bash
-./setup.sh    # 首次或依赖变更后运行：配置 .venv 与前端依赖
-./start.sh    # 构建并启动服务
+./setup.sh                 # npm ci，安装锁定的前端依赖
+./start.sh                 # 纯前端开发服务，支持热更新
 ```
 
-访问 [OpScope](http://127.0.0.1:8768/opscope)。页面与 API 共用 8768 端口，Ctrl+C 停止。改端口用 `./start.sh --port=8770`，不会自动关闭其他服务。
+访问终端输出的地址，默认为 <http://127.0.0.1:5173/>。可用 `./start.sh --port=5176` 指定空闲端口，Ctrl+C 停止服务。
 
-[uv](https://docs.astral.sh/uv/) 已安装时 Python 环境优先按已提交的 `uv.lock` 同步；未安装 uv 自动回退 `python3 -m venv` + pip。逐条创建 `.venv`、安装 requirements、更新锁文件和验证的完整命令见 [`docs/environment.md`](docs/environment.md)。
-
-`setup.sh` 会把仓库内置的 Roofline 后端和固定版本 TileSim 安装到 OpScope 自己的 `.venv`，无需另行克隆 modeling 或填写 `.env`。TileSim 的 NumPy、SciPy 等平台依赖仍从 Python 包索引下载。未安装 uv、使用 venv+pip 回退时，可用 `PYTHON_BIN=/path/to/python3.12 ./setup.sh` 指定 Python。
-
-根目录 `index.html` 仍可直接用现代浏览器离线打开，不需要安装依赖；它是独立导出入口，在线应用使用 `frontend/dist/index.html`。
-
-## 功能
-
-- 两个独立的优化界面：顶部“性能优化”支持算子、硬件和 Size 选择，也可通过“配置输入”编辑各维度，展示对应的最终瓶颈、资源压力、关键流水和优化方向；“MegaKernel”按人工定义的族组织算子/融合算子，展示族内可比成员的排名、基线对比、融合边界和规模趋势。两页及导出只呈现人工配置与最终结果，不展示评估方法来源。当前均为可交互的预设示例，无后端诊断或优化计算，族编辑管理尚未接入。启动 Vue 前端后访问 `/optimization`、`/megakernel`；仅预览这两页可执行 `npm --prefix frontend run dev`，不需要后端。详见[优化工作台](docs/optimization-workspaces.md)。
-- 可搜索的统一目录，共94个不重名算子，按功能分类；逐张量编辑 shape / dtype。同名算子的不同张量契约收至“输入形式”，界面不显示来源项目及训练/推理标签。6个通信条目标注为单算子入口未提供。
-- 11组硬件配置（Server / POD分开），另保留6个独立合成示例硬件。支持搜索、批量选择。
-- 硬件×方法二维矩阵；默认展示六个示例硬件，支持筛选、总耗时/参考偏差切换；方法按真机数据、MSKPP、ESL、Roofline、TileSim排序，前三种预设为 lookup；MSKPP/ESL 的默认耗时仍为合成示例。
-- 单元格突出总耗时、参考偏差和瓶颈；下方偏差点图/耗时条形图支持行列聚焦及点击查看详情。
-- 原生浮层详情包含结果概览、计算与访存、执行过程、输入与硬件、依据与数据；支持两条结果逐项比较、仅看差异及当前详情 JSON 导出。
-- 导出当前筛选的 JSON，提供预览、文本选择和下载链接。
-- 一个 Roofline 方法，用“已校准 / 通用估算”标注状态，来源与参数在详情中。
-
-默认示例为 MatMul，M/N/K=4096，FP16 输入输出、FP32 累加，设备侧单 kernel 边界，30 个默认可见组合中 25 个有合成数据。修改任何输入或执行配置后，旧结果清空为“尚未评估”；精确恢复示例后才恢复原数据。新目录型号不继承旧示例数值。目录存在不代表全部方法、精度与内核兼容性已验证。配置只在当前页面内存中保留，可导出 JSON。
-
-## 开发与验证
-
-开发模式提供 Vite 热更新，浏览器访问 5173，API 代理到 8768：
+也可直接执行：
 
 ```bash
-./start.sh --dev
-# 自定义两个端口
-./start.sh --dev --port=8770 --frontend-port=5174
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
-验证命令（环境配置见 [`docs/environment.md`](docs/environment.md)）：
+页面使用 hash 路由：`/#/`、`/#/optimization`、`/#/megakernel`。开发和默认构建均使用本地数据，不需要 Python、FastAPI、数据库、引擎安装或 API 代理。
+
+## 构建与预览
 
 ```bash
-./setup.sh                                                        # 或 .venv/bin/python -m pip install -r backend/requirements-dev.txt
-.venv/bin/python -B -m unittest discover -s tests -p 'test_*.py' -v
+npm --prefix frontend run build          # 静态站点 → frontend/dist/
+npm --prefix frontend run preview        # 预览构建产物
+npm --prefix frontend run build:demo     # 更新根目录 opscope-demo.html
+npm --prefix frontend run build:design   # 更新根目录 opscope-ui-design.html
+```
+
+也可以执行 `./start.sh --preview --port=5176`，一次完成构建与预览。`frontend/dist/` 可交给静态文件服务器托管；hash 路由无需服务端路由回退规则。Vite preview 用于本地检查。
+
+单文件构建直接消费已提交的 JSON。只有修改 Python 示例生成规则时才需要额外运行：
+
+```bash
+python3 -B build.py
+npm --prefix frontend run build:demo
+npm --prefix frontend run build:design
+```
+
+Python 在此承担离线数据与图表预处理，不参与页面运行。`build.py` 也会更新历史单页产物 `index.html` / `demo.html`，它们不是当前三页应用入口。
+
+## 代码在哪里
+
+```text
+frontend/
+  src/
+    pages/                  三个工作台页面
+    components/             配置、详情、图表、导出等组件
+    stores/                 页面状态及配置选择
+    data/                   预设 JSON、数据选择、算子族文件导入
+    archive-theme.css       本轮设计稿样式
+    reference-theme.css     共用参考主题
+    optimization.css        分析与 MegaKernel 基础样式
+    main.ts                 应用入口及路由
+  tests/                    前端状态与数据合同测试
+  build-demo.mjs            完整展示版单文件构建
+  build-design.mjs          可编辑交接版单文件构建
+  vite.config.ts            前端开发和构建配置
+data/                       算子族模板、目录和硬件快照
+opscope/offline/             可选的 Python 示例数据生成器
+styles.css                  被 Vue 复用的基础样式
+configuration.js            被 Vue 复用的输入配置校验
+opscope-demo.html            当前三页展示产物
+opscope-ui-design.html       当前 UI 设计交接产物
+docs/                       使用、设计与变更文档
+```
+
+日常 UI 修改集中在 `frontend/src/`，优先修改源码再生成 HTML，避免单文件产物与源码不一致。页面数据分别位于 `workspace-demo.json`（性能评估）和 `optimization-demo.json`（性能分析与 MegaKernel）。计算量、比例和图宽由预处理层准备，前端负责选择与展示。
+
+算子族 JSON 只改变目录和成员组织，导入在当前会话中生效，刷新恢复默认。已有成员按 ID 绑定结果，新成员显示待接入；不按名称猜测计算语义或生成性能值。
+
+## 验证与协作
+
+```bash
 npm --prefix frontend test
 npm --prefix frontend run build
-python3 -B build.py
+npm --prefix frontend run build:demo
+npm --prefix frontend run build:design
 ```
 
-在线组件位于 `frontend/src`；共享样式为 `styles.css`，形状/配置契约为 `configuration.js`。Python 继续负责数值、聚合和图表预处理。修改离线源文件或共享数据后运行 `build.py`，不要直接编辑根 `index.html`。生产模式修改源代码后重新构建；后端修改后重启。
+UI 修改还需检查桌面布局、配置应用/取消、筛选、单项详情、双结果比较和 JSON。默认 [CI](.github/workflows/ci.yml) 只安装 Node 依赖并验证前端与两种单文件构建。Python 生成规则的测试另见[历史代码与工具边界](docs/repository-layout.md)。
 
-[GitHub Actions CI](.github/workflows/ci.yml) 安装声明依赖，运行 Python/前端状态测试、TypeScript 检查、Vite 构建、离线 JS 检查及 `index.html` 构建一致性检查；不部署。详见 [CI 说明](docs/ci.md)。
+- [文档导航](docs/README.md)
+- [当前架构与历史记录](ARCHITECTURE.md)
+- [18 张设计图映射](docs/archive-design-implementation.md)
+- [变更记录](docs/CHANGES.md)
+- Agent 开发入口：[AGENTS.md](AGENTS.md) 与[项目记忆](.agent/MEMORY.md)
 
-## 项目结构
+## 历史代码与可选工具
 
-文档按主题整理在 [`docs/README.md`](docs/README.md)，维护脚本说明见 [`tools/README.md`](tools/README.md)。
-
-| 文件 | 作用 |
-| --- | --- |
-| `frontend/src` | Vue 页面、Pinia 状态、API 客户端与可复用组件 |
-| `backend/web` | FastAPI 应用、可挂载 APIRouter、运行配置与生命周期 |
-| `opscope/offline` | 示例数据、详情、矩阵预处理和离线单文件构建 |
-| `opscope/evaluation` | 请求契约、结果转换、独立 worker 与任务运行时 |
-| `tests` | Python 单元测试和离线 JavaScript 契约测试 |
-| `start.sh` | 单端口启动与开发模式，使用本项目内置引擎 |
-| `setup.sh` / `pyproject.toml` / `uv.lock` | 环境配置入口：锁定同步、venv+pip 回退与前端依赖安装 |
-| `index.html` | 可直接打开的完整离线页面，包含样式、脚本和数据 |
-| `shell.html` / `styles.css` / `app.js` | 页面结构、样式和交互源文件 |
-| `data/modeling-catalog.json` / `opscope/offline/catalog_data.py` | 内置目录快照、示例配置、无结果模板 |
-| `configuration.js` / `catalog-ui.js` | 表单验证、配置隔离、目录及张量编辑窗口 |
-| `tools/snapshot_catalog.py` | 按需从 modeling 的受跟踪文件刷新目录，仅标准库 |
-| `build.py` / `serve.py` | 保持稳定的离线构建和服务启动入口 |
-| `AGENTS.md` | Agent 首先读取的工作规则 |
-| `.agent/MEMORY.md` | 已确认决策、验证边界和接入任务索引 |
-| `ARCHITECTURE.md` | 当前数据流及实现边界 |
-| `docs/HISTORY.md` | 提取前的原型迭代记录，早期数量以最新记忆为准 |
-
-## 刷新目录（可选）
-
-日常构建无需 modeling。需要更新内置目录时，明确指定源仓库：
-
-```bash
-python3 -B tools/snapshot_catalog.py /path/to/modeling
-python3 -B build.py
-```
-
-来源为受版本管理的工作区文件，保留提交号和各文件内容摘要；不读取数据库、自定义资产或私有生产覆盖。更新时需复核目录数量测试。目录与配置边界见 [设计与验证记录](docs/operator-catalog-plan.md)。
-
-## 交给 Agent 继续开发
-
-将本目录作为工作区打开，让 Agent 首先读取 `AGENTS.md` 和 `.agent/MEMORY.md`。它们均使用相对路径，不依赖原机器上的 Skill 或 modeling 目录。可直接使用以下提示：
-
-> 请先阅读 AGENTS.md、.agent/MEMORY.md 和 ARCHITECTURE.md，确认当前数据是合成示例，然后根据我的需求继续开发。修改后同步更新记忆中的实现状态与验证记录。
-
-数据口径见 [.agent/data-semantics.md](.agent/data-semantics.md)，后端接入边界和待办见 [.agent/integration.md](.agent/integration.md)。
-
-## 已验证与限制
-
-56 项 Python 测试、2 项前端状态测试、TypeScript 检查、Vite 和离线构建通过。FastAPI 路由在独立宿主挂载验证通过；真实 Roofline / TileSim 的端到端结果和原适配器一致。桌面验证配置校验/清空、双结果比较、流水选核/翻页和完整 JSON。仅PC使用，未做真机精度认证，尚未实际合入 modeling；集成边界见 [框架对齐说明](docs/framework-alignment.md)。
-
-本包包含从既有 modeling 行为迁移的最小 Roofline 后端与硬件快照，以及原版 `msopmodeling 1.0.9` wheel；不包含 modeling 的任务系统、数据库、完整源码、原 Git 历史、个人 Skill 或外部服务凭据。TileSim wheel 的木兰宽松许可证副本位于 `vendor/msopmodeling/LICENSE`。源码仓库已同步到 GitHub 的 Youngscc/opscope；未部署网站。
-
-## 本地运行算子评估
-
-完成快速使用中的两条命令后，Roofline 和 TileSim 会直接启用：
-
-```bash
-./setup.sh
-./start.sh
-```
-
-独立服务固定使用本项目的 `.venv` 与内置引擎，不读取 `.env`，也不接受外部引擎路径参数。用 `./start.sh --port=8770` 改服务端口；开发模式还可设置 `--frontend-port=5174`。`serve.py` 保留为 FastAPI 启动兼容入口，需要先安装依赖和构建前端。
-
-服务 API 位于 `/api/opscope`；[接口文档](http://127.0.0.1:8768/docs) 和 `/api/health` 可用于检查。计算组件仍在独立子进程执行，不连接任务数据库。
-
-- 首批 Roofline 模板：MatMul（二维）、Linear（二维）、BMM、FlashAttention（Q/K/V同形BNSD）、LayerNorm、RMSNorm、融合投影SwiGLU、Embedding、SiLU、GELU、Softmax。相同浮点输入支持 FP16/BF16/FP32，Embedding索引支持 INT32/INT64。
-- 仅默认执行语义；转置、非默认布局和非默认累加精度会拒绝。默认精度/布局选项并不代表模型刻画了不同kernel实现的差异。其他输入形式和目录算子明确返回暂未适配。
-- 每个硬件/方法独立运行，无自动方法回退。每完成一个组合即回传并刷新卡片，可提前查看详情和对比；顶部显示已处理进度，其余卡片保留等待/运行状态。Roofline预测与实测分开，无真机参考时偏差为空。真机数据、MSKPP、ESL 尚未配置 lookup 数据源，运行时明确显示缺源原因；虚拟数据仅用于演示，运行后整批清除。
-- TileSim 使用 `.venv` 中由仓库 wheel 安装的 msopmodeling 1.0.9。910B1/B4 的二维 MatMul 与 BNSD FlashAttention 使用 DSL 工程模式；H200 配置的 FP16 MatMul 使用理论模式、FP16 FA 使用成本模型工程模式。借用配置显式标注；缺失精度/带宽参数不填造。范围、固定分块与验证见 [覆盖记录](docs/modeling-coverage-plan.md)。
-- TileSim详情提供总耗时、最慢核通道时间、搬运路径数据量、预测L2字节命中率、核周期和可选核流水；事件明细每页40条，JSON保留全部规范化事件。图中活动时间为区间并集，空白不能直接解释为等待。
-- “保存结果 HTML”下载包含本次配置、预测、详情和比较图的单文件快照，可离线查看；JSON保留 `synthetic=false`、`measurement=false` 和实际引擎/版本/配置摘要。示例仍保留 `synthetic=true`。
-- 服务仅监听本机。任务保存在内存，最多同时2个、保留最近12个，每批计算超时60秒；重启会清空任务。需要留存的结果请下载HTML或JSON。
-
-实现与边界见 [内置引擎迁移](docs/bundled-engines.md)、[本地评估方案](docs/live-evaluation-plan.md) 和 [组件复用分析](docs/modeling-reuse-analysis.md)。此功能不执行设备实测、不验证模型精度，未接入外部测量数据库。详细范围见 [TileSim接入](docs/tilesim-integration-plan.md)。
+仓库保留 `backend/`、`opscope/evaluation/`、`vendor/` 和旧原生单页实现，供历史参考及示例生成链路使用；它们不属于当前默认运行路径。旧后端安装/启动脚本集中在 `tools/legacy/`，相关文档归入[历史索引](docs/legacy-index.md)。本轮未批量删除仍有引用关系的模块，详见[仓库分层说明](docs/repository-layout.md)。

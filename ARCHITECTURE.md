@@ -1,5 +1,17 @@
 # 架构
 
+## 当前运行边界：纯前端（2026-10-26）
+
+默认开发与构建使用本地 JSON → Pinia / Vue → 三页 hash 路由，交付为 `frontend/dist/` 或两种独立 HTML。`demo-mode.ts` 与 Vite 的虚拟数据模块在非 `integration` 模式启用预设数据；默认不配置 API 代理。Python 仅作为可选离线数据预处理工具。
+
+根目录 setup/start 只负责前端；旧脚本迁至 `tools/legacy/`。保留历史服务和计算包以维持可选生成链路，下文涉及 FastAPI、真实引擎与在线调用的历史记录不代表当前默认运行方式。分层和取舍见[仓库说明](docs/repository-layout.md)。
+
+## 归档设计与族文件导入（2026-10-26）
+
+`archive-theme.css` 在参考主题之后加载，复用三页组件及19个可编辑模板，覆盖18张归档设计状态。详情 fact 可带 subtitle/width/tone，均由静态 presentation_details 生成；前端仅展示，局部流水的空闲条由事件区间生成，缩放与显隐留在Vue。原始引擎结果不补造指标。见[逐图映射](docs/archive-design-implementation.md)。
+
+`family-import.ts` 将 JSON 验证为会话内族目录，MegaKernel 用 source_family_id 和成员 ID 选择已有预处理结果；不以新名字推断支持，不重算排名和性能。未知成员展示待接入，错误输入不替换目录。模板版本 opscope-families-v1；没有持久化和后端上传。见[族文件导入](docs/family-json-import.md)。
+
 ## MatMul类型与维度预设（2026-10-14）
 
 optimization_demo.py构建dimension_cases；findDimensionCase按类型、硬件和完整维度查找。MegaKernel使用workspace_families扁平五族目录与独立维度选择，Attention继续findMegaCase；不再展示计算类型/范围控件。计算及趋势坐标预处理在Python，前端只选择；两类单文件包含全部预设，当前设计版约7.9MB。见[维度设计](docs/matmul-calculation-types.md)。

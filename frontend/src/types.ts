@@ -2,7 +2,7 @@
 export type Fields = Record<string, any>
 export interface Tensor { name: string; role: string; shape: (number | null)[] | null; dtype: string }
 export interface Configuration extends Fields { operator_id: string; operator: string; inputs: Tensor[]; options: Fields; domain?: string }
-export interface Fact { label: string; value: string; known: boolean }
+export interface Fact { tone?:string; subtitle?:string; width?:number; label: string; value: string; known: boolean }
 export interface Section { key: string; title: string; facts: Fact[]; metadata_facts: Fact[]; extra: string }
 export interface Result extends Fields {
   id: string; hardware: string; method: string; available: boolean; synthetic: boolean;

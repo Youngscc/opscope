@@ -1,5 +1,7 @@
 # 数据口径
 
+JSON族导入仅改展示目录与成员归属。已有成员必须引用同一源族的计算语义，结果仍按硬件、完整维度和member_id匹配；未知成员无性能，不补零。图宽、排序、成对比值沿用Python预处理，目录只保存在当前会话。见[导入合同](../docs/family-json-import.md)。
+
 MegaKernel展示目录workspace_families现为五个独立族，计算类型直接绑定族；dimension_cases的family_id/member_id与对应族一致，不跨族比较。原families仅保留为样例构建模板，界面不再显示对比范围层级。
 
 MatMul独立尺寸样例dimension_cases按计算类型、硬件、完整[B,M,N,K]匹配，共96组。BMM两输入均带Batch，共享权重仅A带Batch，普通与融合Batch固定1。时延为演示比例合成，内存按所示张量与人工工作区构造，累计读写不少于输入输出；不是任意形状预测。趋势固定B/N/K改变M。MatMul诊断写回为Fixpipe/L0C→GM，Attention原简化流水不变。见[设计](../docs/matmul-calculation-types.md)。

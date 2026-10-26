@@ -67,6 +67,19 @@ class WorkspaceDemoTests(unittest.TestCase):
                 self.assertIn('解析模型', row['sections']['execution'][0]['extra'])
             self.assertIsNone(row['task']['run_id'])
 
+    def test_detail_card_geometry_and_idle_overlay_use_sample_values(self):
+        # Card widths use the displayed sample's peak/latency; analytic rows stay trace-free.
+        rows = workspace_payload(build_payload())['results']
+        row = next(r for r in rows if r['id']=='demo-ascend-profile')
+        compute = row['sections']['cost'][0]['facts']
+        self.assertAlmostEqual(compute[2]['width'], 554.2/640*100)
+        self.assertAlmostEqual(compute[3]['width'], 72)
+        self.assertIn('未命中 22.0%', row['sections']['cost'][1]['facts'][5]['subtitle'])
+        self.assertIn('detail-idle-guide', row['sections']['execution'][0]['extra'])
+        self.assertIn('Fixpipe', row['sections']['execution'][0]['extra'])
+        roofline = next(r for r in rows if r['id']=='demo-ascend-roofline')
+        self.assertNotIn('detail-idle-guide', roofline['sections']['execution'][0]['extra'])
+
     def test_catalog_and_empty_templates_allow_selection_without_reusing_samples(self):
         original = build_payload()
         demo = workspace_payload(original)

@@ -9,6 +9,7 @@ import MegaKernelPage from './pages/MegaKernelPage.vue'
 import '../../styles.css'
 import './optimization.css'
 import './reference-theme.css'
+import './archive-theme.css'
 const router = createRouter({ history: STATIC_DEMO ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
 scrollBehavior: STATIC_DEMO ? () => ({top:0}) : undefined, routes: [
   { path: '/', component: OpScopePage }, { path: '/opscope', component: OpScopePage },

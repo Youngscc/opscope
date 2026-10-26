@@ -1,0 +1,155 @@
+{
+  "schema": "opscope-families-v1",
+  "families": [
+    {
+      "id": "matmul-family",
+      "name": "MatMul",
+      "source_family_id": "matmul-family",
+      "members": [
+        {
+          "id": "matmul/v1",
+          "name": "matmul_v1",
+          "kind": "operator"
+        },
+        {
+          "id": "matmul/v2",
+          "name": "matmul_v2",
+          "kind": "operator"
+        },
+        {
+          "id": "matmul/v3",
+          "name": "matmul_v3",
+          "kind": "operator"
+        },
+        {
+          "id": "matmul/linear",
+          "name": "linear",
+          "kind": "operator"
+        },
+        {
+          "id": "matmul/mega",
+          "name": "megakernel_mm",
+          "kind": "operator"
+        }
+      ]
+    },
+    {
+      "id": "bmm-family",
+      "name": "BatchMatMul",
+      "source_family_id": "bmm-family",
+      "members": [
+        {
+          "id": "bmm/v1",
+          "name": "bmm_basic",
+          "kind": "operator"
+        },
+        {
+          "id": "bmm/v2",
+          "name": "bmm_batch_parallel",
+          "kind": "operator"
+        },
+        {
+          "id": "bmm/v3",
+          "name": "bmm_tile_schedule",
+          "kind": "operator"
+        },
+        {
+          "id": "bmm/linear",
+          "name": "bmm_grouped",
+          "kind": "operator"
+        },
+        {
+          "id": "bmm/mega",
+          "name": "megakernel_bmm",
+          "kind": "operator"
+        }
+      ]
+    },
+    {
+      "id": "shared-family",
+      "name": "共享权重矩阵乘",
+      "source_family_id": "shared-family",
+      "members": [
+        {
+          "id": "shared/v1",
+          "name": "shared_mm_basic",
+          "kind": "operator"
+        },
+        {
+          "id": "shared/v2",
+          "name": "shared_mm_l2_reuse",
+          "kind": "operator"
+        },
+        {
+          "id": "shared/v3",
+          "name": "shared_mm_weight_resident",
+          "kind": "operator"
+        },
+        {
+          "id": "shared/linear",
+          "name": "shared_linear",
+          "kind": "operator"
+        },
+        {
+          "id": "shared/mega",
+          "name": "megakernel_shared_mm",
+          "kind": "operator"
+        }
+      ]
+    },
+    {
+      "id": "fused-family",
+      "name": "Linear + GELU",
+      "source_family_id": "fused-family",
+      "members": [
+        {
+          "id": "fused/separate",
+          "name": "MatMul + Bias + GELU",
+          "kind": "sequence"
+        },
+        {
+          "id": "fused/linear",
+          "name": "linear + gelu",
+          "kind": "sequence"
+        },
+        {
+          "id": "fused/epilogue",
+          "name": "epilogue_fused",
+          "kind": "fusion"
+        },
+        {
+          "id": "fused/mega",
+          "name": "megakernel_fused",
+          "kind": "fusion"
+        }
+      ]
+    },
+    {
+      "id": "attention-family",
+      "name": "Attention",
+      "source_family_id": "attention-family",
+      "members": [
+        {
+          "id": "attention/separate",
+          "name": "QK + Softmax + PV",
+          "kind": "sequence"
+        },
+        {
+          "id": "attention/v1",
+          "name": "attention_v1",
+          "kind": "operator"
+        },
+        {
+          "id": "attention/v2",
+          "name": "flash_attention_v2",
+          "kind": "fusion"
+        },
+        {
+          "id": "attention/mega",
+          "name": "megakernel_attention",
+          "kind": "fusion"
+        }
+      ]
+    }
+  ]
+}

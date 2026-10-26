@@ -15,6 +15,7 @@ const selectedSize = computed(()=>workload.value.sizes.find(size=>size.dimension
 const scenario = computed(()=>findDiagnosis(operatorId.value, hardwareId.value, dimensions.value))
 watch(operatorId, ()=>{dimensions.value=[...workload.value.sizes.find(size=>size.id===workload.value.default_size)!.dimensions]}, {flush:'sync'})
 watch([operatorId,hardwareId,dimensions], ()=>{exported.value=false})
+function showAnalysis() { document.getElementById('optimization-actions')?.scrollIntoView({block:'nearest',behavior:'smooth'}) }
 function selectSize(id:string) {
   const size=workload.value.sizes.find(item=>item.id===id)
   if (size) dimensions.value=[...size.dimensions]
@@ -41,9 +42,9 @@ function download() {
         <label>算子<select v-model="operatorId" aria-label="诊断算子"><option v-for="item in diagnosticOperators" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
         <label>平台<select v-model="hardwareId" aria-label="诊断硬件"><option v-for="item in diagnosticHardware" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
         <label>输入 Size<select :value="selectedSize?.id ?? 'custom'" aria-label="诊断 Size" @change="selectSize(($event.target as HTMLSelectElement).value)"><option v-for="item in workload.sizes" :key="item.id" :value="item.id">{{item.shape}}</option><option v-if="!selectedSize" value="custom">自定义 · {{dimensions.join(' × ')}}</option></select></label>
-        <button class="button primary diagnosis-configure" aria-haspopup="dialog" :aria-expanded="configOpen" @click="configOpen=true"><OptIcon name="sliders"/>自定义配置</button><button class="button" :disabled="!scenario" @click="download"><OptIcon name="download"/>导出诊断结果</button>
+        <button class="button primary diagnosis-configure" aria-haspopup="dialog" :aria-expanded="configOpen" @click="configOpen=true"><OptIcon name="sliders"/>自定义配置</button>
       </div>
-      <div class="diagnosis-selection-summary"><span class="opt-shape">{{workload.axes.join(' × ')}}<b>{{workload.dtype}}</b></span><span class="diagnosis-latency">任务耗时 <strong>{{scenario?.latency ?? '—'}}</strong><span v-if="scenario">μs</span></span></div>
+      <div class="sidebar-actions"><button class="button primary" :disabled="!scenario" @click="showAnalysis">开始分析</button><button class="button" :disabled="!scenario" @click="download">导出分析结果</button></div><div class="diagnosis-selection-summary"><span class="opt-shape">{{workload.axes.join(' × ')}}<b>{{workload.dtype}}</b></span><span class="diagnosis-latency">任务耗时 <strong>{{scenario?.latency ?? '—'}}</strong><span v-if="scenario">μs</span></span></div>
     </aside>
     <div class="workspace-results">
     <template v-if="scenario">

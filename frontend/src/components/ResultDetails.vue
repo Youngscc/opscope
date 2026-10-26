@@ -9,7 +9,7 @@ import { STATIC_DEMO } from '../demo-mode'
 const props = defineProps<{ids:string[]}>()
 const emit = defineEmits<{close:[]; export:[rows:Result[]]; change:[ids:string[]]}>()
 const s = useOpScopeStore(), tab = ref('overview'), differences = ref(false)
-const scroll = ref<HTMLElement>()
+const scroll = ref<HTMLElement>(), zoom=ref(1), showIdle=ref(true)
 const records = computed(() => props.ids.map(id=>s.data!.results.find(r=>r.id===id)!).filter(Boolean))
 const paired = computed(() => records.value.length===2)
 const available = computed(() => records.value.every(r=>r.available))
@@ -33,14 +33,17 @@ function facts(left:Fact[], right:Fact[]) {
     return {label,a:a?.value || '—',b:b?.value || '—',same:!!(a?.known && b?.known && a.value===b.value)}
   }).filter(row=>!differences.value || !row.same)
 }
+function pipelineMap(section:Section) { return section.extra.split('<svg')[0] }
 function visual(section:Section) {
-  return section.extra.replace(/<div class="trace-view" data-trace-result="[^"]*"><\/div>/g,'')
+  const extra=!paired.value && section.key==='pipeline' && records.value[0]?.presentation_sample?.execution
+    ? section.extra.slice(section.extra.indexOf('<svg')) : section.extra
+  return extra.replace(/<div class="trace-view" data-trace-result="[^"]*"><\/div>/g,'')
 }
 function change_slot(index:number,event:Event) {
   const ids=[...props.ids];ids[index]=(event.target as HTMLSelectElement).value;emit('change',ids)
 }
 async function select_tab(id:string) {
-  tab.value=id;await nextTick();scroll.value?.scrollTo(0,0)
+  tab.value=id;zoom.value=1;showIdle.value=true;await nextTick();scroll.value?.scrollTo(0,0)
 }
 function keyboard(event:KeyboardEvent) {
   const tabs=s.data!.matrix.tabs.map((t:{id:string})=>t.id), i=tabs.indexOf(tab.value)
@@ -58,7 +61,7 @@ function keyboard(event:KeyboardEvent) {
 <template v-if="!available"><div class="missing-detail"><span class="empty-mark">—</span><h3>{{records[0]!.reason}}</h3><p>此组合暂无可用性能数值。</p></div><h3>{{s.config!.operator}} · 输入配置</h3><dl class="facts"><div v-for="t in s.config!.inputs" :key="t.name"><dt>{{t.name}}</dt><dd>{{t.shape}} · {{t.dtype}}</dd></div></dl></template>
 <section v-for="(section,i) in sections" v-else :key="section.key" class="detail-section" :class="`detail-section-${section.key}`"><h3><span>{{String(i+1).padStart(2,'0')}}</span>{{section.title}}</h3>
 <template v-if="paired"><div class="pair-table-wrap"><table class="pair-table"><thead><tr><th>指标</th><th>结果 A</th><th>结果 B</th></tr></thead><tbody><tr v-for="f in facts(section.facts,records[1]!.sections[tab]![i]!.facts)" :key="f.label" :class="f.same?'same-value':'different-value'"><th scope="row">{{f.label}}</th><td>{{f.a}}</td><td>{{f.b}}</td></tr></tbody></table></div><div class="pair-visuals"><div v-for="(r,j) in records" :key="r.id"><h4 class="visual-result-name">结果 {{j?'B':'A'}} · {{s.name(r)}}</h4><div v-html="visual(r.sections[tab]![i]!)"></div><TraceView v-if="section.key==='pipeline' && r.execution.trace_view" :row="r" /></div></div></template>
-<template v-else><dl v-if="section.facts.length" class="facts"><div v-for="f in section.facts" :key="f.label"><dt>{{f.label}}</dt><dd>{{f.value}}</dd></div></dl><div v-html="visual(section)"></div><details v-if="section.metadata_facts.length" class="task-run detail-metadata"><summary>任务、来源与运行记录</summary><dl class="facts"><div v-for="f in section.metadata_facts" :key="f.label"><dt>{{f.label}}</dt><dd>{{f.value}}</dd></div></dl></details><TraceView v-if="section.key==='pipeline' && records[0]!.execution.trace_view" :row="records[0]!" /></template>
+<template v-else><dl v-if="section.facts.length" class="facts"><div v-for="f in section.facts" :key="f.label" :class="f.tone"><dt>{{f.label}}</dt><dd>{{f.value}}</dd><small v-if="f.subtitle">{{f.subtitle}}</small><span v-if="f.width!=null" class="fact-track"><i :style="{width:f.width+'%'}"></i></span></div></dl><div v-if="section.key==='pipeline' && records[0]!.presentation_sample?.execution" v-html="pipelineMap(section)"></div><div v-if="section.key==='pipeline' && records[0]!.presentation_sample?.execution" class="detail-timeline-controls"><span>局部流水</span><button class="button" aria-label="缩小流水" :disabled="zoom<=1" @click="zoom=Math.max(1,zoom-0.5)">−</button><button class="button" @click="zoom=1">复位</button><button class="button" aria-label="放大流水" :disabled="zoom>=3" @click="zoom=Math.min(3,zoom+0.5)">＋</button><label><input v-model="showIdle" type="checkbox">显示空闲区间</label></div><div class="detail-visual" :class="{'hide-idle':!showIdle}" :style="{'--timeline-zoom':zoom}" v-html="visual(section)"></div><details v-if="section.metadata_facts.length" class="task-run detail-metadata"><summary>任务、来源与运行记录</summary><dl class="facts"><div v-for="f in section.metadata_facts" :key="f.label"><dt>{{f.label}}</dt><dd>{{f.value}}</dd></div></dl></details><TraceView v-if="section.key==='pipeline' && records[0]!.execution.trace_view" :row="records[0]!" /></template>
 </section>
 <details v-if="paired && sections[0]?.metadata_facts.length" class="task-run"><summary>任务、来源与运行记录</summary><table class="pair-table"><tbody><tr v-for="f in facts(sections[0].metadata_facts,records[1]!.sections[tab]![0]!.metadata_facts)" :key="f.label"><th>{{f.label}}</th><td>{{f.a}}</td><td>{{f.b}}</td></tr></tbody></table></details>
 </div></div></div></Modal></template>

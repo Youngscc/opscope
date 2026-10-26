@@ -52,7 +52,7 @@ def sample_sections(row, sample):
         ('逻辑算术强度','1365.33 FLOP/Byte'), ('L2 命中率',f"{sample['l2_hit']*100:.1f}%")])
     row['details']['pipeline'] = ('<p>解析模型不生成执行流水。</p>' if analytic else
         facts([('计算活动',f"{sample['compute_us']:.2f} μs"), ('搬运活动',f"{sample['memory_us']:.2f} μs"),
-               ('同步等待',f"{sample['wait_us']:.2f} μs")]) + heatmap(row['hardware'], record) + timeline(record))
+               ('同步等待',f"{sample['wait_us']:.2f} μs")]) + heatmap(row['hardware'], record) + display_timeline(record))
     row['details']['hardware'] = facts([('硬件',row['hardware_snapshot']['name']), ('参数口径','虚拟展示配置'),
         ('显存容量',f"{sample['memory_gib']} GiB"), ('峰值带宽',f"{sample['peak_bandwidth_gbs']} GB/s"),
         ('L2 容量',f"{sample['l2_mib']} MiB"), ('FP16 峰值',f"{sample['fp16_peak_tflops']} TFLOP/s"),
@@ -86,6 +86,7 @@ def finish_static_sections(row):
     resource = row['sections']['overview'][2]
     if row['hardware']!='ascend':
         resource['facts'][2] = dict(label='共享内存占用率', value='64.0%', known=True)
+    decorate_static_sections(row)
     pipe = row['sections']['execution'][1]
     if row['method']=='roofline':
         pipe.update(facts=[], extra='<p>解析模型不生成流水组件周期。</p>')
@@ -96,3 +97,51 @@ def finish_static_sections(row):
         labels = {'tensor_cycles':'Tensor', 'simt_cycles':'SIMT', 'load_cycles':'Load', 'store_cycles':'Store'}
         pipe['facts'] = [dict(label=labels.get(k,k.upper()), value=str(v), known=True) for k,v in components.items()]
         pipe['extra'] = ''
+        values = list(components.values())
+        for fact, value in zip(pipe['facts'], values):
+            if value == max(values):
+                fact.update(tone='maximum', subtitle='最高')
+            elif value == min(values):
+                fact.update(tone='minimum', subtitle='最低')
+
+
+def decorate_static_sections(row):
+    """Prepare display-only annotations from the same sample, never from UI parsing."""
+    sample = row['presentation_sample']
+    compute = row['sections']['cost'][0]['facts']
+    compute[2].update(subtitle=f"峰值 {sample['fp16_peak_tflops']:,} TFLOP/s",
+                      width=min(100, float(row['summary']['throughput'])/sample['fp16_peak_tflops']*100))
+    compute[3].update(subtitle=f"占总时延 {sample['compute_us']/row['latency_us']*100:.1f}%",
+                      width=sample['compute_us']/row['latency_us']*100, tone='green')
+    memory = row['sections']['cost'][1]['facts']
+    memory[3].update(subtitle=f"峰值 {sample['peak_bandwidth_gbs']:,} GB/s",
+                     width=min(100,sample['bandwidth_gbs']/sample['peak_bandwidth_gbs']*100), tone='orange')
+    memory[5].update(subtitle=f"未命中 {(1-sample['l2_hit'])*100:.1f}%",
+                     width=sample['l2_hit']*100, tone='green wide-fact')
+    section = row['sections']['overview'][1]
+    analytic = row['method']=='roofline'
+    qualifier = '成本' if analytic else '活动'
+    bars = ''.join(f'<div class="overlap-bar {kind}" style="width:{sample[key]/row["latency_us"]*100:.3f}%">'
+                   f'{label}{qualifier} {sample[key]:.1f} μs</div>'
+                   for key,kind,label in [('compute_us','compute','计算'),('memory_us','memory','访存')])
+    wait = '' if analytic else f'<p class="wait-key"><i></i>同步等待：{sample["wait_us"]:.1f} μs</p>'
+    section['extra'] = ('<div class="overlap-bars">'+bars+'</div>'+wait+
+                        '<p class="overlap-note">ⓘ 计算与访存可并行重叠，耗时不完全相加。</p>')
+
+
+def display_timeline(record):
+    from .build import timeline
+    # Grey bands are gaps in this local event window, not inferred stall causes.
+    gaps = []
+    for lane in range(3):
+        end = 0
+        for event in sorted((e for e in record['events'] if e['lane_index']==lane), key=lambda e:e['start_us']):
+            start = min(320, event['start_us'])
+            if start > end:
+                gaps.append(f'<rect class="detail-idle-guide" x="{100+end:.1f}" y="{32+lane*36}" width="{start-end:.1f}" height="24" fill="#e5e9f0"/>')
+            end = min(320, max(end, event['end_us']))
+        if end < 320:
+            gaps.append(f'<rect class="detail-idle-guide" x="{100+end:.1f}" y="{32+lane*36}" width="{320-end:.1f}" height="24" fill="#e5e9f0"/>')
+    result = timeline(record)
+    at = result.index('</title>') + len('</title>')
+    return result[:at] + ''.join(gaps) + result[at:]

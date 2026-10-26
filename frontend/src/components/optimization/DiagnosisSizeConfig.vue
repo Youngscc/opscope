@@ -16,11 +16,11 @@ async function apply() {
 </script>
 <template>
   <Modal :open="open" title="配置输入 Size" class-name="diagnosis-size-dialog" @close="emit('close')">
-    <header class="config-header"><div><span class="eyebrow">INPUT CONFIGURATION</span><h2>{{operator.name}} 输入配置</h2></div><button class="button icon-button" aria-label="关闭输入配置" @click="emit('close')">×</button></header>
+    <header class="config-header"><div><h2>自定义配置 <span class="output-dtype">{{operator.dtype}}</span></h2></div><button class="button icon-button" aria-label="关闭输入配置" @click="emit('close')">×</button></header>
     <form id="diagnosis-size-form" class="diagnosis-size-form" novalidate @submit.prevent="apply">
       <div class="tensor-editor-heading"><h3>常用 Size</h3><span>{{operator.dtype}}</span></div>
       <div class="diagnosis-size-presets" role="group" aria-label="常用输入尺寸"><button v-for="size in operator.sizes" :key="size.id" type="button" :aria-pressed="draft.join('×')===size.dimensions.join('×')" @click="preset(size.dimensions)">{{size.shape}}</button></div>
-      <div class="diagnosis-dimensions"><label v-for="(axis,index) in operator.axes" :key="axis">{{axis}}<input ref="fields" v-model="draft[index]" :aria-label="`${axis} 维度`" :aria-invalid="attempted && !parseDimensions([draft[index] || ''])" :aria-describedby="attempted && !parseDimensions(draft)?'dimension-error':undefined" inputmode="numeric" autocomplete="off"></label></div>
+      <h3 class="dimension-heading">自定义维度 <small>(Elements)</small></h3><div class="diagnosis-dimensions"><label v-for="(axis,index) in operator.axes" :key="axis">{{axis}}<input ref="fields" v-model="draft[index]" :aria-label="`${axis} 维度`" :aria-invalid="attempted && !parseDimensions([draft[index] || ''])" :aria-describedby="attempted && !parseDimensions(draft)?'dimension-error':undefined" inputmode="numeric" autocomplete="off"></label></div>
       <p v-if="attempted && !parseDimensions(draft)" id="dimension-error" class="field-error" role="alert">每个维度都需要填写有效的正整数。</p>
       <p class="diagnosis-input-template">{{operator.input_template}}</p>
     </form>

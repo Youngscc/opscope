@@ -1,0 +1,299 @@
+{
+  "audit_date": "2026-09-28",
+  "scope": "Public source and data-file inspection only. No GPU reruns, no application integration.",
+  "flashinfer_trace": {
+    "url": "https://huggingface.co/datasets/flashinfer-ai/flashinfer-trace",
+    "revision": "da915083d4c7c5e61aa3005e3d17ae488e0fc71c",
+    "method": "Parse all definition JSON and trace JSONL files at the pinned revision; no upstream code executed.",
+    "definition_files": 190,
+    "trace_files": 196,
+    "download_errors": [],
+    "evaluation_records": 7735,
+    "passed_records_with_latency": 5474,
+    "baseline_passed_records": 1978,
+    "baseline_definitions_with_passed_records": 89,
+    "status_counts": {
+      "PASSED": 5474,
+      "COMPILE_ERROR": 1262,
+      "RUNTIME_ERROR": 533,
+      "INCORRECT_NUMERICAL": 418,
+      "TIMEOUT": 48
+    },
+    "all_record_hardware_counts": {
+      "NVIDIA B200": 7562,
+      "NVIDIA GB200": 173
+    },
+    "passed_record_hardware_counts": {
+      "NVIDIA B200": 5301,
+      "NVIDIA GB200": 173
+    },
+    "unique_passed_definition_workload_uuid_hardware_tuples": 1692,
+    "passed_by_family": {
+      "gemm": {
+        "definitions": 37,
+        "passed_records": 2529,
+        "hardware": [
+          "NVIDIA B200"
+        ]
+      },
+      "gqa_paged": {
+        "definitions": 30,
+        "passed_records": 1438,
+        "hardware": [
+          "NVIDIA B200",
+          "NVIDIA GB200"
+        ]
+      },
+      "gqa_ragged": {
+        "definitions": 8,
+        "passed_records": 286,
+        "hardware": [
+          "NVIDIA B200",
+          "NVIDIA GB200"
+        ]
+      },
+      "mla_paged": {
+        "definitions": 2,
+        "passed_records": 376,
+        "hardware": [
+          "NVIDIA B200"
+        ]
+      },
+      "mla_ragged": {
+        "definitions": 1,
+        "passed_records": 20,
+        "hardware": [
+          "NVIDIA B200"
+        ]
+      },
+      "moe": {
+        "definitions": 1,
+        "passed_records": 76,
+        "hardware": [
+          "NVIDIA B200"
+        ]
+      },
+      "rmsnorm": {
+        "definitions": 10,
+        "passed_records": 669,
+        "hardware": [
+          "NVIDIA B200"
+        ]
+      },
+      "sampling": {
+        "definitions": 3,
+        "passed_records": 80,
+        "hardware": [
+          "NVIDIA GB200"
+        ]
+      }
+    },
+    "caveats": [
+      "Records include multiple implementations and repeated workloads.",
+      "PASSED is the publisher status, not a local rerun.",
+      "Hardware names do not encode complete clock/power/topology identity."
+    ]
+  },
+  "sol_execbench": {
+    "url": "https://huggingface.co/datasets/nvidia/SOL-ExecBench",
+    "revision_at_inventory": "63699402f003496acc3af4eb534a5304a8ac1ea9",
+    "inspection": "All 235 rows obtained from the public dataset viewer API on the audit date; the viewer API is not revision-pinned.",
+    "subsets": {
+      "FlashInfer-Bench": {
+        "problem_rows": 26,
+        "workload_entries": 660,
+        "columns": [
+          "name",
+          "description",
+          "hf_id",
+          "axes",
+          "inputs",
+          "outputs",
+          "reference",
+          "custom_inputs_entrypoint",
+          "workloads"
+        ],
+        "workload_keys": [
+          "axes",
+          "inputs",
+          "tolerance",
+          "uuid"
+        ]
+      },
+      "L1": {
+        "problem_rows": 94,
+        "workload_entries": 1480,
+        "columns": [
+          "name",
+          "description",
+          "hf_id",
+          "axes",
+          "inputs",
+          "outputs",
+          "reference",
+          "custom_inputs_entrypoint",
+          "workloads"
+        ],
+        "workload_keys": [
+          "axes",
+          "inputs",
+          "tolerance",
+          "uuid"
+        ]
+      },
+      "L2": {
+        "problem_rows": 82,
+        "workload_entries": 1299,
+        "columns": [
+          "name",
+          "description",
+          "hf_id",
+          "axes",
+          "inputs",
+          "outputs",
+          "reference",
+          "custom_inputs_entrypoint",
+          "workloads"
+        ],
+        "workload_keys": [
+          "axes",
+          "inputs",
+          "tolerance",
+          "uuid"
+        ]
+      },
+      "Quant": {
+        "problem_rows": 33,
+        "workload_entries": 518,
+        "columns": [
+          "name",
+          "description",
+          "hf_id",
+          "axes",
+          "inputs",
+          "outputs",
+          "reference",
+          "custom_inputs_entrypoint",
+          "workloads"
+        ],
+        "workload_keys": [
+          "axes",
+          "inputs",
+          "tolerance",
+          "uuid"
+        ]
+      }
+    }
+  },
+  "kernelbench": {
+    "url": "https://github.com/ScalingIntelligence/KernelBench/tree/main/results/timing",
+    "revision_at_inventory": "423217d9fda91e0c2d67e4a43bf62f96f6d104f1",
+    "timing_unit": "ms",
+    "files": {
+      "H100_Modal/baseline_time_torch.json": {
+        "entries_by_level": {
+          "level1": 100,
+          "level2": 100,
+          "level3": 50
+        },
+        "entries_with_numeric_mean": 250,
+        "observed_hardware": [
+          "NVIDIA H100 80GB HBM3"
+        ]
+      },
+      "H100_Modal/baseline_time_torch_compile_inductor_default.json": {
+        "entries_by_level": {
+          "level1": 100,
+          "level2": 100,
+          "level3": 50
+        },
+        "entries_with_numeric_mean": 250,
+        "observed_hardware": [
+          "NVIDIA H100 80GB HBM3"
+        ]
+      },
+      "H100_PCIe_LambdaLabs/baseline_time_torch.json": {
+        "entries_by_level": {
+          "level1": 100,
+          "level2": 100,
+          "level3": 50
+        },
+        "entries_with_numeric_mean": 250,
+        "observed_hardware": [
+          "NVIDIA H100 PCIe"
+        ]
+      },
+      "H100_PCIe_LambdaLabs/baseline_time_torch_compile_inductor_default.json": {
+        "entries_by_level": {
+          "level1": 100,
+          "level2": 100,
+          "level3": 50
+        },
+        "entries_with_numeric_mean": 250,
+        "observed_hardware": [
+          "NVIDIA H100 PCIe"
+        ]
+      }
+    }
+  },
+  "meta_hta": {
+    "url": "https://github.com/facebookresearch/HolisticTraceAnalysis",
+    "revision": "0502deb4ab98b5d30f747b27847b232ce873a8e3",
+    "samples": {
+      "tests/data/execution_trace/benchmark_simple_add_trace.json.gz": {
+        "observed_devices": [
+          "NVIDIA A100-PG509-200"
+        ],
+        "event_categories": {
+          "user_annotation": 8,
+          "cpu_op": 28,
+          "cuda_runtime": 15,
+          "ac2g": 19,
+          "kernel": 4,
+          "(none)": 36,
+          "Trace": 1
+        },
+        "gpu_event_argument_keys": [
+          "External id",
+          "block",
+          "blocks per SM",
+          "context",
+          "correlation",
+          "device",
+          "est. achieved occupancy %",
+          "grid",
+          "queued",
+          "registers per thread",
+          "shared memory",
+          "stream",
+          "warps per SM"
+        ]
+      },
+      "tests/data/cupti_profiler/benchmark_result_924719_1679055439_trace.json.gz": {
+        "observed_devices": [
+          "NVIDIA A100-PG509-200"
+        ],
+        "event_categories": {
+          "user_annotation": 8,
+          "cpu_op": 375,
+          "cuda_runtime": 1862,
+          "ac2g": 1862,
+          "cuda_profiler_range": 77,
+          "(none)": 36,
+          "Trace": 2
+        },
+        "gpu_event_argument_keys": [
+          "smsp__sass_thread_inst_executed_op_dadd_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_dfma_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_dmul_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_fadd_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_ffma_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_fmul_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_hadd_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_hfma_pred_on.sum",
+          "smsp__sass_thread_inst_executed_op_hmul_pred_on.sum"
+        ]
+      }
+    }
+  }
+}

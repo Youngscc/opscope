@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 
+from .output_preview import output_preview
 from .fixtures import HARDWARE, METHODS, method_identity
 from opscope.evaluation.operator_parameters import PARAMETERS, defaults
 
@@ -49,6 +50,7 @@ def catalog_payload():
     catalog['operators'].insert(0, demo)
     for op in catalog['operators']:
         op['parameters'] = PARAMETERS.get(op['id'], [])
+        op['output_preview'] = output_preview(op)
     catalog['groups'] = operator_groups(catalog['operators'])
     catalog['dtypes'] = sorted({'bf16', 'fp16', 'fp32', 'fp8', 'int8', 'int32', 'int64'} |
                                {t['dtype'] for op in catalog['operators'] for t in op['inputs']})

@@ -57,9 +57,9 @@ def task_overview(context, result):
     note = '仅演示结果；任务墙钟耗时与设备侧 kernel 时延是不同口径。'
     if task['requested_method'] == 'tilesim':
         note += ' TileSim 分项与流水为扩展字段示例，不代表当前适配器输出。'
-    return ('<div class="task-metrics">' + hero + '</div><p class="note">' + note + '</p>'
+    return ('<div class="task-metrics">' + hero + '</div>'
             + '<details class="task-run"><summary>任务、来源与运行记录</summary>' + identity
-            + '<h4>运行记录与报告</h4>' + run + '</details>')
+            + '<h4>运行记录与报告</h4>' + run + '<p class="note">' + note + '</p></details>')
 
 
 def input_detail(workload):

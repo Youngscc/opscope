@@ -2,12 +2,13 @@
 import html
 import math
 import re
+from .analysis_display import analysis_detail
 
 
 TABS = [
-    ('overview', '结果概览', [('overview', '结果摘要'), ('latency', '耗时分析')]),
+    ('overview', '结果概览', [('overview', '结果摘要'), ('latency', '耗时分析'), ('analysis', '资源指标')]),
     ('cost', '计算与访存', [('compute', '计算'), ('memory', '访存')]),
-    ('execution', '执行过程', [('pipeline', '各核活动与流水')]),
+    ('execution', '执行过程', [('pipeline', '各核活动与流水'), ('pipe_cycles', '流水组件周期')]),
     ('context', '输入与硬件', [('inputs', '输入输出'), ('hardware', '硬件配置')]),
     ('source', '依据与数据', [('evidence', '执行依据')]),
 ]
@@ -55,7 +56,7 @@ def detail_sections(result):
     for tab, _, groups in TABS:
         sections[tab] = []
         for key, title in groups:
-            body = result['details'][key]
+            body = analysis_detail(result.get('analysis'), key) if key in {'analysis', 'pipe_cycles'} else result['details'][key]
             extra = re.sub(r'<dl class="facts">.*?</dl>', '', body, flags=re.S)
             # Empty headings and run wrappers add noise once their scalar rows are aligned.
             extra = re.sub(r'<details.*?</details>|<h4>.*?</h4>', '', extra, flags=re.S)

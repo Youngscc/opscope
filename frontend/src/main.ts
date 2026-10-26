@@ -8,12 +8,13 @@ import OptimizationPage from './pages/OptimizationPage.vue'
 import MegaKernelPage from './pages/MegaKernelPage.vue'
 import '../../styles.css'
 import './optimization.css'
+import './reference-theme.css'
 const router = createRouter({ history: STATIC_DEMO ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
 scrollBehavior: STATIC_DEMO ? () => ({top:0}) : undefined, routes: [
   { path: '/', component: OpScopePage }, { path: '/opscope', component: OpScopePage },
-  { path: '/optimization', component: OptimizationPage, meta:{title:'算子性能优化'} },
+  { path: '/optimization', component: OptimizationPage, meta:{title:'性能分析'} },
   { path: '/megakernel', component: MegaKernelPage, meta:{title:'MegaKernel 优化'} },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ] })
-router.afterEach(to=>{document.title = `OpScope · ${to.meta.title || '算子性能观察台'}`})
+router.afterEach(to=>{document.title = `OpScope · ${to.meta.title || '性能评估'}`})
 createApp(App).use(createPinia()).use(router).mount('#app')

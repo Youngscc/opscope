@@ -1,6 +1,8 @@
 """Synthetic UI scenarios; none of these values are inferred from evaluations."""
 import json
+from itertools import product
 from copy import deepcopy
+from .analysis_display import sample_analysis, analysis_view
 
 
 def timeline(scale=1.0, profile="waiting"):
@@ -57,8 +59,8 @@ def primary_diagnostics():
          "location": "数据搬入 → 矩阵计算", "latency_us": 126.4,
          "gauges": [("HBM 带宽占用", 87, "memory"), ("Cube 活跃比例", 58, "compute")],
          "focus_span": (23, 37), "focus": "等待下一块输入", "window_us": 100,
-         "timeline_title": "计算在等什么？", "timeline_profile": "waiting",
-         "actions": [("提高 Tile 复用", "优先", "调整 M / N 分块，减少对同一输入的重复搬入。", "验证 HBM 流量与总耗时"),
+         "timeline_title": "执行流水", "timeline_profile": "waiting",
+         "actions": [("提高 Tile 复用", "优先", "调整 M / N 分块，减少对同一输入的重复搬入。", "验证 L2 命中率与总耗时"),
                      ("启用双缓冲", "其次", "让下一块输入的搬运与当前块计算交叠。", "验证 MTE2 / Cube 重叠"),
                      ("检查尾块负载", "后续", "缩小核间尾块差异，减少最后一轮的空闲。", "验证各核结束时间")],
          },
@@ -68,10 +70,10 @@ def primary_diagnostics():
          "location": "矩阵计算 → Softmax", "latency_us": 284.0,
          "gauges": [("Vector 活跃比例", 71, "memory"), ("Cube 活跃比例", 46, "compute")],
          "focus_span": (46, 74), "focus": "等待阶段同步", "window_us": 200,
-         "timeline_title": "计算在等什么？", "timeline_profile": "waiting",
+         "timeline_title": "执行流水", "timeline_profile": "waiting",
          "actions": [("流水化 Softmax", "优先", "将 Softmax 与下一块矩阵计算交叠执行。", "验证 Cube / Vector 衔接"),
                      ("缩短同步范围", "其次", "检查事件依赖，让可独立执行的块更早开始。", "验证关键路径等待"),
-                     ("平衡两阶段分块", "后续", "协调矩阵计算与 Vector 阶段的块大小。", "验证各阶段活跃比例")],
+                     ("平衡两阶段分块", "后续", "协调矩阵计算与 Vector 阶段的块大小。", "验证 AIC / AIV 组件周期")],
          },
     ]
 
@@ -85,10 +87,10 @@ def alternate_diagnostics():
          "location": "矩阵计算", "latency_us": 112.6,
          "gauges": [("Cube 活跃比例", 88, "compute"), ("HBM 带宽占用", 54, "memory")],
          "focus_span": (10, 32), "focus": "矩阵计算密集区间", "window_us": 100,
-         "timeline_title": "计算集中在哪？", "timeline_profile": "compute",
-         "actions": [("优化矩阵分块", "优先", "调整 M / N / K 分块，提高矩阵指令的有效工作量。", "验证 Cube 活跃比例与总耗时"),
+         "timeline_title": "执行流水", "timeline_profile": "compute",
+         "actions": [("优化矩阵分块", "优先", "调整 M / N / K 分块，提高矩阵指令的有效工作量。", "验证 MFU 与总耗时"),
                      ("交错计算与搬运", "其次", "将后续输入预取安排到当前计算期间。", "验证搬运与计算重叠"),
-                     ("减少尾块计算", "后续", "优化尾块处理，减少无效填充和重复计算。", "验证有效计算比例")],
+                     ("减少尾块计算", "后续", "优化尾块处理，减少无效填充和重复计算。", "验证 MFU 与总耗时")],
          },
         {"operator_id": "attention", "hardware_id": "ascend-910b4",
          "bound": "访存受限", "title": "K / V 重复搬入拖慢了执行",
@@ -96,7 +98,7 @@ def alternate_diagnostics():
          "location": "K / V 搬入 → 矩阵计算", "latency_us": 238.8,
          "gauges": [("HBM 带宽占用", 82, "memory"), ("Cube 活跃比例", 64, "compute")],
          "focus_span": (56, 88), "focus": "等待 K / V 分块", "window_us": 200,
-         "timeline_title": "计算在等什么？", "timeline_profile": "memory",
+         "timeline_title": "执行流水", "timeline_profile": "memory",
          "actions": [("提高 K / V 复用", "优先", "让相邻 Query 分块共享已搬入的 K / V 数据。", "验证重复读取量与总耗时"),
                      ("减少中间结果落存", "其次", "将矩阵计算与 Softmax 中间结果保留在片上。", "验证中间结果访存量"),
                      ("调整预取时机", "后续", "在当前分块计算期间提前搬入下一块 K / V。", "验证关键路径等待")],
@@ -143,8 +145,13 @@ def diagnostic_cases():
         case["gauges"] = [dict(label=label, value=value, kind=kind) for label, value, kind in case["gauges"]]
         case["actions"] = [dict(title=title, priority=priority, detail=detail, check=check)
                            for title, priority, detail, check in case["actions"]]
+        profile = {"访存受限": "memory", "计算受限": "compute", "同步等待": "waiting"}[case["bound"]]
+        case["analysis"] = sample_analysis(case["latency_us"], profile, clock_mhz=1500)
+        case["analysis_view"] = analysis_view(case["analysis"])
         duration = case["window_us"]
         case["timeline"] = timeline(duration / 100, case.pop("timeline_profile"))
+        if case["operator_id"] == "matmul":
+            case["timeline"][2].update(name="Fixpipe", label="结果写回 · L0C → GM")
         if case["operator_id"] == "attention":
             case["timeline"][2].update(name="VECTOR", label="Softmax", kind="vector")
         start, end = case.pop("focus_span")
@@ -247,6 +254,35 @@ def performance_samples(scope, hardware_id):
     }[hardware_id][scope]
 
 
+def memory_sample(scope, key, small):
+    # Illustrative simultaneous allocations; traffic and UB do not determine storage.
+    profiles = {
+        "matmul": {"v1": (0, 16), "v2": (0, 12), "v3": (0, 8),
+                   "linear": (0, 12), "mega": (0, 4)},
+        "fused": {"separate": (64, 16), "linear": (32, 12),
+                  "epilogue": (0, 8), "mega": (0, 4)},
+        "attention": {"separate": (2048, 64), "v1": (1024, 32),
+                      "v2": (0, 16), "mega": (0, 8)},
+    }
+    intermediate, workspace = profiles[scope][key]
+    io = (128 if scope == "attention" else 96) / ((4 if scope == "attention" else 16) if small else 1)
+    intermediate /= 16 if small else 1
+    workspace /= 4 if small else 1
+    memory = dict(input_output_mib=io, intermediate_mib=intermediate,
+                  workspace_mib=workspace, peak_mib=io + intermediate + workspace,
+                  synthetic=True)
+    return memory
+
+
+def cost_view(row):
+    memory = row["memory"]
+    return [dict(label="总耗时", unit="μs", value=row["latency"]),
+            dict(label="峰值设备内存", unit="MiB", value=f'{memory["peak_mib"]:g}'),
+            dict(label="中间结果峰值", unit="MiB", value=f'{memory["intermediate_mib"]:g}'),
+            dict(label="临时工作区", unit="MiB", value=f'{memory["workspace_mib"]:g}'),
+            dict(label="累计读写量", unit="MiB", value=f'{row["traffic_mib"]:g}')]
+
+
 def mega_case(family, scope, small, hardware):
     specs = implementation_specs(scope)
     trend_values = performance_samples(scope, hardware["id"])
@@ -260,6 +296,13 @@ def mega_case(family, scope, small, hardware):
                          latency_us=latency, latency=f"{latency:.1f}",
                          traffic_mib=traffic / (16 if small else 1),
                          width=round(latency / max(values) * 100, 3), synthetic=True))
+    for row in rows:
+        row["memory"] = memory_sample(scope, row["id"], small)
+        row["cost_view"] = cost_view(row)
+        row["traffic_bandwidth"] = f'{row["traffic_mib"] * 2**20 / row["latency_us"] / 1000:.1f}'
+        profile = "memory" if row["id"] in ("v1", "separate") else "compute" if row["id"] in ("v3", "mega", "epilogue") else "balanced"
+        row["analysis"] = sample_analysis(row["latency_us"], profile, clock_mhz=1500)
+        row["analysis_view"] = analysis_view(row["analysis"])
     rows.sort(key=lambda row: row["latency_us"])
     size = "1024" if small else "4096"
     semantic = {"matmul": "A × B · Linear 无 bias", "fused": "GELU(XW + b)",
@@ -276,11 +319,124 @@ def mega_case(family, scope, small, hardware):
                 candidates=rows, comparisons=comparisons(rows), trend=trend)
 
 
+# Distinct illustrative strategies, not a claim about real kernel capabilities.
+FAMILY_STRATEGIES = {
+    "bmm": {
+        "v1": ("bmm_basic", "逐批次计算"),
+        "v2": ("bmm_batch_parallel", "批次并行"),
+        "v3": ("bmm_tile_schedule", "跨批次 Tile 调度"),
+        "linear": ("bmm_grouped", "分组调度"),
+        "mega": ("megakernel_bmm", "批次流水"),
+    },
+    "shared": {
+        "v1": ("shared_mm_basic", "逐批次读取权重"),
+        "v2": ("shared_mm_l2_reuse", "L2 权重复用"),
+        "v3": ("shared_mm_weight_resident", "权重驻留"),
+        "linear": ("shared_linear", "合并 Batch / M"),
+        "mega": ("megakernel_shared_mm", "跨批次权重流水"),
+    },
+}
+
+
+def specialize_seed(seed, kind, hardware_id):
+    if kind not in FAMILY_STRATEGIES:
+        return seed
+    latencies = {
+        "bmm": {"ascend-910b1": [140, 117, 94, 108, 82], "ascend-910b4": [124, 102, 83, 95, 74]},
+        "shared": {"ascend-910b1": [118, 101, 80, 89, 66], "ascend-910b4": [106, 90, 71, 79, 61]},
+    }
+    times = dict(zip(("v1", "v2", "v3", "linear", "mega"), latencies[kind][hardware_id]))
+    traffic = dict(zip(times, [192, 176, 152, 160, 136] if kind == "bmm" else [176, 128, 104, 112, 96]))
+    for row in seed["candidates"]:
+        row["name"], row["tag"] = FAMILY_STRATEGIES[kind][row["id"]]
+        row["latency_us"] = times[row["id"]]
+        row["traffic_mib"] = traffic[row["id"]]
+        row["chain"] = ["BatchMatMul" if kind == "bmm" else "MatMul · 共享权重"]
+    seed["candidates"].sort(key=lambda row: row["latency_us"])
+    seed["winner"] = seed["candidates"][0]["id"]
+    return seed
+
+
+def dimension_case(seed, calculation_type, dimensions):
+    case = deepcopy(seed)
+    b, m, n, k = dimensions
+    batched = calculation_type in ("bmm", "shared")
+    case.update(calculation_type=calculation_type, family_id=f"{calculation_type}-family", dimensions=list(dimensions),
+                id=f'{calculation_type}/{b}/{m}/{n}/{k}/{seed["hardware_id"]}',
+                size=f"{b}x{m}x{n}x{k}", shape_label="B × M × N × K",
+                shape=" × ".join(map(str, dimensions)))
+    case["inputs"] = [{"name": "A", "shape": [b, m, k] if batched else [m, k]},
+                      {"name": "B", "shape": [b, k, n] if calculation_type == "bmm" else [k, n]}]
+    case["semantic"] = {"matmul": "A[M,K] × B[K,N]", "bmm": "A[B,M,K] × B[B,K,N]",
+                        "shared": "A[B,M,K] × W[K,N]", "fused": "GELU(A[M,K]W[K,N] + bias)"}[calculation_type]
+    # A deterministic illustration, not an estimator for arbitrary real workloads.
+    factor = b * m * n * k / 4096**3
+    storage = b * m * n / 4096**2
+    io = (b*m*k + (b if calculation_type == "bmm" else 1)*k*n + b*m*n)*2/2**20
+    for row in case["candidates"]:
+        row["member_id"] = f'{calculation_type}/{row["id"]}'
+        row["latency_us"] = round(max(0.1, row["latency_us"] * factor), 2)
+        row["latency"] = f'{row["latency_us"]:.1f}'
+        memory = row["memory"]
+        memory.update(input_output_mib=io, intermediate_mib=memory["intermediate_mib"]*storage,
+                      workspace_mib=memory["workspace_mib"]*storage)
+        memory["peak_mib"] = sum(memory[key] for key in ("input_output_mib", "intermediate_mib", "workspace_mib"))
+        row["traffic_mib"] = round(max(row["traffic_mib"] * storage, io + 2*memory["intermediate_mib"]), 3)
+        row["traffic_bandwidth"] = f'{row["traffic_mib"]*2**20/row["latency_us"]/1000:.1f}'
+        row["cost_view"] = cost_view(row)
+        row["analysis"]["performance"].update(latency_us=row["latency_us"], cycles=round(row["latency_us"]*1500))
+        row["analysis_view"] = analysis_view(row["analysis"])
+    maximum = max(row["latency_us"] for row in case["candidates"])
+    for row in case["candidates"]:
+        row["width"] = round(row["latency_us"]/maximum*100, 3)
+    case["comparisons"] = comparisons(case["candidates"])
+    specs = [(row["id"], row["name"]) for row in seed["candidates"]]
+    values = [[round(max(0.1, row["latency_us"]*b*x*n*k/4096**3), 2) for x in (512,1024,2048,4096)] for row in seed["candidates"]]
+    case["trend"] = trends(specs, values)
+    case["trend"]["axis_label"] = f"M · B={b}, N={n}, K={k}"
+
+    return case
+
+
+def dimension_samples(families, catalog):
+    family = next(item for item in families if item["id"] == "matmul-family")
+    cases = []
+    for kind, hardware in product(("matmul", "bmm", "shared", "fused"), catalog["hardware"]):
+        seed = mega_case(family, "fused" if kind == "fused" else "matmul", False, hardware)
+        seed = specialize_seed(seed, kind, hardware["id"])
+        for dims in product((1, 4) if kind in ("bmm", "shared") else (1,), (1024, 4096), (1024, 4096), (1024, 4096)):
+            cases.append(dimension_case(seed, kind, dims))
+    return cases
+
+
+def workspace_families(families):
+    result = []
+    definitions = [("matmul", "MatMul", "matmul"), ("bmm", "BatchMatMul", "matmul"),
+                   ("shared", "共享权重矩阵乘", "matmul"), ("fused", "Linear + GELU", "fused"),
+                   ("attention", "Attention", "attention")]
+    for kind, name, scope in definitions:
+        parent = next(f for f in families if any(r["id"] == scope for r in f["scopes"]))
+        family = deepcopy(parent)
+        family.update(id=f"{kind}-family", name=name, calculation_type=kind)
+        family["scopes"] = [r for r in family["scopes"] if r["id"] == scope]
+        family["members"] = [r for r in family["members"] if r["scope_id"] == scope]
+        for member in family["members"]:
+            key = member["id"].split("/")[-1]
+            member["id"] = f'{kind}/{key}'
+            if kind in FAMILY_STRATEGIES:
+                member["name"] = FAMILY_STRATEGIES[kind][key][0]
+        family["member_count"] = len(family["members"])
+        result.append(family)
+    return result
+
+
 def build_optimization_demo():
     families = mega_families()
     catalog = diagnostic_catalog()
-    return {"schema": "opscope-optimization-demo-v6", "synthetic": True,
+    return {"schema": "opscope-optimization-demo-v7", "synthetic": True,
             "diagnostic_catalog": catalog, "diagnostics": diagnostic_cases(), "families": families,
+            "dimension_cases": dimension_samples(families, catalog),
+            "workspace_families": workspace_families(families),
             "mega": [mega_case(family, scope["id"], small, hardware) for family in families
                      for scope in family["scopes"] for hardware in catalog["hardware"] for small in (False, True)]}
 

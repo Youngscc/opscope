@@ -20,6 +20,6 @@ defineProps<{scenario:Diagnosis}>()
         <div class="pipeline-overlay" aria-hidden="true"><span class="pipeline-focus" :style="{left:scenario.focus_region.left+'%',width:scenario.focus_region.width+'%'}"></span></div>
       </div>
     </div>
-    <div class="pipeline-callout"><span class="opt-status-dot"></span><strong>{{scenario.focus_range}}</strong><span>{{scenario.focus}}</span><span class="opt-subtle">局部流水示意</span></div>
+    <div class="pipeline-callout"><span class="opt-status-dot"></span><strong>{{scenario.focus_range}}</strong><span>{{scenario.focus}}</span></div>
   </section>
 </template>

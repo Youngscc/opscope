@@ -26,7 +26,8 @@ class WorkspaceDemoTests(unittest.TestCase):
         self.assertEqual(scripts, [{}])
         self.assertFalse(any(tag in {'link', 'base', 'iframe'} for tag, _ in parser.tags))
         self.assertIn("connect-src 'none'", html)
-        self.assertIn('25 组预设结果', html)
+        self.assertIn('选择算子', html)
+        self.assertIn('载入 MatMul 示例', html)
 
     def test_complete_matrix_and_original_dataset_are_independent(self):
         original = build_payload()
@@ -44,6 +45,45 @@ class WorkspaceDemoTests(unittest.TestCase):
         self.assertIsNone(rows['demo-h200-roofline']['execution']['compute_us'])
         # Pair selection excludes comparing a result with itself.
         self.assertEqual(len(demo['matrix']['pairs']), 25 * 24)
+
+    def test_completed_dialog_samples_do_not_change_original_results(self):
+        # Supplemental values belong only to the static copy; GPU has no NPU counters.
+        original = build_payload()
+        before = json.dumps(original, sort_keys=True)
+        demo = workspace_payload(original)
+        self.assertEqual(json.dumps(original, sort_keys=True), before)
+        for row in demo['results']:
+            sample = row['presentation_sample']
+            self.assertTrue(sample['synthetic'])
+            self.assertAlmostEqual(sample['bandwidth_gbs'], sample['traffic_mib']*2**20/row['latency_us']/1000)
+            for sections in row['sections'].values():
+                for section in sections:
+                    self.assertFalse(any(f['value']=='—' for f in section['facts']))
+            if row['hardware']!='ascend':
+                self.assertIsNone(row['analysis']['metrics']['ub_utilization'])
+                self.assertEqual(row['sections']['overview'][2]['facts'][2]['label'], '共享内存占用率')
+            if row['method']=='roofline':
+                self.assertIsNone(sample['execution'])
+                self.assertIn('解析模型', row['sections']['execution'][0]['extra'])
+            self.assertIsNone(row['task']['run_id'])
+
+    def test_catalog_and_empty_templates_allow_selection_without_reusing_samples(self):
+        original = build_payload()
+        demo = workspace_payload(original)
+        # Browsing retains all contracts; only the exact default has performance samples.
+        self.assertEqual(demo['catalog'], original['catalog'])
+        self.assertFalse(demo['presentation']['configuration_locked'])
+        self.assertEqual(len(demo['pending_results']), 25)
+        self.assertEqual({r['hardware'] for r in demo['pending_results']},
+                         {h['id'] for h in demo['hardware']})
+        for row in demo['pending_results']:
+            self.assertFalse(row['available'])
+            self.assertTrue(row['synthetic'])
+            self.assertIsNone(row['latency_us'])
+            self.assertIsNone(row.get('execution'))
+            self.assertEqual(row['task']['status'], 'not_run')
+            self.assertEqual(row['reason'], '未预设该配置的示例结果')
+        self.assertTrue(all(r['reason'] == '尚未评估' for r in original['pending_results']))
 
     def test_checked_in_asset_matches_generated_data(self):
         # The standalone bundle must consume the same Python-prepared figures and geometry.

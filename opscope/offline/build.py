@@ -7,6 +7,7 @@ from .fixtures import HARDWARE, METHODS, RESOURCE_STATS, VALUES, method_config, 
 from .execution_data import execution_record
 from .task_details import hardware_detail, input_detail, task_context, task_overview, workload_record
 from .matrix_data import prepare_matrix
+from .analysis_display import attach_matrix_samples
 from .virtual_data import virtual_result
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -251,6 +252,7 @@ def build_payload():
     pending = pending_results(hardware)
     demo_ids = {item[0] for item in HARDWARE}
     results.extend({**row, 'workload': workload_record()} for row in pending if row['hardware'] not in demo_ids)
+    attach_matrix_samples(results)
     matrix = prepare_matrix(results)
     return {'schema': 'operator-ui-demo-v1', 'synthetic': True, 'notice': '合成 UI 示例，非实测或实际仿真结果', 'workload': {'operator': 'MatMul', 'm': 4096, 'n': 4096, 'k': 4096, 'dtype': 'FP16', 'flops': FLOPS, 'logical_bytes': LOGICAL_BYTES, 'boundary': 'device kernel only'}, 'hardware': hardware, 'methods': [method_config(item[0]) for item in METHODS], 'results': results, 'matrix': matrix, 'catalog': catalog, 'pending_results': pending}
 

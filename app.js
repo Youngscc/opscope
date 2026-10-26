@@ -57,7 +57,6 @@ function render_scope() {
     const active = state.scope && ((button.dataset.scopeMethod && button.dataset.scopeMethod === state.scope.method) || (button.dataset.scopeHardware && button.dataset.scopeHardware === state.scope.hardware));
     button.setAttribute('aria-pressed', String(Boolean(active)));
   });
-  by_id('chart-reset').hidden = !state.scope;
 }
 
 function render_tray() {
@@ -69,7 +68,8 @@ function render_tray() {
 function update_filters() {
   const visible = new Set(visible_results().filter(item => item.available).map(item => item.id));
   state.selected = state.selected.filter(id => visible.has(id));
-  if (state.scope && ((state.scope.hardware && !state.hardware.has(state.scope.hardware)) || (state.scope.method && !state.methods.has(state.scope.method)))) state.scope = null;
+  if (state.scope?.hardware && !state.hardware.has(state.scope.hardware)) delete state.scope.hardware;
+  if (state.scope?.method && !state.methods.has(state.scope.method)) delete state.scope.method;
   render_matrix();
   render_tray();
   render_chart();
@@ -88,54 +88,37 @@ function reset_filters() {
   update_filters();
 }
 
-function plot_results() {
-  return visible_results().filter(item => !state.scope || (state.scope.hardware ? item.hardware === state.scope.hardware : item.method === state.scope.method));
+function comparison_axis() {
+  const ticks = data.matrix.scales.latency_ticks;
+  return `<div class="comparison-axis" aria-hidden="true"><span>μs</span><div>${ticks.map((tick, index) => `<span class="axis-tick ${index === 0 ? 'first' : index === ticks.length - 1 ? 'last' : ''}" style="left:${tick.position}%">${tick.label}</span>`).join('')}</div><span></span></div>`;
 }
 
-function chart_axis(metric) {
-  const ticks = data.matrix.scales[metric === 'error' ? 'error_ticks' : 'latency_ticks'];
-  return `<div class="chart-axis"><span>${metric === 'error' ? '偏差 %' : '耗时 μs'}</span><div>${ticks.map((tick, index) => `<span class="axis-tick ${index === 0 ? 'first' : index === ticks.length - 1 ? 'last' : ''}" style="left:${tick.position}%">${tick.label}</span>`).join('')}</div><span></span></div>`;
+function comparison_row(label, result) {
+  const name = escape_html(label);
+  if (!result) return `<div class="comparison-row"><div class="comparison-bar-button is-missing"><span class="comparison-label">${name}</span><span class="comparison-missing">暂无结果</span><strong class="comparison-value">—</strong></div></div>`;
+  const mark = result.available ? `<span class="comparison-bar" style="width:${result.matrix.latency_width}%"></span>` : `<span class="comparison-missing">${escape_html(result.reason)}</span>`;
+  const value = result.available ? result.latency : '—';
+  const description = escape_html(`${result_name(result)} · ${result.available ? result.latency + ' μs' : result.reason}，查看详情`);
+  return `<div class="comparison-row"><button class="comparison-bar-button ${result.method} ${result.available ? '' : 'is-missing'}" data-open="${result.id}" aria-label="${description}"><span class="comparison-label">${name}</span><span class="comparison-track">${mark}</span><strong class="comparison-value">${value}</strong></button></div>`;
 }
 
-function chart_mark(result, metric) {
-  const error = metric === 'error';
-  const value = error ? result.matrix.error_label : `${result.latency} μs`;
-  const location = error ? `left:${result.matrix.error_position}%` : `width:${result.matrix.latency_width}%`;
-  const label = `${result_name(result)} · ${error ? '较同硬件参考 ' : ''}${value}`;
-  const side_label = !error ? `${method_name(result.method)}<span class="narrow-chart-value">${value}</span>` : state.scope ? value : '';
-  return `<div class="chart-lane"><div class="lane-plot"><button class="chart-mark ${result.method} ${error ? 'point' : 'bar'}" data-open="${result.id}" aria-label="${label}，查看详情" title="${label}" style="${location}">${error ? '<i aria-hidden="true"></i>' : `<span class="bar-number">${result.latency}</span>`}</button></div><span class="lane-value">${side_label}</span></div>`;
-}
-
-function chart_group(hw, rows, metric) {
-  const valid = rows.filter(row => row.available && (metric !== 'error' || row.matrix.error_position !== null));
-  const show_names = Boolean(state.scope);
-  const marks = valid.map(row => `<div class="chart-series"><span class="lane-name">${show_names ? method_name(row.method) : ''}</span>${chart_mark(row, metric)}</div>`).join('');
-  return `<div class="chart-group"><div class="chart-hardware">${hw.name.replace('NVIDIA ', '')}</div><div class="chart-series-group ${metric}">${marks || '<div class="chart-no-data">— 暂无结果</div>'}</div></div>`;
+function comparison_options(axis, items) {
+  const input = by_id(`comparison-${axis}`);
+  const selected = items.find(item => item.id === state.scope?.[axis])?.id || items[0]?.id || '';
+  input.innerHTML = items.length ? items.map(item => `<option value="${item.id}" ${item.id === selected ? 'selected' : ''}>${escape_html(item.name)}</option>`).join('') : '<option value="">未选择</option>';
+  input.disabled = !items.length;
+  return selected;
 }
 
 function render_chart() {
-  const rows = plot_results();
-  const no_reference = rows.some(row => row.available) && !rows.some(row => row.available && row.matrix.error_position !== null);
-  const metric = state.chart === 'error' && no_reference ? 'latency' : state.chart;
-  const scope = state.scope?.hardware ? hardware_by_id(state.scope.hardware).name + ' · 比较方法' : state.scope?.method ? method_name(state.scope.method) + ' · 比较硬件' : '全局对比';
-  by_id('chart-heading').textContent = scope;
-  by_id('chart-description').textContent = metric === 'error' ? '参考偏差 · 左侧低估，右侧高估，越接近零越接近本次参考。' : state.scope?.hardware ? '同一硬件 · 比较各方法预测与参考的耗时差异。' : '总耗时 · 固定同一方法后，可以直观比较不同硬件。';
-  by_id('chart-footnote').textContent = no_reference ? '暂无可用参考，展示绝对耗时。' : metric === 'error' ? '每行使用该硬件的真机数据 作为零点；缺失结果不作零值绘制。' : '统一零起点刻度 · 更短的预测不代表更准确。';
-  const methods = data.methods.filter(item => state.methods.has(item.id) && rows.some(row => row.method === item.id && row.available) && (!state.scope?.method || item.id === state.scope.method) && (metric !== 'error' || item.id !== 'profile'));
-  const plotted = rows.filter(row => metric !== 'error' || row.method !== 'profile');
-  by_id('chart-legend').innerHTML = methods.map(item => `<span><i class="legend-mark ${item.id}" aria-hidden="true"></i>${method_name(item.id)}</span>`).join('');
-  const groups = data.hardware.filter(hw => state.hardware.has(hw.id) && (!state.scope?.hardware || hw.id === state.scope.hardware));
-  const only_reference = rows.length && rows.every(row => row.method === 'profile') && metric === 'error';
-  by_id('analysis-chart').innerHTML = only_reference ? '<div class="reference-note">真机数据是每个硬件的参考基线，偏差为 0%。切换“总耗时”比较硬件。</div>' : chart_axis(metric) + groups.map(hw => chart_group(hw, plotted.filter(row => row.hardware === hw.id), metric)).join('');
-  by_id('analysis-chart').classList.toggle('focused', Boolean(state.scope));
-  const has_results = rows.some(row => row.available);
-  by_id('analysis-chart').hidden = !has_results;
-  by_id('chart-empty').hidden = has_results;
-  if (!has_results) {
-    by_id('chart-description').textContent = '此配置尚无可对比的性能数据。';
-    by_id('chart-footnote').textContent = '未运行的组合不作为零值绘制。';
-  }
-  document.querySelectorAll('[data-chart]').forEach(button => button.setAttribute('aria-pressed', button.dataset.chart === metric));
+  const rows = visible_results();
+  const hardware = data.hardware.filter(item => state.hardware.has(item.id));
+  const methods = data.methods.filter(item => state.methods.has(item.id));
+  const hardware_id = comparison_options('hardware', hardware);
+  const method_id = comparison_options('method', methods);
+  const empty = '<div class="empty-state"><h3>暂无比较组合</h3><p>选择平台和方法后展示对比。</p></div>';
+  by_id('comparison-method-bars').innerHTML = hardware_id && methods.length ? `<div class="comparison-bars">${comparison_axis()}${methods.map(item => comparison_row(item.name, rows.find(row => row.hardware === hardware_id && row.method === item.id))).join('')}</div>` : empty;
+  by_id('comparison-hardware-bars').innerHTML = method_id && hardware.length ? `<div class="comparison-bars">${comparison_axis()}${hardware.map(item => comparison_row(item.name, rows.find(row => row.method === method_id && row.hardware === item.id))).join('')}</div>` : empty;
 }
 
 function render_selectors() {
@@ -250,6 +233,12 @@ function on_change(event) {
     if (input.checked) collection.add(key);
     else collection.delete(key);
     update_filters();
+  } else if (input.id === 'comparison-hardware' || input.id === 'comparison-method') {
+    const axis = input.id === 'comparison-hardware' ? 'hardware' : 'method';
+    state.scope = {...state.scope, [axis]: input.value};
+    render_scope();
+    render_chart();
+    by_id(input.id).focus();
   } else if (input.dataset.detailSlot !== undefined) {
     state.details[Number(input.dataset.detailSlot)] = input.value;
     state.selected = [...state.details];
@@ -278,11 +267,8 @@ function on_click(event) {
   else if (button.dataset.metric) {
     state.metric = button.dataset.metric;
     render_matrix();
-  } else if (button.dataset.chart) {
-    state.chart = button.dataset.chart;
-    render_chart();
   } else if (button.dataset.scopeHardware || button.dataset.scopeMethod) {
-    state.scope = button.dataset.scopeHardware ? {hardware: button.dataset.scopeHardware} : {method: button.dataset.scopeMethod};
+    state.scope = {...state.scope, ...(button.dataset.scopeHardware ? {hardware: button.dataset.scopeHardware} : {method: button.dataset.scopeMethod})};
     render_scope();
     render_chart();
     announce(by_id('chart-heading').textContent + '，图表已更新');
@@ -333,7 +319,6 @@ function bind_controls() {
   by_id('close-detail').addEventListener('click', () => by_id('detail-panel').close());
   by_id('compare-button').addEventListener('click', event => open_details([...state.selected], event.currentTarget));
   by_id('clear-selection').addEventListener('click', () => {state.selected = []; render_matrix(); render_tray();});
-  by_id('chart-reset').addEventListener('click', () => {state.scope = null; render_scope(); render_chart();});
   by_id('workload-button').addEventListener('click', open_configuration);
   by_id('close-workload').addEventListener('click', () => by_id('workload-dialog').close());
   by_id('close-export').addEventListener('click', () => by_id('export-dialog').close());

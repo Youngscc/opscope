@@ -1,5 +1,119 @@
 # 项目记忆
 
+## 2026-10-26 · 汇总前端与静态展示交付
+
+整理并提交三页参考主题与左侧输入布局、双柱状对比、CAModel命名和方法顺序、MegaKernel算子族/维度/开销展示、详情合成数据与输出张量预览，以及设计师单文件HTML和相应设计文档。公开性能来源调查独立成文档提交；本地Trace和编辑器配置不纳入。
+
+验证：127项Python测试、13项前端测试、Vue类型检查、在线构建、两类单文件构建、离线生成、app.js语法和差异格式检查通过。保留既有大包体积告警；本轮未重复浏览器视觉验收，沿用各功能记录中的已验收结果。此次交付不代表后端已接入真实测量或全目录输出推导。
+
+## 2026-10-15 · 配置窗口输出张量预览
+
+将折叠的“输出模板”替换为默认展开的名称、Shape、dtype表格，使用14px数值、等宽形状和精度标签。目录由Python提供维度引用，Vue仅读取对应输入维度与dtype；覆盖矩阵乘、权重投影、BMM及部分保形算子。示例MatMul支持转置引用，Mul/Add限同形输入，未建立规则或不完整/不匹配输入保持待确认状态，不参与性能计算。
+
+验证：6项Python定向测试、13项前端测试、类型检查、离线构建和两类单文件构建通过；浏览器验证默认MatMul、切换模板、M维联动和问号输入状态。尚未覆盖全目录输出推导，未提交推送。
+
+## 2026-10-15 · 补全静态详情与精简说明
+
+静态展示的25组结果补充计算/访存耗时、流量、带宽、资源指标、硬件配置和执行参数，单项详情、双结果比较与JSON使用同一份合成补充数据。GPU展示共享内存及Tensor/SIMT/Load/Store字段；Roofline不生成执行流水。清理配置弹窗和对比摘要中的演示专用说明，保留全局示例标记。见[设计](../docs/static-detail-completion.md)。
+
+验证：12项Python定向测试、13项前端测试、类型检查和三种前端构建通过；浏览器核对NPU硬件详情、GPU计算访存/资源指标和双结果比较。静态25组详情的数值事实无占位横线。原始评估结果与未匹配配置保持缺失语义，未伪造报告或Trace文件；既有构建体积告警仍存在，未提交推送。
+
+## 2026-10-14 · MegaKernel文字可读性
+
+第三页成员说明、徽标、资源表、执行链和趋势图标签从原8–11px提高到12–15px，主要数值增大并加深辅助文字颜色。增加排名行高和中等桌面当前成员卡宽度，允许长名称换行，保持现有数据与交互。同步两类HTML及在线构建。
+
+验证：类型检查、三种构建通过，1280px浏览器核对共享权重长名称及字号，无页面横向溢出。纯样式调整未重复数据测试；未提交推送，既有体积告警仍存在。
+
+## 2026-10-14 · 区分前三族实现示例
+
+保留MatMul分块/流水成员；BatchMatMul改为批次并行、跨批次Tile调度、分组调度及批次流水；共享权重族改为L2复用、权重驻留、Batch/M合并与权重流水。成员名、特点、执行链、时延和流量预设同步区分，目录、基线、趋势和JSON保持一致，仍为合成演示不代表真实支持。
+
+验证：23项Python定向检查、类型检查、三种构建通过，浏览器核对BMM与共享权重成员和数值。两类HTML已同步，未提交推送；既有大包告警仍存在。
+
+## 2026-10-14 · 拆分并列算子族
+
+MegaKernel直接展示MatMul、BatchMatMul、共享权重矩阵乘、Linear+GELU、Attention五族，删除计算类型与对比范围控件。新增扁平workspace_families目录，维度结果family_id/member_id对应独立族，保留硬件、维度与基线选择。未改性能数值；未做HTML体积压缩。
+
+验证：22项Python、13项前端测试、类型检查及三种构建通过；浏览器逐族切换、批次可用性、融合成员、Attention尺寸与1280px无溢出通过。两类HTML同步，既有大包告警仍存在；未提交推送。
+
+## 2026-10-14 · MatMul计算类型与独立尺寸
+
+诊断MatMul写回通道改为Fixpipe/L0C→GM。MegaKernel增加普通、BMM、共享权重和Linear+GELU类型，独立选择M/N/K（1024、4096）及批量类型Batch（1、4），构建96组精确匹配的虚拟组合，含完整输入形状、内存、耗时和比较。趋势固定Batch/N/K改变M，导出记录类型与维度，Attention原配置保留。详见[设计](../docs/matmul-calculation-types.md)。
+
+验证：21项Python、13项前端测试及三种构建通过，浏览器验证BMM/共享权重的空间差异、族切换、Fixpipe、1280px布局。修复族切换时异步类型监听覆盖Attention范围的问题。两类单文件已同步；设计HTML因完整预设增至约7.9MB，生产构建有体积告警。尺寸为有限选项，全部性能是合成样例，未接真实引擎或提交推送。
+
+## 2026-10-14 · 实现与开销对比
+
+MegaKernel实现结构卡改为“实现与开销对比”，保留执行链/启动次数，直接展示耗时、加速比、节省时间、峰值设备内存、中间结果峰值、临时工作区及累计读写量，移除重复UB行。Python新增显式memory样例及cost_view，保留synthetic与零值，未由流量或UB倒推空间。同步两类Vue单文件与在线构建，见[开销设计](../docs/implementation-cost-comparison.md)。
+
+验证：20项Python、13项前端测试、类型及三种构建、差异检查通过。浏览器核对默认112→100MiB、自比1.00×/100→100MiB、融合176→100MiB和中间结果64→0MiB，1280px无横向溢出或控制台错误。补正前次“执行流水”文案的旧测试断言。空间为展示预设，未接真实API；HTTP检查，未提交推送。
+
+## 2026-10-14 · 流水标题精简
+
+性能分析的流水图标题统一改为“执行流水”，替换“计算在等什么？”及同类问句“计算集中在哪？”。同步示例资产、展示版与设计交接HTML。类型检查、三种构建及差异检查通过；纯文案调整，未重复浏览器测试或提交推送。
+
+## 2026-10-14 · 方法展示名称与顺序
+
+ESL显示名改为CAModel，方法顺序为真机数据、MSKPP、CAModel、TileSim、Roofline；矩阵、筛选、柱图、详情与导出共用目录同步。method4内部标识与lookup来源保持不变，不新增执行后端。重生成原生及两类Vue单文件，更新目录顺序断言。19项Python定向检查、类型检查、三种构建及差异检查通过；未重复浏览器交互测试或提交推送。
+
+## 2026-10-14 · 输入栏通高留白
+
+三页左侧输入栏拉满右侧结果区高度，控件保持顶部排列，底部连续白色留白。同步在线与两类Vue单文件。类型和三种构建通过，浏览器核对三页左右等高；仅样式变更，未重复数据交互测试或提交推送。
+
+## 2026-10-14 · 三页左侧输入布局
+
+三页统一为标题下的左侧输入、右侧结果卡片。评估集中算子/形状/平台/方法，分析集中算子/硬件/Size，MegaKernel集中族/范围/平台/Size/基线；沿用既有选择和导出。ResultMatrix以插槽将双柱图纳入右列，窄桌面矩阵内部滚动、图表按可用宽度堆叠。侧栏筛选展开在栏内，避免遮挡后续控件。同步在线与两类Vue单文件，设计见[输入侧栏](../docs/input-sidebar-layout.md)。
+
+验证：13项前端、8项Python定向测试、类型检查、三种构建和差异检查通过。浏览器核对三页1280px布局无整页横向溢出、硬件与基线联动、配置弹窗、筛选、双比较及两条结果JSON的synthetic标记。HTTP预览实测，file协议未实测；未修改性能口径或提交推送。
+
+## 2026-10-14 · 评估输入区域整理
+
+性能评估标题卡仅保留标题；所有输入张量的形状和类型移到筛选卡算子按钮后，每个形状按钮打开既有输入配置弹窗。在线运行/保存入口随配置区移动，全局示例标记保留。同步三页展示和设计交接HTML。类型及构建检查通过。
+
+## 2026-10-14 · 三页参考图风格还原
+
+按用户三张参考图重排性能评估、性能分析与MegaKernel页面：深蓝顶栏、面包屑、居中导航和标题卡，独立筛选/矩阵、诊断资源双列、通栏流水与建议、合并算子族配置及紧凑排名图。新增统一主题，保留算子配置、筛选、详情、双比较与导出；额外周期/吞吐进入展开区。同步在线构建与两类Vue单文件，未修改性能公式或将截图占位硬件/数值写入资产。设计见[参考图还原](../docs/reference-style-redesign.md)。
+
+验证：13项前端、8项Python定向检查、类型检查、三种构建、离线生成及差异检查通过。1920px逐页截图校准，1280px无横向溢出；实测筛选20/20及重置、单条详情、双比较、JSON两条结果与synthetic、硬件/基线和配置弹窗，无控制台错误。使用HTTP检查交接HTML，file协议未实测；未提交推送。
+
+## 2026-10-14 · 前两页命名调整
+
+共享导航第一项改为“性能评估”，第二项改为“性能分析”；第二页主标题、页脚及浏览器标题同步，首屏浏览器标题改为性能评估。路由和功能保持原样，三页demo与设计交接HTML重新生成。类型检查、三种构建、4项交接测试及差异检查通过；纯文字调整未重复浏览器实测，未提交推送。
+
+## 展示数据补全与文案精简（2026-10-14）
+
+AnalysisPanel集中呈现耗时、等效周期和L2/MFU/UB；NPU示例显式带sample_clock_mhz=1500，等效周期按示例时钟换算，默认和实际来源缺失仍为空。MegaKernel恢复预设读写量，增加Python换算GB/s，启动次数仍随实现对照。矩阵、配置弹窗和后两页删重复操作提示、英文装饰和页脚演示说明，详情解释归入来源折叠；全局示例/synthetic与必要口径保留。交接HTML及三页demo重建，原文件临时备份保留。
+
+34项Python定向检查、13项前端测试、类型和三种构建通过。浏览器验证三页、单/双详情、基线联动、融合读写量及JSON的sample_clock/synthetic，1280px无溢出，无控制台错误。本次file协议被浏览器工具限制，使用HTTP预览；筛选未重复实测。未接真实API或提交推送。规则见[数据口径](data-semantics.md)。
+
+## 交接HTML重新同步（2026-10-14）
+
+发现根目录交接HTML回到旧单图版本，而Vue源文件仍为双柱状图。保留原文件到临时备份后，使用build:design重新生成，恢复双图及最新分析指标。类型检查和4项交接测试通过，生成内容确认两个比较方向；本轮未重复浏览器检查。
+
+## 含光分析字段展示（2026-10-13）
+
+核对同级含光Python analyze_performance调用：返回列表，含Kernel总时延/可选总周期、七类多核平均组件周期、L2/MFU/UB比例与Trace文件引用；当前仍为mock，无HTTP与真实引擎。OpScope独立运行，通过analysis_display.py为示例附加同形analysis子集与格式化analysis_view；矩阵单条/双条可看资源与周期，诊断页资源卡和MegaKernel基线对照共用AnalysisPanel。保留原耗时，未知总周期为null，GPU不套NPU组件/UB，组件不可相加；优化结论继续人工预设，后两页不暴露方法身份。资产v7，设计HTML19模板。详见[映射设计](../docs/hanguang-analysis-display.md)及[数据口径](data-semantics.md)。
+
+验证：37项Python、13项前端、类型与三种构建通过；浏览器核对单/双详情、硬件及基线联动、周期展开与JSON，1280px无溢出，无控制台错误。筛选与配置清空未重复浏览器检查，自动测试通过。仅本地HTTP预览，未接后端或提交推送。
+
+## 性能矩阵下方双向柱状图（2026-10-13）
+
+Vue ComparisonChart 和原生 app.js 改为并列的同平台不同方法、同方法不同平台总耗时柱状图。两张图各有选择框，矩阵行列按钮分别更新对应选择，筛选失效仅清理该轴；配置应用/重置恢复默认。共用原 Python 零起点刻度与图宽，缺失保留原因和详情，零值不变；参考偏差留在矩阵。在线构建、opscope-demo.html、opscope-ui-design.html、index.html/demo.html均已同步，交接模板仍18块。见[结果矩阵设计](../docs/result-matrix-design.md)。
+
+验证：22项Python、13项前端及11项原生JS检查通过，三种Vue构建、离线生成、JS语法与差异格式检查通过。浏览器验证两图独立选择、矩阵行列联动、筛选回退、缺失显示、参考偏差、柱条详情、双比较和JSON（25条、H100 Roofline157μs、synthetic）。1280px桌面无溢出，原生/三页静态/交接页均显示双图，最终预览无控制台错误。仅HTTP预览实测，未实际评估、提交推送或部署宿主。
+
+## UI设计师交接单文件（2026-10-13）
+
+新增opscope-ui-design.html，约2.2MB，三个工作台与弹窗共18个可读模板、CSS、两份原示例JSON及Vue/路由/状态逻辑全部内嵌。设计师可以直接改模板、样式和数据后刷新，单文件不请求接口，synthetic和原缺失语义保留。frontend/build-design.mjs使用既有Vue/Vite工具转换模板中的TypeScript、普通setup实例代理及显式组件注册；`python3 -B build.py`后执行`npm --prefix frontend run build:design`生成。模板data-source映射回Vue源文件。回传稿应先保存和比对，迁回Vue/样式并恢复数据适配后再生成新交接文件，避免覆盖设计师修改。当前方案见[UI交接](../docs/ui-design-handoff.md)。
+
+验证：8项Python定向检查、13项前端测试、Vue类型检查、在线/设计构建通过。浏览器验证矩阵、配置、筛选、详情/双比较/JSON、诊断硬件和尺寸、MegaKernel族/规模/基线；临时副本直接改标题、CSS颜色、JSON显示名均生效。1280px无横向溢出，最终预览无控制台错误。file://直接打开未实测，HTTP预览使用单独临时目录。未运行实际评估、接入优化后端或提交推送。
+
+## 三页静态演示恢复算子选择（2026-10-13）
+
+opscope-demo.html 的矩阵恢复标题内“选择算子”按钮，复用 OperatorConfig 的搜索、分类、输入与应用/取消；完整目录保留94个可见算子、100个输入模板。Python 保留五种示例硬件对应的25条空模板，默认 MatMul 4096³ FP16/FP32 精确匹配才展示原25条结果。其他配置显示未预设原因、null性能和not_run状态；载入MatMul示例恢复原结果与工作负载。配置应用清空对比和聚焦，JSON对应当前输入，全局示例/synthetic持续保留。静态模式继续禁止运行和API，错误链接聚焦输入而不改hash路由。当前约定见[静态工作台](../docs/static-workspace-demo.md)及[数据口径](data-semantics.md)。
+
+验证：24项Python检查、13项前端测试、Vue类型检查、在线/单文件构建、内联JS语法及差异检查通过。浏览器检查目录搜索/Mul应用、尺寸校验与错误定位、取消/Escape、空结果/恢复、筛选、详情/双比较、三页导航、实际JSON下载及1280px布局；无控制台错误。在线页原输入和评估文案保持正常。HTTP预览仅提供单文件，file://直接打开未实测；未运行实际评估或提交推送。
+
 ## 三页单文件展示（2026-10-09）
 
 新增根目录opscope-demo.html，完整包含Vue性能矩阵、性能优化与MegaKernel，IIFE脚本/CSS/预设内嵌、hash路由，无后端与外部资源依赖。矩阵固定MatMul4096³，保留五种已有完整示例硬件×五方法共25条；其他两页各12组预设，保持硬件/规模/族选择与synthetic。原demo.html/index.html仍是旧矩阵。构建先运行build.py再执行frontend的build:demo；规则见[静态工作台](../docs/static-workspace-demo.md)。
@@ -66,9 +180,75 @@ Vue 新增 `/optimization` 性能优化和 `/megakernel` 实现比较，顶部�
 
 验证：5项新预设测试、14项既有构建/矩阵测试、1项静态路由测试、5项前端测试、Vue 类型检查/生产构建、离线生成及差异格式检查通过。浏览器验证1440/1280桌面、390窄屏无页面横向溢出，诊断切换/缺失流水/重播/键盘、任务与规模切换/基线自比1.00×/融合3→1、两页JSON下载的synthetic和选择上下文；控制台无错误。原矩阵读取当前宿主目录正常（无已运行结果），未为本次预览提交评估。减少动态效果已提供CSS适配，未模拟系统设置实测。预览服务为本机5173；未提交、推送或部署到8000宿主。
 
+## 在线 OpScope 本机免登录（2026-09-29）
+
+同级 zrt-sim 已恢复在线构建，并在本机配置持久开启 `OPSCOPE_LOCAL_NO_LOGIN=true`。仅本地环境、回环 OpScope API 使用固定普通账户 `opscope-local`；所有本机浏览器共享该账户，提交体或旧身份头不能改变归属，其他 API 和生产认证不变。继续复用原 TaskStore、配额等待及 worker，无需交互登录，重启或前端构建后配置仍生效。静态 demo.html 保留，先前静态页面挂载已被本轮替换。
+
+验证：新增12项身份测试、17项内嵌测试及30项配置测试通过；认证/免登录两套真实 HTTP+worker 的 MatMul/RmsNorm 双方法、报告和快照通过。另2项既有配额测试因认证环境失败，用 HEAD 身份实现同样复现；完整套件收集受两项既有 MCP 依赖导入错误阻塞。已通过统一脚本重启 Web/worker，保留数据库；无身份8000页面和 bootstrap 均200，外部 Origin 为401，浏览器在线目录及运行按钮正常。内存分组历史仍不持久化。未提交推送。见[启动说明](../../zrt-sim/docs/opscope.md)。
+
+
+## 静态展示页挂载到 /opscope（2026-09-29）
+
+用户明确要求直接访问 `/opscope` 即看到预设结果。已将本仓生成的 demo.html 复制到同级 zrt-sim 的 `backend/web/static/opscope/index.html`，复用现有公共页面路由和8000代理；不重启服务，不修改 API 鉴权、数据库或 worker。无身份 HTTP 验证127.0.0.1/localhost、带/不带末尾斜杠及8001直连均200且字节一致；浏览器可见 MatMul、25条预设结果和比较图。独立静态文件无需本仓运行时依赖。宿主 `npm --prefix opscope_ui run build` 会覆盖展示产物并恢复在线版，说明已记入宿主 docs/opscope.md；本轮未提交推送。
+
 ## 静态展示入口（2026-09-29）
 
 新增可单独复制、直接打开的 [demo.html](../demo.html)，由原离线构建链路生成，内置 MatMul 4096³ FP16/FP32 的25条合成结果。固定输入、隐藏运行入口、跳过服务探测，保留矩阵筛选/详情/双结果/JSON；所有示例与缺项语义不变。`python3 -B build.py` 同时更新 index.html 和 demo.html，不手改产物。14项数据/矩阵测试、4项既有评估UI测试及静态模式无网络/不可提交定向检查通过。按用户要求未启动服务或运行评估，本轮未做浏览器视觉与交互实测。
+
+## 公开 Profiling 来源调查（2026-09-28，仅调研）
+
+完整结论与版本见[调查报告](../docs/public-operator-profiling-sources.md)和[审计摘要](../docs/research/public-profiling-audit-2026-09-28.json)。FlashInfer-Trace 固定版本实际含 B200/GB200 的 5,474 条 PASS 延迟记录，不能按文档示例误认含 H100，也不能视作流水；KernelBench 当前已发布计时文件为两种 H100 环境的 eager/compile 基线。SOL 的 235 个问题/3,957 个 workload 不含已填好的硬件延迟；HF Kernels 终端参考耗时/加速比在本轮版本 JSON 中未序列化。FlagGems dtype 汇总列是加速比，Ascend 具体 B1/B4 型号与逐 shape 绝对延迟仍未确认。Meta HTA 公开样例确有时间线和部分 SASS 计数器，但不保证完整输入配置或计数器覆盖。
+
+这些来源是后续 lookup/trace 接入候选，未导入应用、未复测。匹配必须保留精确硬件、算子融合语义、输入精度/布局、实现版本和计时范围；公开总耗时不会自动补齐 TileSim 模型与校准表。
+
+## 配额等待与原 worker 复用（2026-09-28）
+
+同级 zrt-sim OpScope 运行时将 429/ACTIVE_RUN_QUOTA_EXCEEDED 保留为 queued/null，在后续轮询刷新结果后按顺序补交至原 TaskStore/worker。首个额度拒绝停止本轮补交；非配额错误仍失败。取消会终止未提交组合，避免取消后再次提交。未增加计算引擎或执行队列，未放宽角色配额。
+
+验证：17项内嵌后端测试通过；隔离数据库下真实HTTP+原worker的MatMul/RmsNorm双方法、报告、快照和用户隔离通过。用户已同意清空内存展示批次并重启8001，现已仅重启Web，原worker及数据库保留。旧批次失败项不自动重试，请重新发起评估。等待补交仍依赖页面轮询，关闭页面暂停补交，Web重启丢失未提交组合。未commit/push。实现说明见 [排队计划](../../zrt-sim/docs/superpowers/plans/2026-09-28-opscope-quota-queue.md)。
+
+
+## 本地测试身份入口修复（2026-09-28）
+
+同级 zrt-sim-ui 的本地登录插件改用 Vite loadEnv 读取当前模式的 `.env.local`，同时保留进程环境优先级；仅回环连接可访问测试页面。已在本机忽略文件启用入口，密钥未纳管。入口 `?next=/opscope` 支持选择测试身份后直接进入 OpScope，其他目标回原主页。后端鉴权保持开启，未修改角色或添加主页按钮。
+
+验证：4项定向测试通过（含真实Vite请求、生产构建不带测试入口、配置加载和非本机拒绝）。浏览器选普通用户A后OpScope加载成功，原主页显示本地用户A，再访问无参数 `/opscope` 仍成功。未运行评估任务，未commit/push。操作说明见 [UI README](../../zrt-sim-ui/README.md)。
+
+
+## 统一前端端口（2026-09-28）
+
+用户明确 OpScope 应通过前端8000访问。zrt-sim-ui 的 vite.config.ts 增加 `/opscope` 和 `/api/opscope` 到 ZRT_PROXY_TARGET（默认8001）的原路径代理，保留宿主鉴权与原主页，不增加入口按钮。Vite 显式绑定127.0.0.1，避免本机仅监听IPv6 localhost时地址不通。统一入口为 `http://127.0.0.1:8000/opscope`；8001只作为后端直连选择。zrt-sim及UI启动文档同步修正。真实8000页面、两项JS/CSS资源、原主页和原健康API均200，未登录OpScope API为401；两项原代理检查通过。未commit/push，既有前端pid文件不纳入本次改动。
+
+## OpScope 完整内嵌 zrt-sim（2026-09-28，已实现未提交）
+
+按用户“全部合进去，仅主页入口暂不做”的要求，当前同级 zrt-sim/main 工作树在 fc84cdef 上迁入完整 Vue 页面、矩阵/详情/双结果比较、报告和离线快照资源。FastAPI 同端口提供 `/opscope` 与 `/api/opscope`，无需独立 OpScope 服务或本目录的 Python/Node/硬件/算子文件；HostGateway 内部直接复用宿主目录、严格提交、jobs 读写、身份和 worker。原 modeling EAGLE checkout、zrt-sim-ui 和旧 8802/8803 服务未动。没有自动 commit/push。
+
+启动继续用 zrt-sim 原 web + worker，默认 8001，生产构建纳管，运行时无需 Node。可使用已配置好的宿主环境，不需为 OpScope 新建环境。按账户隔离的批次索引暂为单 web 进程内存，每用户12批/全局128批；重启清分组历史，实际任务仍持久化到 TaskStore。维护说明见 [zrt-sim 启动文档](../../zrt-sim/docs/opscope.md)。
+
+验证：41项相关后端与9项前端通过，独立npm ci/类型/构建通过；真实HTTP+worker MatMul/RmsNorm各双方法、lookup缺失、报告/快照和跨账户拒绝通过，validation.cli4/4。宿主回归74通过/2失败；全套尝试207通过/20失败/43跳过后达失败阈值，均在未修改fc84cdef同环境同顺序复现完全相同失败。浏览器矩阵/筛选/双结果浮窗/JSON通过；报告HTTP200，IAB下载落盘事件未确认；file://快照视觉检查被浏览器URL策略拒绝，未绕过。临时测试服务与数据库收尾清理，不代表旧8803已切换。
+
+
+## 拉取 fork 最新主线（2026-09-28）
+
+核对 laksjdf/zrt-sim main 已完全包含于 Youngscc/zrt-sim main，无需额外合并推送。本地同级 zrt-sim/main 从11cd61ca快进到fc84cdef，包含用户校准链路与总览更新；工作树干净，与origin/main无领先落后。GitCode archerye/modeling 的 codex/opscope-modeling-integration 同SHA。原modeling EAGLE分支和未提交文件未动。本轮仅同步已有提交，未新建提交、未重跑测试、未重启服务。
+
+## fork 门禁停用（2026-09-28）
+
+用户明确暂不需要门禁，保留测试。仅在 Youngscc/zrt-sim 的 GitHub 仓库设置中停用 CI、Coverage No-Regression、Gate Administrator、Gate Stale Monitor、GitCode PR Gate 五个工作流，并取消其四个未完成任务。镜像 Signal、PR Mirror Sync、Protected Branch Sync 和 GitHub→GitCode 同步保持启用；未修改工作流文件、测试或分支保护，main 的 protected=false。原团队仓库、zrt-sim-ui、OpScope 自身 CI 不受影响。以后修改继续做适当本地测试，不自动重新启用这些门禁。首次包含 Mirror Signal 的停用请求被自动审批拒绝，缩小为上述五项后已执行；没有绕过拒绝。
+
+## 接入分支基线纠正与交付（2026-09-28）
+
+旧 codex/opscope-modeling-integration 错误地从 f571e9f1（含独立 EAGLE 开发改动）创建，合并 main 并不会清除该历史。用户要求纠正后，原 modeling 目录已恢复 codex/development-20260910 / f571e9f1，原有未提交文件保留；旧集成历史备份为 codex/opscope-integration-backup-20260928。
+
+以 Youngscc/zrt-sim GitHub main 635e5558 创建干净接入，仅移植共享单算子代码/测试/文档，额外隔离嵌套 TileSim 加载，避免改变 main 整模型默认后端。实现 ff6c7dcb、交付记录 11cd61ca 已正常快进推送到 fork main；祖先检查不含额外 EAGLE a1f775c3f，宿主前端无差异。独立 GitHub clone 已创建于同级 zrt-sim（main / 11cd61ca，origin=Youngscc/zrt-sim，工作树干净），EAGLE 继续使用 modeling；GitCode镜像工作流已成功，GitHub CI仍排队；旧运行服务未重启，不能将当前8803页面视为已切换到新main。
+
+接入及相关推理211通过（含27新增严格测试）、原接口69通过、E2E4/4、真实HTTP MatMul/RmsNorm各双方法通过；OpScope97Python+5前端、镜像脚本5通过。全套达到20失败阈值，207通过/20失败/43跳过；扩大回归965通过/20失败；核心216通过/3失败/37fixture错误。以上失败分别在原main同环境复现相同集合，核心main为189通过，其余差额为新增27测试；不宣称全套通过，未执行部分仍未验证。详细证据见zrt-sim内 docs/superpowers/plans/2026-09-28-opscope-clean-main-implementation.md。
+
+## 本机 PostgreSQL 就绪（2026-09-28）
+
+Docker 启动被旧用户磁盘路径与 macOS 配置访问权限阻断，按用户允许的方式改用 Homebrew PostgreSQL 16.15；postgresql@16 服务已启动并注册登录启动，数据目录 /opt/homebrew/var/postgresql@16，只监听 localhost:5432。沿用 modeling 现有配置创建 zrt 账号/数据库，TCP 密码认证，Unix socket peer；实际 SQL 连接成功。未记录密码、未修改项目数据库连接配置或重启 Web/worker。常用管理：brew services start/stop postgresql@16。Docker 原数据未主动重置或删除。
+
+此前受数据库阻塞的 289 项推理测试已实际复跑：282 通过、7 项断言失败，无数据库初始化错误。失败集中于 EAGLE3 DSV4 embedding、decode 候选及 prefill 历史计量；尚未定位归因，不能称为既有基线失败或已修复。完整本机日志位于 /tmp/modeling-postgres-ready-regression.log。
 
 ## 同步 GitHub 主线到集成分支（2026-09-28）
 

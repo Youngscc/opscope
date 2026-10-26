@@ -11,9 +11,9 @@ HARDWARE = [
 METHODS = [
     ("profile", "真机数据", "lookup", "profile"),
     ("method3", "MSKPP", "lookup", "method3"),
-    ("method4", "ESL", "lookup", "method4"),
-    ("roofline", "Roofline", "解析模型", "roofline"),
+    ("method4", "CAModel", "lookup", "method4"),
     ("tilesim", "TileSim", "仿真", "tilesim"),
+    ("roofline", "Roofline", "解析模型", "roofline"),
 ]
 LOOKUP_METHODS = {'profile', 'method3', 'method4'}
 

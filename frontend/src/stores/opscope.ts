@@ -18,7 +18,7 @@ export const useOpScopeStore = defineStore('opscope', () => {
   const session = new EvaluationSession()
   let remote = false, activeJob: string | undefined
   const visible = computed(() => data.value?.results.filter(r => hardware.value.includes(r.hardware) && methods.value.includes(r.method)) || [])
-  const label = computed(() => data.value?.evaluation ? '模型预测 · 非实测' : data.value?.synthetic && config.value && baseline.value && Configuration.matches_demo(config.value, baseline.value.catalog.default_config) ? '示例数据' : '待评估')
+  const label = computed(() => STATIC_DEMO ? '示例数据' : data.value?.evaluation ? '模型预测 · 非实测' : data.value?.synthetic && config.value && baseline.value && Configuration.matches_demo(config.value, baseline.value.catalog.default_config) ? '示例数据' : '待评估')
   const snapshot = computed(() => data.value?.evaluation && !busy.value && data.value.evaluation.status === 'completed' ? `${api_base}/evaluations/${data.value.evaluation.id}/snapshot` : '')
 
   async function initialize() {
@@ -47,14 +47,14 @@ export const useOpScopeStore = defineStore('opscope', () => {
   }
 
   function apply(next: Config) {
-    if (STATIC_DEMO) return
     cancel()
     config.value = next
     const base = baseline.value!
+    const matchesDemo = base.synthetic && Configuration.matches_demo(next, base.catalog.default_config)
     data.value = { ...base, results: Configuration.project(next, base.results, base.pending_results, base.catalog.default_config),
-      workload: Configuration.workload(next) }
+      workload: STATIC_DEMO && matchesDemo ? base.workload : Configuration.workload(next) }
     selected.value = []; scope.value = null
-    message.value = base.synthetic && Configuration.matches_demo(next, base.catalog.default_config) ? '已载入示例数据' : '配置已应用，请运行评估'
+    message.value = matchesDemo ? '已载入示例数据' : STATIC_DEMO ? '该配置未预设示例结果' : '配置已应用，请运行评估'
   }
 
   function pending() {

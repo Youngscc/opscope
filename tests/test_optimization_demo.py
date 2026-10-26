@@ -20,6 +20,71 @@ class OptimizationDemoTests(unittest.TestCase):
         for row in actual['diagnostics'] + actual['mega'] + actual['families']:
             self.assertTrue(row['synthetic'])
 
+    def test_memory_cost_samples_preserve_space_and_traffic_distinction(self):
+        # Peak is a simultaneous allocation sample; zero intermediates are valid.
+        cases = {(row['scope_id'], row['size']): row for row in self.data['mega']
+                 if row['hardware_id'] == 'ascend-910b1'}
+        mm = {row['id']: row for row in cases['matmul', '4096']['candidates']}
+        self.assertEqual(mm['v1']['memory']['peak_mib'], 112)
+        self.assertEqual(mm['mega']['memory']['peak_mib'], 100)
+        self.assertEqual(mm['mega']['cost_view'][2]['value'], '0')
+        fused = {row['id']: row for row in cases['fused', '4096']['candidates']}
+        self.assertEqual(fused['separate']['memory']['intermediate_mib'], 64)
+        self.assertEqual(fused['mega']['memory']['workspace_mib'], 4)
+        attention = {row['id']: row for row in cases['attention', '1024']['candidates']}
+        self.assertEqual(attention['separate']['memory']['peak_mib'], 176)
+        for case in self.data['mega']:
+            for row in case['candidates']:
+                memory = row['memory']
+                self.assertTrue(memory['synthetic'])
+                self.assertEqual(memory['peak_mib'], sum(memory[key] for key in
+                    ('input_output_mib', 'intermediate_mib', 'workspace_mib')))
+                self.assertEqual(row['cost_view'][-1]['value'], f"{row['traffic_mib']:g}")
+
+    def test_dimension_cases_and_fixpipe(self):
+        # Batch-bearing B and shared weights must remain different input contracts.
+        cases = self.data['dimension_cases']
+        self.assertEqual(len(cases), 96)
+        bmm = next(r for r in cases if r['calculation_type']=='bmm' and r['dimensions']==[4,1024,4096,1024])
+        shared = next(r for r in cases if r['calculation_type']=='shared' and r['dimensions']==[4,1024,4096,1024])
+        self.assertEqual(bmm['inputs'][1]['shape'], [4,1024,4096])
+        self.assertEqual(shared['inputs'][1]['shape'], [1024,4096])
+        self.assertIn('N=4096, K=1024', bmm['trend']['axis_label'])
+        for case in cases:
+            self.assertTrue(case['synthetic'])
+            for row in case['candidates']:
+                self.assertGreaterEqual(row['traffic_mib'], row['memory']['input_output_mib'])
+                self.assertEqual(case['comparisons'][row['id']][row['id']]['speedup'], 1)
+        for case in self.data['diagnostics']:
+            if case['operator_id']=='matmul':
+                self.assertEqual(case['timeline'][2]['name'], 'Fixpipe')
+
+    def test_flat_workspace_families_match_exported_members(self):
+        # Each visible family is one task; exported candidates belong to that family.
+        families = {r['id']: r for r in self.data['workspace_families']}
+        self.assertEqual([r['name'] for r in families.values()],
+                         ['MatMul', 'BatchMatMul', '共享权重矩阵乘', 'Linear + GELU', 'Attention'])
+        for family in families.values():
+            self.assertEqual(len(family['scopes']), 1)
+            self.assertEqual(family['member_count'], len(family['members']))
+        for case in self.data['dimension_cases']:
+            members = {r['id'] for r in families[case['family_id']]['members']}
+            self.assertEqual({r['member_id'] for r in case['candidates']}, members)
+
+    def test_first_three_families_have_distinct_strategies(self):
+        # Distinct task families must not show copied names or identical timings.
+        rows = {r['calculation_type']: r for r in self.data['dimension_cases']
+                if r['dimensions']==[1,4096,4096,4096] and r['hardware_id']=='ascend-910b1'}
+        winners = [next(c for c in rows[k]['candidates'] if c['id']==rows[k]['winner'])
+                   for k in ('matmul','bmm','shared')]
+        self.assertEqual([r['name'] for r in winners],
+                         ['megakernel_mm','megakernel_bmm','megakernel_shared_mm'])
+        self.assertEqual([r['latency_us'] for r in winners], [76.8,82,66])
+        for family in self.data['workspace_families'][:3]:
+            case = rows[family['calculation_type']]
+            self.assertEqual({r['name'] for r in family['members']}, {r['name'] for r in case['candidates']})
+            self.assertEqual({r['name'] for r in case['trend']['series']}, {r['name'] for r in case['candidates']})
+
     def test_only_final_results_are_published(self):
         # Both pages and their exports consume this asset: method provenance stays out.
         encoded = json.dumps(self.data, ensure_ascii=False).lower()
@@ -31,7 +96,7 @@ class OptimizationDemoTests(unittest.TestCase):
         self.assertEqual(case['latency'], '126.4')
         self.assertEqual(case['bound'], '访存受限')
         self.assertEqual(case['location'], '数据搬入 → 矩阵计算')
-        self.assertEqual(self.data['schema'], 'opscope-optimization-demo-v6')
+        self.assertEqual(self.data['schema'], 'opscope-optimization-demo-v7')
 
     def test_diagnosis_is_specific_to_operator_and_hardware(self):
         # Switching a SKU must select a complete preset, not relabel the previous result.
@@ -61,7 +126,7 @@ class OptimizationDemoTests(unittest.TestCase):
         cases = {row['id']: row for row in self.data['diagnostics']}
         matrix = cases['matmul/ascend-910b4/4096']
         self.assertEqual(matrix['focus_region'], {'start_us': 10, 'end_us': 32, 'left': 10, 'width': 22})
-        self.assertEqual(matrix['timeline_title'], '计算集中在哪？')
+        self.assertEqual(matrix['timeline_title'], '执行流水')
         self.assertEqual(cases['attention/ascend-910b4/2048']['focus_range'], '56–88 μs')
         for case in cases.values():
             focus = case['focus_region']

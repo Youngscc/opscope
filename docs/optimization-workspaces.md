@@ -48,7 +48,7 @@ MatMul/Attention × Ascend 910B1/910B4 × 各三组尺寸，共12组展示结果
 
 `opscope/offline/optimization_demo.py` 定义预设并计算比值、图宽、坐标与标尺；`build.py` 同步生成 `frontend/src/data/optimization-demo.json`。这些是展示 fixture，不是性能算法。Vue 页面负责选择/筛选/展开，通用组件绘制流水与趋势，独立 CSS 复用根设计 token。原 `demo.html` / `index.html` 的矩阵导出链路保持独立。
 
-`opscope-optimization-demo-v6` 只包含人工配置与结果层数据；`diagnostic_catalog` 定义诊断算子、两页共用的硬件选择项、维度轴、默认尺寸和输入张量，`diagnostics` 按 `operator_id + hardware_id + dimensions` 精确提供结果。`families` 显式记录族身份、成员身份/类型及比较范围，`mega` 按 `family_id + scope_id + size + hardware_id` 提供结果。成员使用范围内唯一的 `member_id` 与族目录关联；导出包含当前结果和完整选择上下文，MegaKernel 另保留选中的族定义。预设诊断与单一耗时由人工定义，不对多方法结果平均或计算融合。各通道活动可以重叠，不当作时延可加拆分。局部流水明确是示意窗口，不冒充全核 trace。基线比值只在同一任务、精度、规模、硬件和计时边界内生成。
+`opscope-optimization-demo-v7` 只包含人工配置与结果层数据；`diagnostic_catalog` 定义诊断算子、两页共用的硬件选择项、维度轴、默认尺寸和输入张量，`diagnostics` 按 `operator_id + hardware_id + dimensions` 精确提供结果。`families` 显式记录族身份、成员身份/类型及比较范围，`mega` 按 `family_id + scope_id + size + hardware_id` 提供结果。成员使用范围内唯一的 `member_id` 与族目录关联；导出包含当前结果和完整选择上下文，MegaKernel 另保留选中的族定义。预设诊断与单一耗时由人工定义，不对多方法结果平均或计算融合。各通道活动可以重叠，不当作时延可加拆分。局部流水明确是示意窗口，不冒充全核 trace。基线比值只在同一任务、精度、规模、硬件和计时边界内生成。
 
 ## 验收
 
@@ -57,3 +57,7 @@ MatMul/Attention × Ascend 910B1/910B4 × 各三组尺寸，共12组展示结果
 3. Python 测试验证族与成员归属/类型、具体比值、方法信息不外露、坐标边界、语义隔离、synthetic 与构建产物一致；Vue 类型检查和生产构建通过。
 4. 桌面检查导航、筛选、细节、基线比较、JSON；窄屏检查无溢出，支持键盘和减少动态效果。返回桌面视口后交付。
 5. 不修改当前矩阵的公式、方法、硬件身份及真实评估逻辑。不自动部署到宿主 zrt-sim。
+
+## 含光分析字段展示（2026-10-13）
+
+v7增加analysis及Python预处理analysis_view。诊断主卡使用L2命中率、MFU、UB利用率，并可展开总周期/七类流水组件周期；MegaKernel在排名下对齐基线与选中实现的相同指标。基线和实现选择联动，无方法身份展示。实现结构仍为人工定义，UB对照替代未经接口定义的流量对照。旧资源压力字段仅保留兼容，不作为当前主卡。来源能力与缺失规则见[含光分析展示](hanguang-analysis-display.md)。

@@ -3,19 +3,53 @@ import { computed } from 'vue'
 import { useOpScopeStore } from '../stores/opscope'
 const s = useOpScopeStore()
 const emit = defineEmits<{detail:[ids:string[]]}>()
-const rows = computed(() => s.visible.filter(r => !s.scope || (s.scope.hardware ? r.hardware===s.scope.hardware : r.method===s.scope.method)))
-const no_reference = computed(() => rows.value.some(r=>r.available) && !rows.value.some(r=>r.available && r.matrix.error_position!==null))
-const metric = computed(() => s.chart==='error' && no_reference.value ? 'latency' : s.chart)
-const groups = computed(() => s.data!.hardware.filter(h=>s.hardware.includes(h.id) && (!s.scope?.hardware || h.id===s.scope.hardware)).map(hw=>({hw,rows:rows.value.filter(r=>r.hardware===hw.id && r.available && (metric.value!=='error' || (r.method!=='profile' && r.matrix.error_position!==null)))})))
-const ticks = computed(() => s.data!.matrix.scales[metric.value==='error'?'error_ticks':'latency_ticks'])
-const title = computed(() => s.scope?.hardware ? s.data!.hardware.find(h=>h.id===s.scope!.hardware)?.name+' · 比较方法' : s.scope?.method ? s.data!.methods.find(m=>m.id===s.scope!.method)?.name+' · 比较硬件' : '全局对比')
-const methods = computed(() => s.data!.methods.filter(m=>rows.value.some(r=>r.method===m.id && r.available) && (metric.value!=='error' || m.id!=='profile')))
+const hardware = computed(() => s.data!.hardware.filter(h => s.hardware.includes(h.id)))
+const methods = computed(() => s.data!.methods.filter(m => s.methods.includes(m.id)))
+const hardwareId = computed(() => hardware.value.find(h => h.id === s.scope?.hardware)?.id ?? hardware.value[0]?.id ?? '')
+const methodId = computed(() => methods.value.find(m => m.id === s.scope?.method)?.id ?? methods.value[0]?.id ?? '')
+const ticks = computed(() => s.data!.matrix.scales.latency_ticks)
+const panels = computed(() => [
+  {id:'hardware', title:'同平台 · 不同方法', label:'对比平台', value:hardwareId.value, options:hardware.value,
+    rows:methods.value.map(m => ({label:m.name, result:s.visible.find(r => r.hardware === hardwareId.value && r.method === m.id)}))},
+  {id:'method', title:'同方法 · 不同平台', label:'对比方法', value:methodId.value, options:methods.value,
+    rows:hardware.value.map(h => ({label:h.name, result:s.visible.find(r => r.method === methodId.value && r.hardware === h.id)}))},
+])
+function select(axis:string, event:Event) {
+  s.scope = {...s.scope, [axis]:(event.target as HTMLSelectElement).value}
+}
 </script>
 <template>
-<section class="analysis-section" aria-labelledby="chart-heading"><div class="analysis-heading"><div><div class="eyebrow">COMPARISON / INSIGHTS</div><h2 id="chart-heading">{{title}}</h2></div><div class="chart-controls"><button v-if="s.scope" class="text-button" @click="s.scope=null">返回全局</button><div class="segmented" aria-label="图表指标"><button :aria-pressed="metric==='error'" @click="s.chart='error'">参考偏差</button><button :aria-pressed="metric==='latency'" @click="s.chart='latency'">总耗时</button></div></div></div>
-<div class="chart-meta"><p>{{metric==='error'?'参考偏差 · 左侧低估，右侧高估，越接近零越接近本次参考。':'总耗时 · 固定同一方法后，可以直观比较不同硬件。'}}</p><div class="chart-legend"><span v-for="m in methods" :key="m.id"><i class="legend-mark" :class="m.id"></i>{{m.name}}</span></div></div>
-<div v-if="rows.some(r=>r.available)" class="analysis-chart" :class="{focused:!!s.scope}"><div class="chart-axis"><span>{{metric==='error'?'偏差 %':'耗时 μs'}}</span><div><span v-for="(tick,i) in ticks" :key="i" class="axis-tick" :class="{first:i===0,last:i===ticks.length-1}" :style="{left:tick.position+'%'}">{{tick.label}}</span></div><span></span></div>
-<div v-for="group in groups" :key="group.hw.id" class="chart-group"><div class="chart-hardware">{{group.hw.name.replace('NVIDIA ','')}}</div><div class="chart-series-group" :class="metric"><div v-for="r in group.rows" :key="r.id" class="chart-series"><span class="lane-name">{{s.scope?s.data!.methods.find(m=>m.id===r.method)?.name:''}}</span><div class="chart-lane"><div class="lane-plot"><button class="chart-mark" :class="[r.method,metric==='error'?'point':'bar']" :style="metric==='error'?{left:r.matrix.error_position+'%'}:{width:r.matrix.latency_width+'%'}" :aria-label="`${s.name(r)} · ${r.latency} μs，查看详情`" @click="emit('detail',[r.id])"><i v-if="metric==='error'"></i><span v-else class="bar-number">{{r.latency}}</span></button></div><span class="lane-value">{{metric==='error'?(s.scope?r.matrix.error_label:''):s.data!.methods.find(m=>m.id===r.method)?.name}}</span></div></div><div v-if="!group.rows.length" class="chart-no-data">— 暂无结果</div></div></div></div>
-<div v-else class="empty-state"><h3>暂无可绘制的结果</h3><p>缺失值保留为空，不参与对比。</p></div><p class="chart-footnote">{{no_reference?'暂无可用参考，展示绝对耗时。':'统一刻度 · 缺失结果不作零值绘制，更短的预测不代表更准确。'}}</p>
+<section class="analysis-section" aria-labelledby="chart-heading">
+  <div class="analysis-heading">
+    <div><h2 id="chart-heading">性能对比</h2><p class="chart-description">点击柱条可查看详情<br>统一刻度，图形长度表示耗时。</p></div>
+    <span class="comparison-unit">总耗时 · μs</span>
+  </div>
+  <div class="comparison-panels">
+    <section v-for="panel in panels" :key="panel.id" class="comparison-panel" :aria-labelledby="`comparison-${panel.id}-heading`">
+      <div class="comparison-panel-heading">
+        <h3 :id="`comparison-${panel.id}-heading`">{{panel.title}}</h3>
+        <label class="comparison-select"><span>{{panel.label}}</span>
+          <select :value="panel.value" :disabled="!panel.options.length" @change="select(panel.id,$event)">
+            <option v-if="!panel.options.length" value="">未选择</option>
+            <option v-for="option in panel.options" :key="option.id" :value="option.id">{{option.name}}</option>
+          </select>
+        </label>
+      </div>
+      <div v-if="panel.value && panel.rows.length" class="comparison-bars">
+        <div class="comparison-axis" aria-hidden="true"><span>μs</span><div>
+          <span v-for="(tick,i) in ticks" :key="i" class="axis-tick" :class="{first:i===0,last:i===ticks.length-1}" :style="{left:tick.position+'%'}">{{tick.label}}</span>
+        </div><span></span></div>
+        <div v-for="row in panel.rows" :key="row.label" class="comparison-row">
+          <button v-if="row.result" class="comparison-bar-button" :class="[row.result.method,{'is-missing':!row.result.available}]" :aria-label="`${s.name(row.result)} · ${row.result.available?row.result.latency+' μs':row.result.reason}，查看详情`" @click="emit('detail',[row.result.id])">
+            <span class="comparison-label">{{row.label}}</span>
+            <span class="comparison-track"><span v-if="row.result.available" class="comparison-bar" :style="{width:row.result.matrix.latency_width+'%'}"></span><span v-else class="comparison-missing">{{row.result.reason}}</span></span>
+            <strong class="comparison-value">{{row.result.available?row.result.latency:'—'}}</strong>
+          </button>
+          <div v-else class="comparison-bar-button is-missing"><span class="comparison-label">{{row.label}}</span><span class="comparison-missing">暂无结果</span><strong class="comparison-value">—</strong></div>
+        </div>
+      </div>
+      <div v-else class="empty-state"><h3>暂无比较组合</h3><p>选择平台和方法后展示对比。</p></div>
+    </section>
+  </div>
 </section>
 </template>

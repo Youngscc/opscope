@@ -11,8 +11,8 @@ class VirtualMethodsTest(unittest.TestCase):
         from opscope.evaluation.evaluation_results import evaluation_payload
         from opscope.evaluation.engine_worker import unavailable_reason
         demo = build_payload()
-        order = ['profile', 'method3', 'method4', 'roofline', 'tilesim']
-        names = ['真机数据', 'MSKPP', 'ESL', 'Roofline', 'TileSim']
+        order = ['profile', 'method3', 'method4', 'tilesim', 'roofline']
+        names = ['真机数据', 'MSKPP', 'CAModel', 'TileSim', 'Roofline']
         request = normalize_request({'configuration': demo['catalog']['default_config'],
                                      'hardware_ids': ['h100'], 'method_ids': order})
         raw = []
@@ -24,7 +24,7 @@ class VirtualMethodsTest(unittest.TestCase):
         for payload in (demo, live):
             self.assertEqual([m['id'] for m in payload['methods']], order)
             self.assertEqual([m['name'] for m in payload['methods']], names)
-            self.assertEqual([m['backend'] for m in payload['methods']], ['lookup'] * 3 + ['roofline', 'tilesim'])
+            self.assertEqual([m['backend'] for m in payload['methods']], ['lookup'] * 3 + ['tilesim', 'roofline'])
             self.assertEqual([m['source'] for m in payload['methods'][:3]], ['lookup'] * 3)
             rows = [r for r in payload['results'] if r['hardware'] == 'h100']
             self.assertEqual([r['method'] for r in rows], order)

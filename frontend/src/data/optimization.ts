@@ -32,3 +32,10 @@ export function exportDemo(kind:string, selection:unknown, data:unknown) {
   link.href = url; link.download = `opscope-${kind}-demo.json`; link.click()
   setTimeout(()=>URL.revokeObjectURL(url), 1000)
 }
+
+export const calculationTypes = [{id:'matmul',name:'普通矩阵乘'}, {id:'bmm',name:'批量矩阵乘 BMM'}, {id:'shared',name:'共享权重矩阵乘'}, {id:'fused',name:'Linear + GELU'}]
+export function findDimensionCase(kind:string, hardware:string, dimensions:number[]):MegaCase | null {
+  return (fixture.dimension_cases.find(row=>row.calculation_type===kind && row.hardware_id===hardware && row.dimensions.every((n,i)=>n===dimensions[i])) as unknown as MegaCase) ?? null
+}
+
+export const workspaceFamilies = fixture.workspace_families

@@ -24,6 +24,6 @@ async function apply() {
       <p v-if="attempted && !parseDimensions(draft)" id="dimension-error" class="field-error" role="alert">每个维度都需要填写有效的正整数。</p>
       <p class="diagnosis-input-template">{{operator.input_template}}</p>
     </form>
-    <footer class="config-footer"><span class="diagnosis-demo-note">示例数据</span><button class="button" @click="emit('close')">取消</button><button class="button primary" type="submit" form="diagnosis-size-form">应用配置</button></footer>
+    <footer class="config-footer"><button class="button" @click="emit('close')">取消</button><button class="button primary" type="submit" form="diagnosis-size-form">应用配置</button></footer>
   </Modal>
 </template>

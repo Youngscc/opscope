@@ -1,14 +1,36 @@
 # 架构
 
+## MatMul类型与维度预设（2026-10-14）
+
+optimization_demo.py构建dimension_cases；findDimensionCase按类型、硬件和完整维度查找。MegaKernel使用workspace_families扁平五族目录与独立维度选择，Attention继续findMegaCase；不再展示计算类型/范围控件。计算及趋势坐标预处理在Python，前端只选择；两类单文件包含全部预设，当前设计版约7.9MB。见[维度设计](docs/matmul-calculation-types.md)。
+
+## MegaKernel开销展示（2026-10-14）
+
+optimization_demo.py为候选生成memory人工预设与cost_view展示行；ImplementationFlow接收当前、基线和已有comparison展示执行链及时间/空间对照。空间值与synthetic随候选进入JSON，JS不推导内存或性能。见[实现与开销设计](docs/implementation-cost-comparison.md)。
+
+## 三页输入侧栏（2026-10-14）
+
+三页复用input-result-layout/input-sidebar/workspace-results样式组织左配置与右结果。ResultMatrix提供results插槽承载ComparisonChart；分析和MegaKernel将原配置与结果分组，基线选择移入侧栏。状态与数据流不变；在线、三页demo及设计交接复用，原生旧矩阵仍独立。见[布局设计](docs/input-sidebar-layout.md)。
+
+## 三页参考主题（2026-10-14）
+
+`App.vue`提供顶栏与面包屑，`main.ts`在既有样式后加载`reference-theme.css`；三页组件调整展示结构，共用导航、资源指标与原交互逻辑。在线、三页demo及设计交接复用同一主题，原生矩阵导出仍用原有布局。数值与图形预处理留在Python，主题不改变数据契约。布局和边界见[参考图还原](docs/reference-style-redesign.md)。
+
+## 矩阵下方的双向柱状图（2026-10-13）
+
+`ComparisonChart` 与原生 `app.js` 均展示同平台不同方法、同方法不同平台两张总耗时柱状图。共用 Python `matrix_data` 提供的零起点刻度与 `latency_width`；浏览器只选择和展示。平台/方法选择分别保存，矩阵行列按钮更新对应轴，筛选失效仅清理对应选择。缺失保留原因和详情入口，参考偏差仍由矩阵指标切换提供。在线与各 HTML 导出同步，数据/导出契约及计算层不变；当前设计见[结果矩阵](docs/result-matrix-design.md)。
+
 ## 三页静态工作台（2026-10-09）
 
-`opscope-demo.html` 复用 Vue 三页，通过独立 demo 模式将 IIFE 脚本、CSS、矩阵及优化预设内嵌为单文件。hash 路由支持离线页面切换；共享 SkipLink 在页内聚焦，不覆盖路由。`workspace_demo.py` 从原预设中选取五种完整示例硬件，在25条结果上重新预处理图表及比较；`build.py` 写入 workspace-demo.json。虚拟模块仅在 demo 构建中加载此资产，在线构建返回null。静态 store 直接初始化，固定矩阵输入、隐藏运行与服务报告，API边界及HTML CSP禁止连接。生成命令及验证边界见[静态工作台](docs/static-workspace-demo.md)。
+UI设计交接另提供 `opscope-ui-design.html`：`frontend/build-design.mjs` 复用当前19个Vue组件的setup逻辑，显式注册组件、转换模板中的TypeScript表达式，并将可读模板、全局CSS、两份原示例JSON和完整运行库内嵌为单文件。运行时编译模板使设计师可直接编辑HTML并刷新；代价是交接文件约2.6MB，且本地交接页需允许模板编译。数据块与布局独立，API仍禁用；在线构建继续预编译。回传时按data-source标注迁回Vue与样式文件，通过数据适配层恢复接口，不将设计稿数据当作新测量。流程与验证见[UI交接说明](docs/ui-design-handoff.md)。
+
+`opscope-demo.html` 复用 Vue 三页，通过独立 demo 模式将 IIFE 脚本、CSS、矩阵及优化预设内嵌为单文件。hash 路由支持离线页面切换；共享 SkipLink 与配置错误链接在页内聚焦，不覆盖路由。`workspace_demo.py` 从原预设中选取五种完整示例硬件，在25条结果上重新预处理图表及比较，同时保留完整算子目录和25条空结果模板；`build.py` 写入 workspace-demo.json。虚拟模块仅在 demo 构建中加载此资产，在线构建返回null。静态 store 直接初始化，复用 OperatorConfig 和配置精确匹配：默认 MatMul 展示原结果，其他配置保留空值，恢复默认配置重新载入原结果与工作负载；应用清空对比及聚焦。运行与服务报告隐藏，API边界及HTML CSP禁止连接。生成命令及验证边界见[静态工作台](docs/static-workspace-demo.md)。
 
 ## 独立优化工作台（2026-10-08）
 
 Vue 增加 `/optimization` 与 `/megakernel`，通过 `WorkspaceHeader` 与性能矩阵并列。两页只消费本地展示 fixture，不初始化评估 store、不请求 API。`opscope/offline/optimization_demo.py` 预处理示例比值、排序、图宽和趋势坐标；`build.py` 同步生成 `frontend/src/data/optimization-demo.json`，Vue 只执行选择、展示和导出。原矩阵在路由返回时保留已有配置。独立 FastAPI 仅为两个新路由提供静态 Vue 壳的刷新入口，计算层没有变化。
 
-诊断页提供算子、硬件与 Size 选择，以 `operator_id + hardware_id + dimensions` 精确匹配耗时、最终瓶颈结论、资源压力和关键流水；没有结果时展示空状态，不跨组合回退。`DiagnosisSizeConfig` 复用现有 Modal，管理维度草稿、正整数校验和应用/取消；输入张量元数据由Python生成，前端不按尺寸推导性能。MegaKernel 页先选择人工定义的族，再比较族内算子/融合算子。两页共用硬件目录与选择控件样式；族目录显式配置成员及类型，`family_id + scope_id + size + hardware_id` 精确定位结果；缺失时为空，同族内不同计算语义用对比范围隔离。支持硬件、基线、规模和指标切换，以及融合边界与趋势。两页及JSON导出仅含人工配置与结果层信息，不公开方法身份、数量或来源选择；展示资产版本为 `opscope-optimization-demo-v6`。全部标为示例，JSON 保留 synthetic；族编辑和持久化尚未接入。原离线 `demo.html` / `index.html` 仍是矩阵导出，此轮未增加离线优化页。具体边界和验收见[优化工作台](docs/optimization-workspaces.md)。
+诊断页提供算子、硬件与 Size 选择，以 `operator_id + hardware_id + dimensions` 精确匹配耗时、最终瓶颈结论、资源压力和关键流水；没有结果时展示空状态，不跨组合回退。`DiagnosisSizeConfig` 复用现有 Modal，管理维度草稿、正整数校验和应用/取消；输入张量元数据由Python生成，前端不按尺寸推导性能。MegaKernel 页先选择人工定义的族，再比较族内算子/融合算子。两页共用硬件目录与选择控件样式；族目录显式配置成员及类型，`family_id + scope_id + size + hardware_id` 精确定位结果；缺失时为空，同族内不同计算语义用对比范围隔离。支持硬件、基线、规模和指标切换，以及融合边界与趋势。两页及JSON导出仅含人工配置与结果层信息，不公开方法身份、数量或来源选择；展示资产版本为 `opscope-optimization-demo-v7`。全部标为示例，JSON 保留 synthetic；族编辑和持久化尚未接入。原离线 `demo.html` / `index.html` 仍是矩阵导出，此轮未增加离线优化页。具体边界和验收见[优化工作台](docs/optimization-workspaces.md)。
 
 ## 静态演示产物（2026-09-29）
 
@@ -138,3 +160,13 @@ worker通过逐行JSON/flush报告组合状态，worker_stream.py在进程仍运
 `tilesim_adapters.py`区分 DSL 工程、DSL 理论和工程 API，适配 BNSD FA 的输入与逻辑工作量；保留各自实际 mode，不自动回退。GPU 映射复用已审计源映射，借用配置随结果导出并进入矩阵标记和比较限制。无事件的模型允许 trace_view=null，默认占位字段不作为采集数据展示。R200 对应已有 R200_Server Roofline 规格；源头仍缺的 910B Roofline、GPU BF16、GB200/R200 带宽/存储参数明确显示原因。见[覆盖计划及验证](docs/modeling-coverage-plan.md)。
 
 共享算子的有界参数合同与模型适配由 modeling 维护，OpScope 只传递和显示；当前覆盖及限制见[算子覆盖](docs/shared-operator-coverage.md)。
+
+分析展示由 `opscope/offline/analysis_display.py` 统一准备含光 API 同形的 analysis 子集、百分比与缺失值；矩阵详情和 A/B 对齐，后两页共用 AnalysisPanel 展示 L2/MFU/UB 与可展开的七类流水组件周期。只在示例构建附加预设，不向实际评估补造指标，不依赖同级含光运行。边界见[含光分析展示](docs/hanguang-analysis-display.md)。
+
+## 静态详情补充层（2026-10-15）
+
+`opscope/offline/presentation_details.py`仅在`workspace_payload`深拷贝后的25组可用静态结果上运行，先补充details与analysis，再由prepare_matrix生成比较结构，最后修正GPU指标标签。`presentation_sample.synthetic=true`记录虚拟配置及流量/耗时等数值；这些硬件配置不是已核验型号规格，不写入真实硬件目录或API结果。GPU不套用UB/NPU流水；Roofline不产生执行流水；未匹配配置、run_id、报告与Trace路径不伪造。JSON保留补充层及synthetic来源。
+
+### 配置输出预览
+
+`offline/output_preview.py`按现有算子身份生成有限的维度引用描述，目录携带`output_preview`；Vue配置窗口按输入维度索引展示，不计算FLOPs、流量或性能。不支持的规则、改变模板秩和不合法输入显示待确认/待完善输入，不套用第一张输入为通用输出。此预览不替代后端的输出契约校验。

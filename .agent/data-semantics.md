@@ -1,12 +1,24 @@
 # 数据口径
 
+MegaKernel展示目录workspace_families现为五个独立族，计算类型直接绑定族；dimension_cases的family_id/member_id与对应族一致，不跨族比较。原families仅保留为样例构建模板，界面不再显示对比范围层级。
+
+MatMul独立尺寸样例dimension_cases按计算类型、硬件、完整[B,M,N,K]匹配，共96组。BMM两输入均带Batch，共享权重仅A带Batch，普通与融合Batch固定1。时延为演示比例合成，内存按所示张量与人工工作区构造，累计读写不少于输入输出；不是任意形状预测。趋势固定B/N/K改变M。MatMul诊断写回为Fixpipe/L0C→GM，Attention原简化流水不变。见[设计](../docs/matmul-calculation-types.md)。
+
+MegaKernel空间展示来自人工memory预设，峰值设备内存=输入输出+中间结果峰值+临时工作区，假定同时驻留且三者互斥分类；非实测、不由读写量或UB倒推。零中间结果合法。cost_view由Python格式化，memory.synthetic保留，真实来源缺失不回填。详见[实现与开销](../docs/implementation-cost-comparison.md)。
+
+当前展示顺序为真机数据、MSKPP、CAModel、TileSim、Roofline。CAModel为原ESL的展示改名，内部method4与lookup来源不变，不表示新增模拟器接入。
+
+## 矩阵下方的柱状图（2026-10-13）
+
+固定平台比较方法、固定方法比较平台，两张图只展示同一工作负载的原始总耗时，使用统一的 Python 预处理刻度和图宽。方法颜色与矩阵一致；固定方法时所有平台保持该方法颜色。筛选不重新定标，缺失显示“—”和原因，合法零值保留数值和详情入口。两轴选择独立，参考偏差仍保留在矩阵，不以更短的模型预测表示更准确。synthetic、配置身份和 JSON 数值不变。
+
 ## 三页静态演示
 
-opscope-demo.html 的矩阵是原MatMul 4096³ FP16/FP32预设的完整子集：Ascend9382、H100/H200/B200/B300 × 五种方法，共25条，逐条保留synthetic、原始数值和缺失分项。R200及未运行目录型号不出现在该演示集合，不将缺失改成支持。矩阵输入锁定；诊断和MegaKernel各12组预设沿用严格选择匹配。虚拟数据不代表真实测量、仿真或硬件认证；具体[静态工作台约定](../docs/static-workspace-demo.md)。
+opscope-demo.html 的默认矩阵是原MatMul 4096³ FP16/FP32预设的完整子集：Ascend9382、H100/H200/B200/B300 × 五种方法，共25条，逐条保留synthetic、原始数值和缺失分项。R200及未运行目录型号不出现在该演示集合，不将缺失改成支持。静态版保留完整算子目录及输入配置；只有精确匹配默认配置才展示原25条结果，其他配置使用对应硬件/方法的空模板，available=false、latency_us=null、task.status=not_run，不携带旧执行、FLOPs或推导输出。恢复默认配置同时恢复原工作负载。导出包含当前输入，全局示例标记与synthetic持续保留。诊断和MegaKernel各12组预设沿用严格选择匹配。虚拟数据不代表真实测量、仿真或硬件认证；具体[静态工作台约定](../docs/static-workspace-demo.md)。
 
 ## 优化界面示例（2026-10-08）
 
-性能优化与 MegaKernel 页使用独立的 `opscope-optimization-demo-v6` fixture，不消费矩阵中的预测/实测数据，也不把预设结论当作诊断算法。全局、族、场景、候选与导出均保留 synthetic。两页只公开最终结果，不向用户展示评估方法、数量、来源或一致性投票；展示资产及JSON导出也不包含这些字段。任务耗时是独立预设值，不平均不同方法结果。资源压力是独立指标，不能相加为总时延；流水是说明瓶颈的局部示意。
+性能优化与 MegaKernel 页使用独立的 `opscope-optimization-demo-v7` fixture，不消费矩阵中的预测/实测数据，也不把预设结论当作诊断算法。全局、族、场景、候选与导出均保留 synthetic。两页只公开最终结果，不向用户展示评估方法、数量、来源或一致性投票；展示资产及JSON导出也不包含这些字段。任务耗时是独立预设值，不平均不同方法结果。资源压力是独立指标，不能相加为总时延；流水是说明瓶颈的局部示意。
 
 诊断按 `operator_id + hardware_id + dimensions` 精确匹配，当前 MatMul/Attention × Ascend 910B1/910B4 × 各三组尺寸共12组预设。MatMul维度顺序为M/N/K、输入A[M,K]与B[K,N]；Attention为B/H/S/D、Q/K/V同形。输入形状与dtype由Python生成，耗时和资源压力是显式预设，不按尺寸或芯片名推导倍率。切换算子保留硬件、加载默认尺寸，切换硬件保留尺寸；自定义尺寸仅接受安全范围内正整数，不存在的完整组合返回null、显示空状态并禁用导出。相同元素总量也不能替代逐维匹配，禁止插值或借用另一组合。
 
@@ -109,3 +121,19 @@ TileSim engine.mode区分dsl-eng/dsl-theo/cost-eng；只有真实events生成tra
 硬件快照的 FP8/FP4 峰值键使用 `_tops`，FP16/BF16/FP32 等使用 `_tflops`；两者读取后都换算为每秒 10¹² 次运算。键名不匹配不得解释成缺规格。当前 `Adevice03_POD` 的 `fp8_tops=0` 仍按无可用峰值拒绝 FP8 目录公式预测，不能借用 Server 或 TileSim 的规格。
 
 算子属性与张量shape/dtype分开存储在`configuration.attributes`，参与配置摘要与双结果可比性。TorchSum固定axis=1、TorchCumsum固定最后一轴、Transpose固定`[0,2,1]`。Cumsum和GatherV2的axis默认未知，须由用户明确填写，分别只接受最后一轴和0；仅axis张量的形状不能代表其数值。TileSim三维Linear请求会展平前导维度，结果的逻辑输出仍保留原维度；分布式/通信成本未包括在内。
+
+## 含光分析字段展示
+
+analysis 是与含光分析 API 同形的展示子集，保留 performance.latency_us/cycles、metrics、pipe_cycles.components、trace；不是含光完整响应或真实采集。比例为0–1，Python生成百分比与条宽；零值合法、未知为null/“—”。组件是多核平均周期，可重叠、不可求和或当作总耗时拆分。总周期不按假定频率填充，Trace引用不代表浏览器下载服务。NPU组件与UB不套用到GPU。
+
+矩阵仅真机/TileSim的合成示例附加指标，其他方法与实际评估没有的字段保持缺失。优化资产v7按现有场景/成员附加人工预设，使用L2/MFU/UB替代旧资源压力主展示；旧gauges保留为兼容数据。诊断建议、局部流水、实现结构与排名仍是预设，不声称由含光直接返回。详见[展示设计](../docs/hanguang-analysis-display.md)。
+
+### 展示补全与文案精简（2026-10-14）
+
+用户要求补全展示数据后，NPU合成示例显式设置sample_clock_mhz=1500，周期按latency_us×clock_mhz生成并标为“等效周期”，不是实测总周期，也不是型号规格；默认无时钟时仍为null，真实引擎不补值。AnalysisPanel集中展示耗时/等效周期/资源指标，组件平均周期仍独立、不相加。MegaKernel沿用预设traffic_mib，Python计算读写吞吐GB/s=MiB×2^20/μs/1000；不是新增硬件计数器。UI删除重复操作说明、装饰英文及页脚演示说明，保留全局示例、导出synthetic、单位、缺失原因和关键比较限制。详情的演示解释移入已有来源记录折叠区。
+
+前三矩阵族的策略名称与时延/流量分别预设；BMM强调批次调度，共享权重强调权重复用。族内比较与趋势由相应种子重建，不将这些虚拟成员解释为真实Kernel支持列表。
+
+## 静态详情补充层（2026-10-15）
+
+`opscope/offline/presentation_details.py`仅在`workspace_payload`深拷贝后的25组可用静态结果上运行，先补充details与analysis，再由prepare_matrix生成比较结构，最后修正GPU指标标签。`presentation_sample.synthetic=true`记录虚拟配置及流量/耗时等数值；这些硬件配置不是已核验型号规格，不写入真实硬件目录或API结果。GPU不套用UB/NPU流水；Roofline不产生执行流水；未匹配配置、run_id、报告与Trace路径不伪造。JSON保留补充层及synthetic来源。
